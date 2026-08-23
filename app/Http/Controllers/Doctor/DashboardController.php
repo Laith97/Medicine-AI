@@ -968,13 +968,20 @@ class DashboardController extends Controller
             // Generate predictions using the service
             $predictiveService = app(\App\Services\PredictiveAnalyticsService::class);
             $predictions = $predictiveService->predictRisks($appointment->patient, $appointment);
+            // Also capture feature snapshot for auditability
+            $featureExtractor = app(\App\Services\FeatureExtractor::class);
+            $features = $featureExtractor->extractFeatures($appointment->patient, $appointment);
 
-            // Create and save the risk score
+            // Create and save the risk score with production provenance
             $riskScore = new \App\Models\PatientRiskScore();
             $riskScore->patient_id = $appointment->patient_id;
             $riskScore->appointment_id = $appointment->id;
             $riskScore->no_show_risk = $predictions['no_show_risk'];
             $riskScore->hospitalization_risk = $predictions['hospitalization_risk'];
+            $riskScore->prediction_method = $predictions['prediction_method'] ?? 'rule_based';
+            $riskScore->confidence = $predictions['confidence'] ?? 0.60;
+            $riskScore->model_version = $predictions['model_version'] ?? \App\Services\PredictiveAnalyticsService::MODEL_VERSION;
+            $riskScore->feature_snapshot = array_combine($featureExtractor->getFeatureNames(), $features);
             $riskScore->save();
 
             // Cache success for 1 hour

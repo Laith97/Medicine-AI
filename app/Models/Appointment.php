@@ -97,6 +97,9 @@ class Appointment extends Model
         'reminder_sent',
         'kiosk_id',
         'version',
+        'was_hospitalized',
+        'hospitalized_at',
+        'hospitalization_source',
         // Guest patient fields
         'guest_name',
         'guest_email',
@@ -118,6 +121,8 @@ class Appointment extends Model
         'completed_at' => 'datetime',
         'reminder_sent' => 'boolean',
         'follow_up_required' => 'boolean',
+        'was_hospitalized' => 'boolean',
+        'hospitalized_at' => 'datetime',
         'guest_date_of_birth' => 'date',
         'token_expires_at' => 'datetime',
         'is_verified' => 'boolean',

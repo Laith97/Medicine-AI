@@ -539,15 +539,30 @@ class AIAssistant
             // Include risk assessment section in the prompt
             $prompt = $this->buildMedicationPrompt($symptoms, $allergies, $pastMeds, $appointment, $additionalData, $redFlags, $riskFactors);
 
+            // buildMedicationPrompt may return a blocked array response when critical data is missing
+            // In that case, return it directly without calling OpenAI (prevents strlen() TypeError)
+            if (is_array($prompt) && isset($prompt['suggestions'])) {
+                if (!isset($prompt['clinical_data_used'])) {
+                    $prompt['clinical_data_used'] = $this->buildClinicalDataSummary($symptoms, $additionalData);
+                }
+                $prompt['generated_at'] = $prompt['generated_at'] ?? now()->toISOString();
+                Log::info('AI blocked — returning early response without OpenAI', [
+                    'appointment_id' => $appointment->id,
+                    'blocked' => $prompt['blocked'] ?? false,
+                    'missing_data' => $prompt['missing_data'] ?? $prompt['risk_flags'] ?? [],
+                ]);
+                return $prompt;
+            }
+
             Log::info('Calling OpenAI API for prescription suggestions', [
                 'appointment_id' => $appointment->id,
                 'patient_id' => $appointment->patient_id,
                 'model' => 'gpt-4o',
-                'prompt_length' => strlen($prompt),
+                'prompt_length' => is_string($prompt) ? strlen($prompt) : 0,
                 'max_tokens' => 1200,
                 'temperature' => 0.1,
                 'has_response_format' => true,
-                'prompt_preview' => substr($prompt, 0, 500) . '...',
+                'prompt_preview' => is_string($prompt) ? substr($prompt, 0, 500) . '...' : 'N/A (blocked array)',
             ]);
 
             // Call OpenAI GPT-4o with enhanced safety and JSON enforcement
@@ -1607,11 +1622,15 @@ REQUIRED JSON FORMAT:
             'risk_flags' => $allRiskFlags,
             'clinical_data_used' => $aiResult['clinical_data_used'] ?? [],
             'message' => $aiResult['message'] ?? 'AI suggestions with FDA validation generated',
-            'source' => 'openai_fda_enhanced', // Override source to indicate FDA validation was applied
+            'source' => $aiResult['source'] ?? 'openai_fda_enhanced',
             'disabled' => $aiResult['disabled'] ?? false,
+            'blocked' => $aiResult['blocked'] ?? false,
+            'requires_evaluation' => $aiResult['requires_evaluation'] ?? false,
+            'missing_data' => $aiResult['missing_data'] ?? null,
+            'fallback' => $aiResult['fallback'] ?? false,
             'disclaimer' => $aiResult['disclaimer'] ?? 'These are AI-generated suggestions for clinical decision support only. All medication decisions must be made by qualified healthcare professionals after considering FDA validation data.',
-            'generated_at' => now()->toISOString(),
-            'ai_model' => 'gpt-4o with FDA validation',
+            'generated_at' => $aiResult['generated_at'] ?? now()->toISOString(),
+            'ai_model' => $aiResult['ai_model'] ?? 'gpt-4o with FDA validation',
             'confidence_level' => $aiResult['confidence_level'] ?? 'support_only'
         ];
 

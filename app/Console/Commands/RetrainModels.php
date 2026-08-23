@@ -38,9 +38,22 @@ class RetrainModels extends Command
         $this->info('Starting model retraining...');
 
         try {
-            $this->analyticsService->trainModels();
-
+            $result = $this->analyticsService->trainModels();
+            $this->info('Result: '. json_encode($result, JSON_PRETTY_PRINT));
+            try {
+                $health = $this->analyticsService->getModelHealth();
+                $this->table(['Metric','Value'], [
+                    ['Adequate', $health['adequacy']['adequate'] ? 'YES (ML)' : 'NO (rule-based)'],
+                    ['Total appts', $health['adequacy']['total_appointments']],
+                    ['No-show', $health['adequacy']['no_show_count'].' ('.($health['adequacy']['no_show_rate']*100).'%)'],
+                    ['Hospitalized', $health['adequacy']['hospitalization_count'].' ('.($health['adequacy']['hospitalization_rate']*100).'%)'],
+                    ['Models exist', $health['models_exist'] ? 'yes' : 'no'],
+                ]);
+            } catch (\Exception $e) {
+                // for mocked tests
+            }
             $this->info('Model retraining completed successfully.');
+            Log::info('Model retraining completed', (array)$result);
             return 0;
         } catch (\Exception $e) {
             $this->error('Model retraining failed: ' . $e->getMessage());

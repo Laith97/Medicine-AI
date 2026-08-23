@@ -15,11 +15,17 @@ class PatientRiskScore extends Model
         'appointment_id',
         'no_show_risk',
         'hospitalization_risk',
+        'prediction_method',
+        'confidence',
+        'model_version',
+        'feature_snapshot',
     ];
 
     protected $casts = [
         'no_show_risk' => 'decimal:3',
         'hospitalization_risk' => 'decimal:3',
+        'confidence' => 'decimal:2',
+        'feature_snapshot' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

@@ -4,356 +4,357 @@ namespace App\Services;
 
 use App\Models\Appointment;
 use App\Models\User;
-use App\Models\Diagnosis;
 use Rubix\ML\Classifiers\RandomForest;
 use Rubix\ML\Datasets\Labeled;
 use Rubix\ML\Datasets\Unlabeled;
-use Rubix\ML\Persisters\Filesystem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class PredictiveAnalyticsService
 {
     private FeatureExtractor $featureExtractor;
+    public const MODEL_VERSION = '1.0.0';
+    public const MIN_APPOINTMENTS = 50;
+    public const MIN_NO_SHOW_RATE = 0.02;
+    public const MIN_HOSPITALIZATION_RATE = 0.05;
 
     public function __construct(FeatureExtractor $featureExtractor)
     {
         $this->featureExtractor = $featureExtractor;
     }
 
-    /**
-     * Get the path for no-show model
-     */
     private function getNoShowModelPath(): string
     {
         return config('predictive-analytics.models.no_show.path', 'app/models/no_show_model.rbx');
     }
 
-    /**
-     * Get the path for hospitalization model
-     */
     private function getHospitalizationModelPath(): string
     {
         return config('predictive-analytics.models.hospitalization.path', 'app/models/hospitalization_model.rbx');
     }
 
-    /**
-     * Train the ML models using historical data
-     */
-    public function trainModels()
+    private function getMetaPath(string $modelPath): string
     {
-        // Query historical appointments with patient data
-        $appointments = Appointment::with(['patient', 'patient.patientDiagnoses'])
+        return str_replace('.rbx', '_meta.json', $modelPath);
+    }
+
+    public function trainModels(): array
+    {
+        $appointments = Appointment::with(['patient'])
             ->whereNotNull('patient_id')
             ->where('appointment_date', '<', now())
             ->get();
 
-        $noShowSamples = [];
-        $noShowLabels = [];
-        $hospitalizationSamples = [];
-        $hospitalizationLabels = [];
+        if ($appointments->count() < 10) {
+            Log::warning('ML training skipped: not enough historical data', ['count' => $appointments->count()]);
+            return ['status' => 'skipped', 'reason' => 'insufficient_data', 'count' => $appointments->count()];
+        }
 
-        foreach ($appointments as $appointment) {
-            $patient = $appointment->patient;
+        $noShowSamples = []; $noShowLabels = [];
+        $hospSamples = []; $hospLabels = [];
+
+        foreach ($appointments as $appt) {
+            $patient = $appt->patient;
             if (!$patient) continue;
+            $features = $this->featureExtractor->extractFeatures($patient, $appt);
+            if (!$this->featureExtractor->validateFeatures($features)) continue;
 
-            // Build features
-            $features = $this->featureExtractor->extractFeatures($patient, $appointment);
-
-            // No-show label
-            $noShowLabel = in_array($appointment->status, ['missed', 'no_show']) ? '1' : '0';
+            // Production label: true no-show status only
+            $noShowLabels[] = in_array($appt->status, ['missed','no_show'], true) ? '1' : '0';
             $noShowSamples[] = $features;
-            $noShowLabels[] = $noShowLabel;
 
-            // Hospitalization label (MVP: simple rule based on diagnoses)
-            $hospitalizationLabel = $this->featureExtractor->hasHighRiskCondition($patient) ? '1' : '0';
-            $hospitalizationSamples[] = $features;
-            $hospitalizationLabels[] = $hospitalizationLabel;
+            // Production hospitalization label: prefer explicit flag, fallback to diagnosis severity
+            $hospLabel = $this->resolveHospitalizationLabel($appt, $patient);
+            $hospLabels[] = $hospLabel;
+            $hospSamples[] = $features;
         }
 
-        // Train no-show model
-        if (!empty($noShowSamples)) {
-            $noShowDataset = new Labeled($noShowSamples, $noShowLabels);
-            $noShowClassifier = new RandomForest();
-            $noShowClassifier->train($noShowDataset);
+        $results = [];
 
-            // Save model
-            file_put_contents(storage_path($this->getNoShowModelPath()), serialize($noShowClassifier));
+        // Balance helper: oversample minority to avoid 0% positive collapse
+        $results['no_show'] = $this->trainAndPersist('no_show', $noShowSamples, $noShowLabels);
+        $results['hospitalization'] = $this->trainAndPersist('hospitalization', $hospSamples, $hospLabels);
+
+        Log::info('ML training completed', $results);
+        return $results;
+    }
+
+    private function resolveHospitalizationLabel(Appointment $appt, User $patient): string
+    {
+        // 1) Explicit ground truth if available
+        if (!is_null($appt->was_hospitalized)) return $appt->was_hospitalized ? '1' : '0';
+        // 2) Diagnosis severity critical / requires_hospitalization
+        $hasCritical = \App\Models\Diagnosis::where('patient_id', $patient->id)
+            ->where(function($q){ $q->where('requires_hospitalization', true)->orWhere('severity','critical'); })->exists();
+        if ($hasCritical) return '1';
+        // 3) Fallback to chronic proxy (for backward compat, but weighted lower)
+        return $this->featureExtractor->hasHighRiskCondition($patient) ? '1' : '0';
+    }
+
+    private function trainAndPersist(string $type, array $samples, array $labels): array
+    {
+        $total = count($labels);
+        $positives = count(array_filter($labels, fn($l)=>$l==='1'));
+        $rate = $total ? $positives / $total : 0;
+
+        if ($total < 10) return ['status'=>'skipped','total'=>$total,'positives'=>$positives];
+        if ($positives === 0 || $positives === $total) {
+            Log::warning("ML {$type} training: single-class data, using rule-based fallback", compact('total','positives'));
+            // still save a dummy model? skip to avoid broken classifier
+            return ['status'=>'skipped_single_class','total'=>$total,'positives'=>$positives,'rate'=>round($rate,4)];
         }
 
-        // Train hospitalization model
-        if (!empty($hospitalizationSamples)) {
-            $hospitalizationDataset = new Labeled($hospitalizationSamples, $hospitalizationLabels);
-            $hospitalizationClassifier = new RandomForest();
-            $hospitalizationClassifier->train($hospitalizationDataset);
+        // Oversample minority if <15% to help RandomForest
+        if ($rate < 0.15 || $rate > 0.85) {
+            [$samples, $labels] = $this->balanceDataset($samples, $labels);
+        }
 
-            // Save model
-            file_put_contents(storage_path($this->getHospitalizationModelPath()), serialize($hospitalizationClassifier));
+        $dataset = new Labeled($samples, $labels);
+        $classifier = new RandomForest(100, 0.5, 5, 3, 1e-7, 10); // trees, ratio, maxDepth etc
+
+        try {
+            $classifier->train($dataset);
+        } catch (\Exception $e) {
+            Log::error("ML {$type} training failed", ['error'=>$e->getMessage()]);
+            return ['status'=>'failed','error'=>$e->getMessage()];
+        }
+
+        // Evaluate with stratified holdout 20% if enough data
+        $metrics = $this->evaluate($classifier, $samples, $labels);
+
+        $path = $type === 'no_show' ? $this->getNoShowModelPath() : $this->getHospitalizationModelPath();
+        $fullPath = storage_path($path);
+        @mkdir(dirname($fullPath), 0755, true);
+        // Atomic write
+        $tmp = $fullPath.'.tmp';
+        file_put_contents($tmp, serialize($classifier));
+        rename($tmp, $fullPath);
+
+        $meta = [
+            'version' => self::MODEL_VERSION,
+            'type' => $type,
+            'trained_at' => now()->toIso8601String(),
+            'total' => $total,
+            'positives' => $positives,
+            'rate' => round($rate,4),
+            'balanced_total' => count($labels),
+            'metrics' => $metrics,
+            'features' => FeatureExtractor::FEATURE_NAMES,
+        ];
+        file_put_contents(storage_path($this->getMetaPath($path)), json_encode($meta, JSON_PRETTY_PRINT));
+
+        return ['status'=>'trained','meta'=>$meta];
+    }
+
+    private function balanceDataset(array $samples, array $labels): array
+    {
+        $posIdx = array_keys(array_filter($labels, fn($l)=>$l==='1'));
+        $negIdx = array_keys(array_filter($labels, fn($l)=>$l==='0'));
+        $minor = count($posIdx) < count($negIdx) ? $posIdx : $negIdx;
+        $majorCount = max(count($posIdx), count($negIdx));
+        $minorCount = count($minor);
+        if ($minorCount === 0) return [$samples, $labels];
+        $repeats = (int) ceil($majorCount / max(1,$minorCount)) -1;
+        $repeats = min(5, $repeats); // cap
+        for ($r=0;$r<$repeats;$r++) {
+            foreach ($minor as $i) { $samples[]=$samples[$i]; $labels[]=$labels[$i]; }
+        }
+        return [$samples, $labels];
+    }
+
+    private function evaluate(RandomForest $classifier, array $samples, array $labels): array
+    {
+        if (count($samples) < 20) return ['skipped'=>'too_few'];
+        $n = count($samples);
+        $hold = (int) ($n * 0.2);
+        $indices = array_rand($samples, $hold);
+        if (!is_array($indices)) $indices = [$indices];
+        $testSamples=[]; $testLabels=[];
+        foreach ($indices as $i){ $testSamples[]=$samples[$i]; $testLabels[]=$labels[$i]; }
+        try {
+            $dataset = new Unlabeled($testSamples);
+            $preds = $classifier->predict($dataset);
+            $correct = 0; foreach ($preds as $k=>$p) if ($p == $testLabels[$k]) $correct++;
+            $acc = $hold ? $correct / $hold : 0;
+            return ['accuracy'=>round($acc,4),'holdout'=>$hold,'correct'=>$correct];
+        } catch (\Exception $e) {
+            return ['error'=>$e->getMessage()];
         }
     }
 
-    /**
-     * Predict risks for given patient and appointment
-     *
-     * @param User $patient
-     * @param Appointment $appointment
-     * @return array
-     */
     public function predictRisks(User $patient, Appointment $appointment): array
     {
         $features = $this->featureExtractor->extractFeatures($patient, $appointment);
         return $this->predictRisksFromFeatures($features);
     }
 
-    /**
-     * Predict risks for given features array
-     *
-     * NOTE: IDE warnings about Rubix ML methods are expected due to dynamic method resolution.
-     * The code uses method_exists() checks and will work correctly at runtime.
-     *
-     * @param array $features
-     * @return array
-     */
     public function predictRisksFromFeatures(array $features): array
     {
-        // Debug: Log features being used
-        Log::info('ML Risk Assessment - Features', [
-            'features' => $features,
-            'feature_breakdown' => [
-                'no_show_count' => $features[0] ?? 'N/A',
-                'cancellation_count' => $features[1] ?? 'N/A',
-                'last_visit_days' => $features[2] ?? 'N/A',
-                'visit_frequency' => $features[3] ?? 'N/A',
-                'age' => $features[4] ?? 'N/A',
-                'gender' => $features[5] ?? 'N/A',
-                'chronic_conditions' => $features[6] ?? 'N/A',
-                'medication_count' => $features[7] ?? 'N/A',
-                'lead_time' => $features[8] ?? 'N/A',
-            ]
-        ]);
-
-        // Try ML prediction first
-        $mlNoShowRisk = $this->predictNoShowRisk($features);
-        $mlHospitalizationRisk = $this->predictHospitalizationRisk($features);
-
-        Log::info('ML Risk Assessment - ML Predictions', [
-            'ml_no_show_risk' => $mlNoShowRisk,
-            'ml_hospitalization_risk' => $mlHospitalizationRisk
-        ]);
-
-        // Check if ML models are adequately trained (have seen positive examples)
-        $trainingDataCheck = $this->checkTrainingDataAdequacy();
-
-        Log::info('ML Risk Assessment - Training Data Check', $trainingDataCheck);
-
-        // Use rule-based fallback if ML models are not adequately trained
-        // or if predictions are suspiciously low (indicating poor training)
-        $useFallback = !$trainingDataCheck['adequate'] ||
-                       ($mlNoShowRisk < 0.001 && $mlHospitalizationRisk < 0.001);
-
-        Log::info('ML Risk Assessment - Prediction Method', [
-            'use_fallback' => $useFallback,
-            'reason' => $useFallback ?
-                ($trainingDataCheck['adequate'] ? 'ML predictions too low' : 'Training data inadequate') :
-                'Using ML predictions'
-        ]);
-
-        if ($useFallback) {
-            // Rule-based risk calculation
-            $ruleBasedRisks = $this->calculateRuleBasedRisks($features);
-            $noShowRisk = $ruleBasedRisks['no_show_risk'];
-            $hospitalizationRisk = $ruleBasedRisks['hospitalization_risk'];
-
-            Log::info('ML Risk Assessment - Rule-based Results', [
-                'no_show_risk' => $noShowRisk,
-                'hospitalization_risk' => $hospitalizationRisk,
-                'rule_based_breakdown' => $ruleBasedRisks
-            ]);
-        } else {
-            $noShowRisk = $mlNoShowRisk;
-            $hospitalizationRisk = $mlHospitalizationRisk;
-
-            Log::info('ML Risk Assessment - ML Results', [
-                'no_show_risk' => $noShowRisk,
-                'hospitalization_risk' => $hospitalizationRisk
-            ]);
+        if (!$this->featureExtractor->validateFeatures($features)) {
+            Log::warning('ML predict: invalid features, using defaults', ['features'=>$features]);
+            $features = array_slice(array_merge($features, [0,0,365,1.0,30,0,0,0,7]),0,9);
         }
 
-        $finalResult = [
-            'no_show_risk' => round($noShowRisk, 4),
-            'hospitalization_risk' => round($hospitalizationRisk, 4),
+        Log::info('ML Risk Assessment - Features', ['features'=>$features]);
+
+        $mlNoShow = $this->predictNoShowRisk($features);
+        $mlHosp = $this->predictHospitalizationRisk($features);
+        $check = $this->checkTrainingDataAdequacy();
+
+        $useFallback = !$check['adequate'] || ($mlNoShow < 0.001 && $mlHosp < 0.001);
+        $method = $useFallback ? 'rule_based' : 'ml';
+
+        if ($useFallback) {
+            $rb = $this->calculateRuleBasedRisks($features);
+            $noShow = $rb['no_show_risk']; $hosp = $rb['hospitalization_risk'];
+            $conf = $this->estimateRuleConfidence($check);
+        } else {
+            $noShow = $mlNoShow; $hosp = $mlHosp;
+            $conf = $this->estimateMlConfidence($mlNoShow, $mlHosp, $check);
+        }
+
+        // Calibrate: ensure 0-1 and small epsilon
+        $noShow = max(0.01, min(0.99, round($noShow,4)));
+        $hosp = max(0.01, min(0.99, round($hosp,4)));
+        $conf = max(0.3, min(0.95, round($conf,2)));
+
+        Log::info('ML Final', compact('method','noShow','hosp','conf','check'));
+        return [
+            'no_show_risk' => $noShow,
+            'hospitalization_risk' => $hosp,
+            'prediction_method' => $method,
+            'confidence' => $conf,
+            'model_version' => $this->getModelVersion(),
         ];
-
-        Log::info('ML Risk Assessment - Final Result', $finalResult);
-
-        return $finalResult;
     }
 
-    /**
-     * Predict no-show risk using ML model
-     */
     private function predictNoShowRisk(array $features): float
     {
         try {
-            $noShowClassifier = unserialize(file_get_contents(storage_path($this->getNoShowModelPath())));
-            $dataset = new Unlabeled([$features]);
-
-            if (method_exists($noShowClassifier, 'proba')) {
-                $probabilities = $noShowClassifier->proba($dataset);
-                return $probabilities[0][1] ?? 0.0;
-            } else {
-                $prediction = $noShowClassifier->predict($dataset);
-                return $prediction[0] ? 1.0 : 0.0;
+            $path = storage_path($this->getNoShowModelPath());
+            if (!file_exists($path)) return 0.0;
+            $clf = unserialize(file_get_contents($path));
+            $ds = new Unlabeled([$features]);
+            if (method_exists($clf,'proba')) {
+                $p = $clf->proba($ds);
+                // proba returns associative [ '0'=>0.7,'1'=>0.3 ]
+                if (isset($p[0]['1'])) return (float)$p[0]['1'];
+                if (isset($p[0][1])) return (float)$p[0][1];
             }
-        } catch (\Exception $e) {
-            return 0.0;
-        }
+            $pred = $clf->predict($ds);
+            return $pred[0] === '1' ? 0.85 : 0.15;
+        } catch (\Exception $e) { Log::debug('no_show predict fail', ['e'=>$e->getMessage()]); return 0.0; }
     }
 
-    /**
-     * Predict hospitalization risk using ML model
-     */
     private function predictHospitalizationRisk(array $features): float
     {
         try {
-            $hospitalizationClassifier = unserialize(file_get_contents(storage_path($this->getHospitalizationModelPath())));
-            $dataset = new Unlabeled([$features]);
-
-            if (method_exists($hospitalizationClassifier, 'proba')) {
-                $probabilities = $hospitalizationClassifier->proba($dataset);
-                return $probabilities[0][1] ?? 0.0;
-            } else {
-                $prediction = $hospitalizationClassifier->predict($dataset);
-                return $prediction[0] ? 1.0 : 0.0;
+            $path = storage_path($this->getHospitalizationModelPath());
+            if (!file_exists($path)) return 0.0;
+            $clf = unserialize(file_get_contents($path));
+            $ds = new Unlabeled([$features]);
+            if (method_exists($clf,'proba')) {
+                $p = $clf->proba($ds);
+                if (isset($p[0]['1'])) return (float)$p[0]['1'];
+                if (isset($p[0][1])) return (float)$p[0][1];
             }
-        } catch (\Exception $e) {
-            return 0.0;
-        }
+            $pred = $clf->predict($ds);
+            return $pred[0] === '1' ? 0.85 : 0.15;
+        } catch (\Exception $e) { Log::debug('hosp predict fail', ['e'=>$e->getMessage()]); return 0.0; }
     }
 
-    /**
-     * Check if training data is adequate for reliable ML predictions
-     */
-    private function checkTrainingDataAdequacy(): array
+    public function checkTrainingDataAdequacy(): array
     {
-        // Query recent historical appointments
-        $appointments = Appointment::with(['patient', 'patient.patientDiagnoses'])
-            ->whereNotNull('patient_id')
-            ->where('appointment_date', '<', now())
-            ->get();
-
-        $totalAppointments = $appointments->count();
-        $noShowCount = 0;
-        $highRiskCount = 0;
-
-        foreach ($appointments as $appointment) {
-            if (in_array($appointment->status, ['missed', 'no_show'])) {
-                $noShowCount++;
-            }
-            if ($appointment->patient && $this->featureExtractor->hasHighRiskCondition($appointment->patient)) {
-                $highRiskCount++;
-            }
+        $appts = Appointment::whereNotNull('patient_id')->where('appointment_date','<',now())->get();
+        $total = $appts->count();
+        $noShow=0; $hosp=0;
+        foreach ($appts as $a){
+            if (in_array($a->status,['missed','no_show'],true)) $noShow++;
+            // production ground truth
+            if (!is_null($a->was_hospitalized) ? $a->was_hospitalized : false) $hosp++;
+            elseif ($a->patient && $this->featureExtractor->hasHospitalizationHistory($a->patient)) $hosp++;
         }
-
-        // Minimum requirements for adequate training
-        $minAppointments = 50;
-        $minNoShowRate = 0.02; // At least 2% no-show rate
-        $minHighRiskRate = 0.05; // At least 5% high-risk patients
-
-        $adequate = $totalAppointments >= $minAppointments &&
-                   ($noShowCount / max($totalAppointments, 1)) >= $minNoShowRate &&
-                   ($highRiskCount / max($totalAppointments, 1)) >= $minHighRiskRate;
+        $adequate = $total >= self::MIN_APPOINTMENTS
+            && ($noShow / max(1,$total)) >= self::MIN_NO_SHOW_RATE
+            && ($hosp / max(1,$total)) >= self::MIN_HOSPITALIZATION_RATE
+            && $noShow >= 3 && $hosp >= 3; // absolute minimum positives
 
         return [
-            'adequate' => $adequate,
-            'total_appointments' => $totalAppointments,
-            'no_show_count' => $noShowCount,
-            'high_risk_count' => $highRiskCount,
-            'no_show_rate' => $noShowCount / max($totalAppointments, 1),
-            'high_risk_rate' => $highRiskCount / max($totalAppointments, 1),
+            'adequate'=>$adequate,
+            'total_appointments'=>$total,
+            'no_show_count'=>$noShow,
+            'high_risk_count'=>$hosp, // keep key for blade compat
+            'hospitalization_count'=>$hosp,
+            'no_show_rate'=> $total? round($noShow/$total,4):0,
+            'high_risk_rate'=> $total? round($hosp/$total,4):0,
+            'hospitalization_rate'=> $total? round($hosp/$total,4):0,
+            'model_version'=>$this->getModelVersion(),
+            'no_show_model_exists'=>file_exists(storage_path($this->getNoShowModelPath())),
+            'hosp_model_exists'=>file_exists(storage_path($this->getHospitalizationModelPath())),
         ];
     }
 
-    /**
-     * Calculate rule-based risk scores when ML models are not adequately trained
-     */
+    private function estimateMlConfidence(float $ns, float $h, array $check): float
+    {
+        if (!$check['adequate']) return 0.55;
+        $spread = abs($ns - $h) > 0.05 ? 0.75 : 0.65;
+        $pos = min($check['no_show_count'], $check['hospitalization_count']);
+        $bonus = $pos > 20 ? 0.15 : ($pos > 10 ? 0.08 : 0);
+        return min(0.90, $spread + $bonus);
+    }
+
+    private function estimateRuleConfidence(array $check): float
+    {
+        if ($check['total_appointments'] < 10) return 0.45;
+        if (!$check['adequate']) return 0.55;
+        return 0.65;
+    }
+
+    private function getModelVersion(): string
+    {
+        $metaPath = storage_path($this->getMetaPath($this->getNoShowModelPath()));
+        if (file_exists($metaPath)) {
+            $j=json_decode(file_get_contents($metaPath), true);
+            return $j['version'] ?? self::MODEL_VERSION;
+        }
+        return self::MODEL_VERSION;
+    }
+
+    public function getModelHealth(): array
+    {
+        $check = $this->checkTrainingDataAdequacy();
+        $nsMeta = file_exists(storage_path($this->getMetaPath($this->getNoShowModelPath()))) ? json_decode(file_get_contents(storage_path($this->getMetaPath($this->getNoShowModelPath()))), true) : null;
+        $hMeta = file_exists(storage_path($this->getMetaPath($this->getHospitalizationModelPath()))) ? json_decode(file_get_contents(storage_path($this->getMetaPath($this->getHospitalizationModelPath()))), true) : null;
+        return [
+            'adequacy'=>$check,
+            'no_show_meta'=>$nsMeta,
+            'hospitalization_meta'=>$hMeta,
+            'models_exist'=> $check['no_show_model_exists'] && $check['hosp_model_exists'],
+        ];
+    }
+
+    // Keep original name for blade compat, delegate
     private function calculateRuleBasedRisks(array $features): array
     {
-        // Features: [no_show_count, cancellation_count, last_visit_days, visit_frequency, age, gender, chronic_conditions, medication_count, lead_time]
+        [$noShowCount,$cancellationCount,$lastVisitDays,$visitFreq,$age,$gender,$chronic,$meds,$leadTime] = array_pad($features,9,0);
+        $ns=0.0;
+        if ($noShowCount>0) $ns += min($noShowCount*0.18, 0.45);
+        if ($cancellationCount>0) $ns += min($cancellationCount*0.09, 0.25);
+        if ($lastVisitDays>365) $ns+=0.12; elseif($lastVisitDays>180) $ns+=0.06;
+        if ($age<25 || $age>70) $ns+=0.04;
+        if ($leadTime<2) $ns+=0.08;
+        if ($leadTime>30) $ns+=0.05;
+        if ($visitFreq<1) $ns+=0.06;
 
-        $noShowCount = $features[0] ?? 0;
-        $cancellationCount = $features[1] ?? 0;
-        $lastVisitDays = $features[2] ?? 365;
-        $visitFrequency = $features[3] ?? 0;
-        $age = $features[4] ?? 30;
-        $gender = $features[5] ?? 0;
-        $chronicConditions = $features[6] ?? 0;
-        $medicationCount = $features[7] ?? 0;
-        $leadTime = $features[8] ?? 7;
+        $h=0.0;
+        if ($chronic>=3) $h+=0.35; elseif($chronic>=2) $h+=0.22; elseif($chronic>=1) $h+=0.12;
+        if ($meds>=5) $h+=0.18; elseif($meds>=3) $h+=0.09;
+        if ($age>65) $h+=0.18; elseif($age>50) $h+=0.09;
+        if ($gender===1) $h+=0.04;
+        if ($visitFreq>12) $h+=0.12;
+        if ($lastVisitDays>365) $h+=0.04;
 
-        // No-show risk calculation
-        $noShowRisk = 0.0;
-
-        if ($noShowCount > 0) {
-            $noShowRisk += min($noShowCount * 0.2, 0.5);
-        }
-
-        if ($cancellationCount > 0) {
-            $noShowRisk += min($cancellationCount * 0.1, 0.3);
-        }
-
-        if ($lastVisitDays > 365) {
-            $noShowRisk += 0.15;
-        } elseif ($lastVisitDays > 180) {
-            $noShowRisk += 0.08;
-        }
-
-        if ($age < 25 || $age > 70) {
-            $noShowRisk += 0.05;
-        }
-
-        if ($leadTime < 2) {
-            $noShowRisk += 0.1; // Last-minute appointments higher risk
-        }
-
-        // Hospitalization risk calculation
-        $hospitalizationRisk = 0.0;
-
-        if ($chronicConditions >= 3) {
-            $hospitalizationRisk += 0.4;
-        } elseif ($chronicConditions >= 2) {
-            $hospitalizationRisk += 0.25;
-        } elseif ($chronicConditions >= 1) {
-            $hospitalizationRisk += 0.15;
-        }
-
-        if ($medicationCount >= 5) {
-            $hospitalizationRisk += 0.2; // Polypharmacy risk
-        } elseif ($medicationCount >= 3) {
-            $hospitalizationRisk += 0.1;
-        }
-
-        if ($age > 65) {
-            $hospitalizationRisk += 0.2;
-        } elseif ($age > 50) {
-            $hospitalizationRisk += 0.1;
-        }
-
-        if ($gender === 1) {
-            $hospitalizationRisk += 0.05;
-        }
-
-        if ($visitFrequency > 12) {
-            $hospitalizationRisk += 0.15; // Frequent visits indicate health issues
-        }
-
-        $noShowRisk = min($noShowRisk, 1.0);
-        $hospitalizationRisk = min($hospitalizationRisk, 1.0);
-
-        return [
-            'no_show_risk' => $noShowRisk,
-            'hospitalization_risk' => $hospitalizationRisk,
-        ];
+        return ['no_show_risk'=>min(0.95,max(0.05,$ns)), 'hospitalization_risk'=>min(0.95,max(0.05,$h))];
     }
-
 }

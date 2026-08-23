@@ -928,82 +928,114 @@ class AppointmentController extends Controller
             'past_diagnoses' => 'nullable|string',
             'voice_diagnosis' => 'nullable|string',
             'reason_for_visit' => 'nullable|string',
+            'continue_limited' => 'nullable|boolean',
+            'clinical_notes' => 'nullable|string',
+            'doctor_notes' => 'nullable|string',
         ]);
 
-        // Decode JSON data
-        $allergies = json_decode($request->allergies, true) ?? [];
-        $past_meds = json_decode($request->past_meds, true) ?? [];
-        
-        // Ensure allergies and past_meds are arrays
-        if (!is_array($allergies)) {
-            $allergies = is_string($allergies) && !empty(trim($allergies)) ? [trim($allergies)] : [];
-        }
-        if (!is_array($past_meds)) {
-            $past_meds = is_string($past_meds) && !empty(trim($past_meds)) ? [trim($past_meds)] : [];
-        }
+        // Server-authoritative: load verified data from DB, do not trust client for safety-critical fields
+        $latestDiagnosis = \App\Models\Diagnosis::where('patient_id', $appointment->patient_id)->latest()->first();
+        $pastDiagnosesModels = $latestDiagnosis ? \App\Models\Diagnosis::where('patient_id', $appointment->patient_id)->orderBy('created_at', 'desc')->skip(1)->take(10)->get() : collect();
+        $voiceModel = $appointment->patient_id ? \App\Models\AiAssistantResult::where('patient_id', $appointment->patient_id)->where('source', 'voice_assistant')->latest()->first() : null;
 
-        // Handle symptoms fallback
-        $symptoms = $request->symptoms ?: 'No symptoms provided';
+        $continueLimited = $request->boolean('continue_limited');
 
-        // Ensure symptoms is an array for AI service
-        if (!is_array($symptoms)) {
-            $symptoms = [$symptoms];
+        // Allergies — server-authoritative, allow dummy only if continue_limited explicitly set
+        $serverAllergies = [];
+        if ($latestDiagnosis && isset($latestDiagnosis->patient_data['allergies'])) {
+            $val = $latestDiagnosis->patient_data['allergies'];
+            if (is_array($val)) {
+                $serverAllergies = array_values(array_filter(array_map('trim', $val), fn($v) => $v !== ''));
+            } elseif (is_string($val) && trim($val) !== '') {
+                $serverAllergies = [trim($val)];
+            }
         }
+        // Fallback to client only if server empty and continue_limited (for Quick Entry dummy)
+        if (empty($serverAllergies) && $continueLimited) {
+            $clientAllergies = json_decode($request->allergies, true) ?? [];
+            if (!is_array($clientAllergies)) $clientAllergies = is_string($clientAllergies) && trim($clientAllergies) !== '' ? [trim($clientAllergies)] : [];
+            if (!empty($clientAllergies)) $serverAllergies = $clientAllergies;
+            if (empty($serverAllergies)) $serverAllergies = ['No known allergies'];
+        }
+        $allergies = $serverAllergies;
 
-        // Prepare additional data for AI processing
+        // Medications — server-authoritative via Diagnosis + active prescriptions
+        $serverMeds = [];
+        if ($latestDiagnosis) {
+            $pd = $latestDiagnosis->patient_data ?? [];
+            $val = $pd['medications'] ?? $pd['past_medications'] ?? null;
+            if (is_array($val)) {
+                $serverMeds = array_values(array_filter(array_map('trim', $val), fn($v) => $v !== ''));
+            } elseif (is_string($val) && trim($val) !== '') {
+                $serverMeds = [trim($val)];
+            }
+        }
+        if (empty($serverMeds) && $appointment->patient_id) {
+            $activeMeds = \App\Models\Prescription::getActiveForPatient($appointment->patient_id)->pluck('medication_name')->toArray();
+            if (!empty($activeMeds)) $serverMeds = $activeMeds;
+        }
+        if (empty($serverMeds) && $continueLimited) {
+            $clientMeds = json_decode($request->past_meds, true) ?? [];
+            if (!is_array($clientMeds)) $clientMeds = is_string($clientMeds) && trim($clientMeds) !== '' ? [trim($clientMeds)] : [];
+            if (!empty($clientMeds)) $serverMeds = $clientMeds;
+            if (empty($serverMeds)) $serverMeds = ['No current medications'];
+        }
+        $past_meds = $serverMeds;
+
+        // Symptoms / clinical notes — server-authoritative
+        $serverSymptoms = trim($appointment->doctor_notes ?? '');
+        if (empty($serverSymptoms) && $latestDiagnosis) {
+            $pd = $latestDiagnosis->patient_data ?? [];
+            $serverSymptoms = trim($pd['clinical_notes'] ?? $pd['symptoms'] ?? '');
+            if (empty($serverSymptoms)) $serverSymptoms = trim($latestDiagnosis->diagnosis_text ?? '');
+        }
+        if (empty($serverSymptoms) && $continueLimited) {
+            $clientSymptomsRaw = $request->symptoms ?? $request->clinical_notes ?? '';
+            $decoded = json_decode($clientSymptomsRaw, true);
+            if (is_array($decoded)) $serverSymptoms = implode(', ', $decoded);
+            elseif (is_string($decoded) && trim($decoded) !== '') $serverSymptoms = trim($decoded);
+            elseif (is_string($clientSymptomsRaw) && trim($clientSymptomsRaw) !== '' && $clientSymptomsRaw !== '[]') $serverSymptoms = trim($clientSymptomsRaw);
+            if (empty($serverSymptoms)) $serverSymptoms = 'General consultation - no specific symptoms documented';
+        }
+        $symptoms = $serverSymptoms ?: 'No symptoms provided';
+        if (!is_array($symptoms)) $symptoms = [$symptoms];
+
+        // Prepare additional data for AI processing — server-authoritative
         $additionalData = [];
-
-        // Add current diagnosis if available
-        if ($request->current_diagnosis) {
-            $currentDiagnosisData = json_decode($request->current_diagnosis, true);
-            if ($currentDiagnosisData) {
-                $additionalData['current_diagnosis'] = $currentDiagnosisData;
+        if ($latestDiagnosis) {
+            $additionalData['current_diagnosis'] = $latestDiagnosis->toArray();
+            if (!empty($pastDiagnosesModels) && $pastDiagnosesModels->count() > 0) {
+                $additionalData['past_diagnoses'] = $pastDiagnosesModels->toArray();
             }
-        }
-
-        // Add past diagnoses if available
-        if ($request->past_diagnoses) {
-            $pastDiagnosesData = json_decode($request->past_diagnoses, true);
-            if ($pastDiagnosesData && is_array($pastDiagnosesData)) {
-                $additionalData['past_diagnoses'] = $pastDiagnosesData;
+            if ($voiceModel) {
+                $additionalData['voice_diagnosis'] = $voiceModel->patient_data['diagnosis'] ?? $voiceModel->ai_analysis ?? '';
             }
+            // Always include doctor_notes from appointment or latest diagnosis
+            $additionalData['doctor_notes'] = $appointment->doctor_notes ?: ($latestDiagnosis->patient_data['clinical_notes'] ?? '');
+        } else {
+            // No diagnosis — use appointment data
+            if ($appointment->doctor_notes) $additionalData['doctor_notes'] = $appointment->doctor_notes;
+            if ($appointment->reason) $additionalData['reason_for_visit'] = $appointment->reason;
+            if ($continueLimited && $request->clinical_notes) $additionalData['doctor_notes'] = $request->clinical_notes;
         }
-
-        // Add voice diagnosis if available
-        if ($request->voice_diagnosis) {
-            $voiceData = json_decode($request->voice_diagnosis, true);
-            if ($voiceData && isset($voiceData['diagnosis_text'])) {
-                $additionalData['voice_diagnosis'] = $voiceData['diagnosis_text'];
-            }
-        }
-
-        // Add reason for visit if available
-        if ($request->reason_for_visit) {
+        if ($request->reason_for_visit && empty($additionalData['reason_for_visit'])) {
             $additionalData['reason_for_visit'] = $request->reason_for_visit;
         }
 
-        // Add clinical notes if available (from Quick Entry)
-        if ($request->clinical_notes) {
-            $additionalData['doctor_notes'] = $request->clinical_notes;
-        } elseif ($request->doctor_notes) {
-            $additionalData['doctor_notes'] = $request->doctor_notes;
-        }
-
-        // Debug logging
-        \Log::info('AI Suggestion Request Data', [
+        // Debug logging — server-authoritative
+        \Log::info('AI Suggestion Request Data (server-authoritative)', [
             'appointment_id' => $appointment->id,
-            'raw_symptoms' => $request->symptoms,
-            'processed_symptoms' => $symptoms,
-            'allergies' => $allergies,
-            'past_meds' => $past_meds,
-            'current_diagnosis' => $request->current_diagnosis,
-            'past_diagnoses_count' => is_array($additionalData['past_diagnoses'] ?? null) ? count($additionalData['past_diagnoses']) : 0,
-            'voice_diagnosis' => $request->voice_diagnosis,
-            'reason_for_visit' => $request->reason_for_visit,
-            'additional_data' => $additionalData,
+            'continue_limited' => $continueLimited,
+            'server_symptoms' => $symptoms,
+            'server_allergies' => $allergies,
+            'server_past_meds' => $past_meds,
+            'has_current_diagnosis' => !empty($latestDiagnosis),
+            'past_diagnoses_count' => $pastDiagnosesModels->count() ?? 0,
+            'has_voice' => !empty($voiceModel),
+            'additional_data_keys' => array_keys($additionalData),
         ]);
 
-        $aiAssistant = new AIAssistant();
+        $aiAssistant = app(AIAssistant::class);
 
         // Use the enhanced method that includes FDA validation
         $result = $aiAssistant->generatePrescriptionSuggestionsWithFDAValidation($appointment, $symptoms, $allergies, $past_meds, $additionalData);

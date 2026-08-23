@@ -67,13 +67,18 @@ class PredictionController extends Controller
 
             // Predict risks
             $predictions = $this->predictiveService->predictRisks($patient, $appointment);
+            $features = $this->featureExtractor->extractFeatures($patient, $appointment);
 
-            // Create and save PatientRiskScore
+            // Create and save PatientRiskScore with provenance
             $riskScore = new PatientRiskScore();
             $riskScore->patient_id = $patientId;
             $riskScore->appointment_id = $appointmentId;
             $riskScore->no_show_risk = $predictions['no_show_risk'];
             $riskScore->hospitalization_risk = $predictions['hospitalization_risk'];
+            $riskScore->prediction_method = $predictions['prediction_method'] ?? 'rule_based';
+            $riskScore->confidence = $predictions['confidence'] ?? 0.60;
+            $riskScore->model_version = $predictions['model_version'] ?? \App\Services\PredictiveAnalyticsService::MODEL_VERSION;
+            $riskScore->feature_snapshot = array_combine($this->featureExtractor->getFeatureNames(), $features);
             $riskScore->save();
 
             return response()->json([
@@ -83,6 +88,9 @@ class PredictionController extends Controller
                     'appointment_id' => $appointmentId,
                     'no_show_risk' => $predictions['no_show_risk'],
                     'hospitalization_risk' => $predictions['hospitalization_risk'],
+                    'prediction_method' => $riskScore->prediction_method,
+                    'confidence' => $riskScore->confidence,
+                    'model_version' => $riskScore->model_version,
                 ]
             ]);
 

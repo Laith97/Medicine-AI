@@ -49,6 +49,19 @@ class Kernel extends ConsoleKernel
             ->runInBackground()
             ->evenInMaintenanceMode();
 
+        // Retrain ML models (production pipeline with balancing & evaluation) daily 02:30
+        $schedule->command('predictions:retrain')
+            ->dailyAt('02:30')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->evenInMaintenanceMode();
+
+        // Check model health every 6 hours
+        $schedule->command('models:health')
+            ->everySixHours()
+            ->withoutOverlapping()
+            ->runInBackground();
+
         // Generate predictions for next 7 days daily at 3 AM
         $schedule->command('predictions:generate')
             ->dailyAt('03:00')

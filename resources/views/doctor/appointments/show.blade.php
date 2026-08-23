@@ -6,20 +6,202 @@
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
 <style>
+/* Match standard headers (appointments/index, patients/show) */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%) !important;
+    border-radius: 12px !important;
+    padding: 2.5rem !important;
+    margin-bottom: 2rem !important;
+    box-shadow: 0 4px 15px rgba(44, 90, 160, 0.15) !important;
+    position: relative;
+    overflow: hidden;
+}
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+.dashboard-header h2 {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 2.2rem !important;
+    margin-bottom: 0.5rem !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 1rem !important;
+    font-weight: 400 !important;
+    margin-bottom: 0 !important;
+}
+/* Header actions — professional flat design (no glassmorphism) */
+.header-actions-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.65rem;
+    min-width: 300px;
+}
+.header-top-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.dashboard-header .status-badge {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+    border-radius: 99px !important;
+    padding: 0.38rem 0.85rem !important;
+    font-size: 0.73rem !important;
+    font-weight: 700 !important;
+    text-transform: capitalize !important;
+    letter-spacing: 0 !important;
+    line-height: 1 !important;
+}
+.dashboard-header .status-badge.status-pending { color: #92400e !important; background: #fef3c7 !important; border-color: #fde68a !important; }
+.dashboard-header .status-badge.status-confirmed { color: #065f46 !important; background: #d1fae5 !important; border-color: #a7f3d0 !important; }
+.dashboard-header .status-badge.status-completed { color: #1e40af !important; background: #dbeafe !important; border-color: #bfdbfe !important; }
+.dashboard-header .status-badge.status-cancelled { color: #991b1b !important; background: #fee2e2 !important; border-color: #fecaca !important; }
+.dashboard-header .status-badge.status-no_show { color: #475569 !important; background: #f1f5f9 !important; border-color: #e2e8f0 !important; }
+.btn-back {
+    background: rgba(255,255,255,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.32) !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 600 !important;
+    font-size: 0.83rem !important;
+    line-height: 1 !important;
+    transition: all 0.18s ease !important;
+    white-space: nowrap;
+}
+.btn-back:hover {
+    background: #ffffff !important;
+    border-color: #ffffff !important;
+    color: #1e3a8a !important;
+}
+.appointment-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: none;
+    padding: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    box-shadow: none;
+}
+.action-btn {
+    border-radius: 10px !important;
+    padding: 0.52rem 1.05rem !important;
+    font-size: 0.81rem !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    line-height: 1 !important;
+    white-space: nowrap;
+    transition: all 0.18s ease !important;
+    border: 1px solid transparent !important;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.10) !important;
+    letter-spacing: -0.01em;
+}
+.action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.14) !important; }
+.action-btn:active { transform: translateY(0); }
+.action-btn-confirm {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    border-color: #10b981 !important;
+}
+.action-btn-confirm:hover { background: #059669 !important; border-color: #059669 !important; color: #fff !important; }
+.action-btn-complete {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #ffffff !important;
+}
+.action-btn-complete:hover { background: #f1f5f9 !important; color: #0f172a !important; border-color: #f1f5f9 !important; }
+.action-btn-noshow {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border-color: #e2e8f0 !important;
+}
+.action-btn-noshow:hover { background: #f8fafc !important; color: #334155 !important; border-color: #cbd5e1 !important; }
+.action-btn-danger {
+    background: #ffffff !important;
+    color: #dc2626 !important;
+    border-color: #fecaca !important;
+}
+.action-btn-danger:hover { background: #fef2f2 !important; color: #b91c1c !important; border-color: #fca5a5 !important; }
+.action-btn-muted {
+    background: rgba(255,255,255,0.22) !important;
+    color: rgba(255,255,255,0.95) !important;
+    border-color: rgba(255,255,255,0.22) !important;
+    cursor: default !important;
+    box-shadow: none !important;
+}
+.action-btn-muted:hover { transform: none !important; box-shadow: none !important; }
+@media (max-width: 992px) {
+    .header-actions-wrap { min-width: 0; width: 100%; align-items: stretch; }
+    .header-top-row { justify-content: space-between; width: 100%; }
+    .appointment-actions { justify-content: flex-start; width: 100%; }
+}
+@media (max-width: 576px) {
+    .dashboard-header { padding: 1.5rem !important; }
+    .appointment-actions { gap: 0.4rem; }
+    .action-btn { flex: 1; justify-content: center; padding: 0.6rem 0.7rem !important; font-size: 0.79rem !important; }
+}
+/* Section headers — dark premium for clarity */
+.table-card .section-head-modern,
+#prescriptions .section-head-modern,
+#diagnosis-section .section-head-modern,
+#ai-medical-copilot-section .section-head-modern { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin:-1.3rem -1.3rem 1.1rem -1.3rem; padding:1rem 1.3rem; background:#f8fafc; border-bottom:1px solid #e2e8f0; border-radius:12px 12px 0 0; flex-wrap:wrap; }
+.table-card .section-head-modern .head-left,
+#prescriptions .section-head-modern .head-left,
+#diagnosis-section .section-head-modern .head-left,
+#ai-medical-copilot-section .section-head-modern .head-left { display:flex; align-items:center; gap:0.75rem; }
+.table-card .section-head-modern .head-icon,
+#prescriptions .section-head-modern .head-icon,
+#diagnosis-section .section-head-modern .head-icon,
+#ai-medical-copilot-section .section-head-modern .head-icon { width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:0.95rem; flex-shrink:0; background:#1e293b !important; color:#fff !important; border:1px solid #1e293b !important; }
+.table-card .section-head-modern h4,
+.table-card .section-head-modern h5 { color:#0f172a !important; font-weight:800 !important; letter-spacing:-0.01em; }
+.table-card .section-head-modern p { color:#475569 !important; font-weight:500 !important; }
+#prescriptions .prescription-card-premium:hover { box-shadow: 0 8px 20px rgba(15,23,42,0.06); transform: translateY(-1px); }
+#prescriptions .form-section { background:#fff; border:1px solid #eef2f7; border-radius:12px; padding:1.1rem; margin-bottom:1rem; box-shadow: 0 1px 4px rgba(15,23,42,0.04); }
+#prescriptions .form-section-header { display:flex; align-items:center; justify-content:space-between; padding-bottom:0.65rem; margin-bottom:0.9rem; border-bottom:1px solid #f1f5f9; }
+#prescriptions .form-section-title { font-size:0.86rem; font-weight:700; color:#1e293b; margin:0; }
+
+</style>
+<style>
+/* AI Copilot — premium tabs like workflow */
+#ai-medical-copilot-section .d-flex.border-bottom { background:#f8fafc; border:1px solid #eef2f7 !important; border-radius:10px; padding:0.3rem; gap:0.25rem; }
 .copilot-tab {
     cursor: pointer;
-    padding: 0.75rem 1.5rem;
+    padding: 0.55rem 0.9rem;
     border: none;
     background-color: transparent;
-    color: #6c757d;
-    border-bottom: 2px solid transparent;
-    transition: all 0.3s ease;
+    color: #64748b;
+    border-radius: 8px;
+    font-size:0.82rem;
+    font-weight:600;
+    transition: all 0.2s ease;
+    border-bottom: none;
 }
-
 .copilot-tab.active {
-    color: #0d6efd;
-    border-bottom-color: #0d6efd;
-    font-weight: 500;
+    color: #1e293b;
+    background:#fff;
+    border:1px solid #e2e8f0;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.06);
+    font-weight: 700;
 }
 
 .copilot-tab-content {
@@ -32,7 +214,12 @@
 }
 
 .copilot-section {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
+    background:#fff;
+    border:1px solid #eef2f7;
+    border-radius:12px;
+    padding:1.1rem;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.04);
 }
 
 .copilot-section-header {
@@ -180,70 +367,75 @@
 @section('content')
 <div class="dashboard-container">
     <div class="container appointment-details">
-        <!-- Header -->
+        <!-- Header — standardized like other system headers (appointments/index, patients/show) -->
         <div class="dashboard-header">
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                <div class="d-flex align-items-center">
-                    <a href="{{ route('doctor.appointments.index') }}" class="btn btn-light me-3 shadow-sm">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Appointments
-                    </a>
-                    <div>
-                        <h1 class="h2 mb-1 fw-bold">Appointment Details</h1>
-                        <p class="mb-0 opacity-75">ID: #{{ $appointment->id }} • {{ $appointment->appointment_date->format('M j, Y \a\t g:i A') }}</p>
-                    </div>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2><i class="fas fa-user-injured me-2"></i>{{ e($appointment->patient_name ?? 'Unknown Patient') }}</h2>
+                    <p>
+                        <i class="fas fa-hashtag me-1"></i>Appointment #{{ $appointment->id }}
+                        @if($appointment->appointment_type) · {{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}@endif
+                        · <i class="far fa-calendar me-1"></i>{{ $appointment->appointment_date->format('M j, Y \a\t g:i A') }}
+                    </p>
+                    <p class="mt-1" style="font-size:0.92rem; opacity:0.85;">
+                        <i class="fas fa-envelope me-1"></i>{{ e($appointment->patient_email) }}
+                        @if($appointment->patient_phone) · <i class="fas fa-phone me-1"></i>{{ e($appointment->patient_phone) }}@endif
+                    </p>
                 </div>
 
-                <div class="text-end">
-                    <div class="d-flex flex-column align-items-end gap-2">
-                        <div class="d-flex align-items-center gap-3">
-                            <!-- Quick Action Buttons -->
-                            @if(auth()->check() && auth()->user()->isDoctor())
-                                <div class="btn-group" role="group">
-                                    @if($appointment->status == 'pending')
-                                        <button onclick="confirmAppointment({{ $appointment->id }})" class="btn btn-success btn-sm" title="Confirm Appointment">
-                                            <i class="fas fa-check me-1"></i>Confirm
-                                        </button>
-                                    @endif
+                <div class="header-actions-wrap">
+                    <div class="header-top-row">
+                        <span class="status-badge status-{{ $appointment->status }}">
+                            <i class="fas fa-{{ $appointment->status == 'pending' ? 'clock' : ($appointment->status == 'confirmed' ? 'check-circle' : ($appointment->status == 'completed' ? 'check-double' : ($appointment->status == 'cancelled' ? 'times-circle' : 'user-times'))) }}"></i>
+                            {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
+                        </span>
+                        <a href="{{ route('doctor.appointments.index') }}" class="btn btn-back">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Appointments
+                        </a>
+                    </div>
 
-                                    @if($appointment->status == 'confirmed')
-                                        @if(!$appointment->appointment_date || !$appointment->appointment_date->isFuture())
-                                            <button onclick="completeAppointment({{ $appointment->id }})" class="btn btn-primary btn-sm" title="Complete Appointment">
-                                                <i class="fas fa-check-circle me-1"></i>Complete
-                                            </button>
-                                            <button onclick="markNoShow({{ $appointment->id }})" class="btn btn-secondary btn-sm" title="Mark as No Show">
-                                                <i class="fas fa-user-times me-1"></i>No Show
-                                            </button>
-                                        @else
-                                            <span class="btn btn-primary btn-sm" title="Video call available when consultation starts">
-                                                <i class="fas fa-video me-1"></i>Video consultation available
-                                            </span>
-                                        @endif
-                                    @endif
-
-                                    @if(in_array($appointment->status, ['pending', 'confirmed']))
-                                        <button onclick="cancelAppointment({{ $appointment->id }})" class="btn btn-danger btn-sm" title="Cancel Appointment">
-                                            <i class="fas fa-times me-1"></i>Cancel
-                                        </button>
-                                    @endif
-                                </div>
+                    @if(auth()->check() && auth()->user()->isDoctor())
+                        @if(in_array($appointment->status, ['pending','confirmed']))
+                        <div class="appointment-actions" role="group" aria-label="Appointment actions">
+                            @if($appointment->status == 'pending')
+                                <button onclick="confirmAppointment({{ $appointment->id }})" class="btn action-btn action-btn-confirm" title="Confirm appointment">
+                                    <i class="fas fa-check"></i>Confirm
+                                </button>
                             @endif
-                            
-                            <span class="status-badge status-{{ $appointment->status }}">
-                                <i class="fas fa-{{ $appointment->status == 'pending' ? 'clock' : ($appointment->status == 'confirmed' ? 'check-circle' : ($appointment->status == 'completed' ? 'check-double' : ($appointment->status == 'cancelled' ? 'times-circle' : 'user-times'))) }}"></i>
-                                {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
-                            </span>
-                        </div>
-                        @if($appointment->status == 'completed')
-                        <div class="bg-success bg-opacity-25 px-3 py-1 rounded-pill">
-                            <small class="text-white fw-semibold">
-                                <i class="fas fa-trophy me-1"></i>Successfully Completed
-                            </small>
+
+                            @if($appointment->status == 'confirmed')
+                                @php
+                                    $canJoinVideo = $appointment->appointment_type === 'video_call' && ($appointment->getEndTime() ? now()->isBefore($appointment->getEndTime()) : now()->isBefore($appointment->appointment_date->copy()->addHour()));
+                                @endphp
+                                @if($canJoinVideo)
+                                    <a href="{{ route('video.room', $appointment->id) }}" target="_blank" class="btn action-btn action-btn-confirm" title="Join video consultation now">
+                                        <i class="fas fa-video"></i>Join Video
+                                    </a>
+                                @elseif($appointment->appointment_type === 'phone_call')
+                                    <button onclick="headerShowPatientPhone({{ $appointment->id }}, this)" class="btn action-btn action-btn-confirm" title="Show patient phone number">
+                                        <i class="fas fa-phone"></i>Call Patient
+                                    </button>
+                                @endif
+                                @if(!$appointment->appointment_date || !$appointment->appointment_date->isFuture())
+                                    <button onclick="completeAppointment({{ $appointment->id }})" class="btn action-btn action-btn-complete" title="Mark as completed">
+                                        <i class="fas fa-check-circle"></i>Complete
+                                    </button>
+                                    <button onclick="markNoShow({{ $appointment->id }})" class="btn action-btn action-btn-noshow" title="Mark as no show">
+                                        <i class="fas fa-user-times"></i>No Show
+                                    </button>
+                                @elseif(!in_array($appointment->appointment_type, ['video_call','phone_call']))
+                                    <span class="btn action-btn action-btn-muted" title="Starts {{ $appointment->appointment_date->format('M j, g:i A') }}">
+                                        <i class="fas fa-clock"></i>{{ $appointment->appointment_date->diffForHumans() }}
+                                    </span>
+                                @endif
+                            @endif
+
+                            <button onclick="cancelAppointment({{ $appointment->id }})" class="btn action-btn action-btn-danger" title="Cancel appointment">
+                                <i class="fas fa-times"></i>Cancel
+                            </button>
                         </div>
                         @endif
-                        <small class="text-white-50">
-                            <i class="fas fa-calendar-alt me-1"></i>{{ $appointment->appointment_date->format('l, F j, Y') }}
-                        </small>
-                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -251,146 +443,184 @@
         <div class="row">
             <!-- Main Content -->
             <div class="col-lg-12">
-                <!-- Information Cards Grid -->
+                <!-- Information Cards Grid - Premium -->
                 <div class="info-cards-grid">
-                    <!-- Call/Video Buttons -->
-                @if($appointment->status === 'confirmed')
-                    @include('components.appointment-call-buttons', ['appointment' => $appointment])
-                @endif
-
-                <!-- Appointment Overview Card -->
-                    <div class="table-card">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <h5 class="mb-1 fw-bold text-primary">
-                                    <i class="fas fa-calendar-check me-2"></i>Appointment Overview
-                                </h5>
-                                <small class="text-muted">{{ $appointment->appointment_date->format('l, F j, Y') }}</small>
-                            </div>
-                            <div class="text-end">
-                                <div class="h4 mb-0 fw-bold text-primary">{{ $appointment->appointment_duration ?? 30 }}</div>
-                                <small class="text-muted">minutes</small>
-                            </div>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-15 rounded p-2 me-3">
-                                        <i class="fas fa-calendar-alt text-primary"></i>
+                    <!-- Appointment Overview Card -->
+                    <div class="info-card-premium">
+                        <div class="card-inner">
+                            <div class="card-top">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="card-icon-box icon-red">
+                                        <i class="fas fa-calendar-check"></i>
                                     </div>
                                     <div>
-                                        <small class="text-muted d-block">Type</small>
-                                        <span class="badge bg-primary">{{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}</span>
+                                        <h5 class="card-title">Appointment Overview</h5>
+                                        <div class="card-subtitle">
+                                            <i class="fas fa-clock me-1"></i>{{ $appointment->appointment_date->format('l, F j, Y • g:i A') }}
+                                        </div>
                                     </div>
+                                </div>
+                                <div class="card-badge-duration">
+                                    <strong>{{ $appointment->appointment_duration ?? 30 }}</strong>
+                                    <span>minutes</span>
+                                </div>
+                            </div>
+
+                            <div class="info-rows">
+                                <div class="info-row">
+                                    <div class="info-row-icon"><i class="fas fa-layer-group"></i></div>
+                                    <div class="flex-grow-1">
+                                        <span class="info-row-label">Appointment Type</span>
+                                        <span class="info-row-value"><span class="badge bg-light text-muted border px-3 py-1 rounded-pill fw-semibold" style="font-size:0.72rem;">{{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}</span></span>
+                                    </div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-row-icon"><i class="fas fa-hashtag"></i></div>
+                                    <div class="flex-grow-1">
+                                        <span class="info-row-label">Appointment ID</span>
+                                        <span class="info-row-value">#{{ $appointment->id }}</span>
+                                    </div>
+                                    <span class="badge bg-light text-dark border small">{{ ucfirst($appointment->status) }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-row-icon"><i class="fas fa-calendar-day"></i></div>
+                                    <div class="flex-grow-1">
+                                        <span class="info-row-label">Scheduled Date</span>
+                                        <span class="info-row-value">{{ $appointment->appointment_date->format('M j, Y') }}</span>
+                                    </div>
+                                    <small class="text-muted fw-medium">{{ $appointment->appointment_date->format('g:i A') }}</small>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Patient Information Card -->
-                    <div class="table-card">
-                        <h5 class="mb-3 fw-bold text-primary">
-                            <i class="fas fa-user-injured me-2"></i>Patient Information
-                        </h5>
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-user text-muted me-2"></i>
-                                    <span class="fw-semibold">{{ e($appointment->patient_name) }}</span>
+                    <div class="info-card-premium card-patient">
+                        <div class="card-inner">
+                            <div class="card-top">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="card-icon-box icon-blue">
+                                        <i class="fas fa-user-injured"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="card-title">Patient Information</h5>
+                                        <div class="card-subtitle">Contact & personal details</div>
+                                    </div>
+                                </div>
+                                <div class="card-badge-duration">
+                                    <strong><i class="fas fa-user"></i></strong>
+                                    <span>Patient</span>
                                 </div>
                             </div>
-                            <div class="col-12">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-envelope text-muted me-2"></i>
-                                    <span>{{ e($appointment->patient_email) }}</span>
+
+                            <div class="info-rows">
+                                <div class="info-row">
+                                    <div class="info-row-icon"><i class="fas fa-user"></i></div>
+                                    <div class="flex-grow-1">
+                                        <span class="info-row-label">Full Name</span>
+                                        <span class="info-row-value">{{ e($appointment->patient_name) }}</span>
+                                    </div>
                                 </div>
-                            </div>
-                            @if($appointment->patient_phone)
-                            <div class="col-12">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-phone text-muted me-2"></i>
-                                    <span>{{ e($appointment->patient_phone) }}</span>
+                                <div class="info-row">
+                                    <div class="info-row-icon"><i class="fas fa-envelope"></i></div>
+                                    <div class="flex-grow-1">
+                                        <span class="info-row-label">Email Address</span>
+                                        <span class="info-row-value"><a href="mailto:{{ e($appointment->patient_email) }}">{{ e($appointment->patient_email) }}</a></span>
+                                    </div>
+                                    <a href="mailto:{{ e($appointment->patient_email) }}" class="btn btn-sm btn-light border rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:32px;height:32px;"><i class="fas fa-paper-plane small text-muted"></i></a>
                                 </div>
+                                @if($appointment->patient_phone)
+                                <div class="info-row">
+                                    <div class="info-row-icon"><i class="fas fa-phone"></i></div>
+                                    <div class="flex-grow-1">
+                                        <span class="info-row-label">Phone Number</span>
+                                        <span class="info-row-value"><a href="tel:{{ e($appointment->patient_phone) }}">{{ e($appointment->patient_phone) }}</a></span>
+                                    </div>
+                                    <a href="tel:{{ e($appointment->patient_phone) }}" class="btn btn-sm btn-light border rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:32px;height:32px;"><i class="fas fa-phone small text-muted"></i></a>
+                                </div>
+                                @else
+                                <div class="info-row" style="opacity:0.65;">
+                                    <div class="info-row-icon"><i class="fas fa-phone-slash"></i></div>
+                                    <div class="flex-grow-1">
+                                        <span class="info-row-label">Phone Number</span>
+                                        <span class="info-row-value text-muted fst-italic">Not provided</span>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
-                            @endif
                         </div>
                     </div>
                 </div>
 
-                <!-- Next Steps Section for Completed Appointments -->
+                <!-- Next Steps Section for Completed Appointments - Premium -->
                 @if($appointment->status == 'completed')
                 <div class="table-card mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h4 class="mb-1 fw-bold text-success">
-                                <i class="fas fa-check-double me-2"></i>Appointment Completed Successfully
-                            </h4>
-                            <p class="mb-0 text-muted">What would you like to do next?</p>
+                    <div class="section-head-modern">
+                        <div class="head-left">
+                            <div class="head-icon" style="background:#f8fafc; color:#475569; border:1px solid #e2e8f0;">
+                                <i class="fas fa-check-double"></i>
+                            </div>
+                            <div>
+                                <h4>Appointment Completed Successfully</h4>
+                                <p>Choose your next clinical action • All tools are ready</p>
+                            </div>
                         </div>
-                        <div class="text-end">
-                            <i class="fas fa-rocket fa-3x text-success opacity-75"></i>
-                        </div>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill fw-semibold d-none d-md-inline-flex align-items-center gap-2">
+                            <span class="bg-success rounded-circle d-inline-block" style="width:8px;height:8px;"></span> Completed #{{ $appointment->id }}
+                        </span>
                     </div>
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <button onclick="toggleAIMedicalCopilotForm()" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
-                                <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
-                                AI Copilot
-                                <small class="text-muted">Clinical Decision Support</small>
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button onclick="viewPatientAIAnalyses({{ $appointment->patient_id }})" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
-                                <i class="fas fa-history fa-2x mb-2 text-info"></i>
-                                View AI History
-                                <small class="text-muted">Patient's Saved Analyses</small>
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="#ai-analytics" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
-                                <i class="fas fa-brain fa-2x mb-2 text-primary"></i>
-                                <span class="fw-bold">AI Analytics</span>
-                                <small class="text-muted">View risk predictions & insights</small>
-                            </a>
-                        </div>
-                        <div class="col-md-3">
-                            <button onclick="toggleDiagnosisForm()" class="btn btn-outline-warning btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
-                                <i class="fas fa-stethoscope fa-2x mb-2 text-warning"></i>
-                                <span class="fw-bold">Diagnosis</span>
-                                <small class="text-muted">Create medical diagnosis</small>
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="#prescriptions" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
-                                <i class="fas fa-prescription-bottle fa-2x mb-2 text-success"></i>
-                                <span class="fw-bold">Prescriptions</span>
-                                <small class="text-muted">Manage medications</small>
-                            </a>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="{{ route('doctor.follow-ups.create', $appointment) }}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" style="text-decoration: none; min-height: 120px;">
-                                <i class="fas fa-calendar-plus fa-2x mb-2 text-info"></i>
-                                <span class="fw-bold">Follow-ups</span>
-                                <small class="text-muted">Schedule next appointment</small>
-                            </a>
-                        </div>
+
+                    <div class="next-steps-grid">
+                        <button onclick="toggleAIMedicalCopilotForm()" class="action-tile tone-purple">
+                            <div class="tile-icon"><i class="fas fa-brain"></i></div>
+                            <span class="tile-title">AI Copilot</span>
+                            <span class="tile-desc">Clinical decision support</span>
+                        </button>
+                        <button onclick="viewPatientAIAnalyses({{ $appointment->patient_id }})" class="action-tile tone-info">
+                            <div class="tile-icon"><i class="fas fa-history"></i></div>
+                            <span class="tile-title">View AI History</span>
+                            <span class="tile-desc">Patient's saved analyses</span>
+                        </button>
+                        <a href="#ai-analytics" class="action-tile tone-primary">
+                            <div class="tile-icon"><i class="fas fa-chart-line"></i></div>
+                            <span class="tile-title">AI Analytics</span>
+                            <span class="tile-desc">Risk predictions & insights</span>
+                        </a>
+                        <button onclick="toggleDiagnosisForm()" class="action-tile tone-warning">
+                            <div class="tile-icon"><i class="fas fa-stethoscope"></i></div>
+                            <span class="tile-title">Diagnosis</span>
+                            <span class="tile-desc">Create medical diagnosis</span>
+                        </button>
+                        <a href="#prescriptions" class="action-tile tone-success">
+                            <div class="tile-icon"><i class="fas fa-prescription-bottle"></i></div>
+                            <span class="tile-title">Prescriptions</span>
+                            <span class="tile-desc">Manage medications</span>
+                        </a>
+                        <a href="{{ route('doctor.follow-ups.create', $appointment) }}" class="action-tile tone-info">
+                            <div class="tile-icon"><i class="fas fa-calendar-plus"></i></div>
+                            <span class="tile-title">Follow-ups</span>
+                            <span class="tile-desc">Schedule next appointment</span>
+                        </a>
                     </div>
                 </div>
                 @endif
 
 
-                <!-- AI Predictive Analytics Section -->
-                <div id="ai-analytics" class="table-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h4 class="mb-0 fw-bold text-primary">
-                                <i class="fas fa-brain me-2"></i>AI Predictive Analytics
-                            </h4>
-                            <p class="mb-0 text-muted small">Machine Learning Risk Assessment</p>
+                <!-- AI Predictive Analytics Section - Compact Premium -->
+                <div id="ai-analytics" class="table-card mb-4">
+                    <div class="section-head-modern">
+                        <div class="head-left">
+                            <div class="head-icon" style="background: linear-gradient(135deg, #ede9ff 0%, #ddd6fe 100%); color: #7c3aed; border: 1px solid #ddd6fe;">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div>
+                                <h5 style="margin:0; font-weight:800; color:#1e293b; font-size:0.92rem; letter-spacing:-0.01em;">AI Predictive Analytics</h5>
+                                <p style="margin:2px 0 0; font-size:0.74rem; color:#94a3b8; font-weight:500;">Machine Learning Risk Assessment</p>
+                            </div>
                         </div>
                         @if($appointment->status == 'completed')
-                        <span class="badge bg-success">
-                            <i class="fas fa-check-circle me-1"></i>Analysis Complete
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill fw-semibold" style="font-size:0.70rem;">
+                            <i class="fas fa-check-circle me-1"></i>Complete
                         </span>
                         @endif
                     </div>
@@ -399,221 +629,228 @@
                         $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first();
                     @endphp
                     @if($riskScore)
-                        <div class="row g-4 mb-4">
-                            <div class="col-md-6">
-                                <div class="text-center p-4 bg-light rounded">
-                                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                        <i class="fas fa-user-times text-warning fa-2x"></i>
-                                    </div>
-                                    <h5 class="text-warning fw-bold mb-2">No-Show Risk</h5>
-                                    <div class="h2 fw-bold text-warning mb-2">{{ number_format($riskScore->no_show_risk * 100, 1) }}<span class="h4">%</span></div>
-                                    <p class="text-muted small mb-0">Probability of patient missing appointment</p>
-                                </div>
+                        <div class="ai-risk-grid">
+                            <div class="ai-risk-card risk-warning">
+                                <div class="risk-icon-box"><i class="fas fa-user-times"></i></div>
+                                <span class="risk-label">No-Show Risk</span>
+                                <div class="risk-value">{{ number_format($riskScore->no_show_risk * 100, 1) }}<small>%</small></div>
+                                <p class="risk-desc">Probability of missing appointment</p>
+                                <div class="risk-bar"><div class="risk-bar-fill" style="width: {{ min(100, $riskScore->no_show_risk * 100) }}%"></div></div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="text-center p-4 bg-light rounded">
-                                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                        <i class="fas fa-hospital text-danger fa-2x"></i>
-                                    </div>
-                                    <h5 class="text-danger fw-bold mb-2">Hospitalization Risk</h5>
-                                    <div class="h2 fw-bold text-danger mb-2">{{ number_format($riskScore->hospitalization_risk * 100, 1) }}<span class="h4">%</span></div>
-                                    <p class="text-muted small mb-0">Probability of requiring hospitalization</p>
-                                </div>
+                            <div class="ai-risk-card risk-danger">
+                                <div class="risk-icon-box"><i class="fas fa-hospital"></i></div>
+                                <span class="risk-label">Hospitalization Risk</span>
+                                <div class="risk-value">{{ number_format($riskScore->hospitalization_risk * 100, 1) }}<small>%</small></div>
+                                <p class="risk-desc">Probability of hospitalization</p>
+                                <div class="risk-bar"><div class="risk-bar-fill" style="width: {{ min(100, $riskScore->hospitalization_risk * 100) }}%"></div></div>
                             </div>
                         </div>
 
-                        <!-- Risk Level Summary -->
-                        <div class="bg-light p-3 rounded">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    @php
-                                        $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk);
-                                    @endphp
-                                    @if($maxRisk < 0.3)
-                                        <span class="badge bg-success fs-6 px-3 py-2">
-                                            <i class="fas fa-shield-alt me-1"></i>Low Risk Patient
-                                        </span>
-                                        <small class="text-muted d-block mt-1">Strong compliance patterns detected</small>
-                                    @elseif($maxRisk < 0.7)
-                                        <span class="badge bg-warning fs-6 px-3 py-2 text-dark">
-                                            <i class="fas fa-exclamation-triangle me-1"></i>Medium Risk Patient
-                                        </span>
-                                        <small class="text-muted d-block mt-1">Consider follow-up reminders</small>
-                                    @else
-                                        <span class="badge bg-danger fs-6 px-3 py-2">
-                                            <i class="fas fa-exclamation-circle me-1"></i>High Risk Patient
-                                        </span>
-                                        <small class="text-muted d-block mt-1">Immediate attention recommended</small>
-                                    @endif
-                                </div>
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#mlExplanationModal">
-                                    <i class="fas fa-info-circle me-1"></i>How is this calculated?
-                                </button>
+                        <!-- Risk Level Summary - Compact + Production Provenance -->
+                        @php $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk); @endphp
+                        <div class="ai-summary-row">
+                            <div>
+                                @if($maxRisk < 0.3)
+                                    <span class="summary-badge" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0;">
+                                        <i class="fas fa-shield-alt"></i> Low Risk Patient
+                                    </span>
+                                    <span class="summary-hint">Strong compliance patterns detected</span>
+                                @elseif($maxRisk < 0.7)
+                                    <span class="summary-badge" style="background:#fffbeb; color:#b45309; border:1px solid #fde68a;">
+                                        <i class="fas fa-exclamation-triangle"></i> Medium Risk Patient
+                                    </span>
+                                    <span class="summary-hint">Consider follow-up reminders</span>
+                                @else
+                                    <span class="summary-badge" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">
+                                        <i class="fas fa-exclamation-circle"></i> High Risk Patient
+                                    </span>
+                                    <span class="summary-hint">Immediate attention recommended</span>
+                                @endif
+                                @if(isset($riskScore->prediction_method))
+                                <span class="d-block mt-1" style="font-size:0.68rem; color:#94a3b8; font-weight:500;">
+                                    <i class="fas fa-{{ $riskScore->prediction_method === 'ml' ? 'brain' : 'calculator' }} me-1"></i>
+                                    via {{ $riskScore->prediction_method === 'ml' ? 'ML model' : 'rule-based' }}
+                                    @if($riskScore->confidence) • {{ (int)($riskScore->confidence*100) }}% confidence @endif
+                                    @if($riskScore->model_version) • v{{ $riskScore->model_version }} @endif
+                                </span>
+                                @endif
                             </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" style="font-size:0.75rem; padding:0.3rem 0.65rem; border-radius:8px;" data-bs-toggle="modal" data-bs-target="#mlExplanationModal">
+                                <i class="fas fa-info-circle me-1"></i>How calculated?
+                            </button>
                         </div>
                     @else
-                        <div class="text-center py-4">
-                            <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                <i class="fas fa-brain text-info fa-2x"></i>
-                            </div>
-                            <h5 class="text-muted mb-2">AI Analysis in Progress</h5>
-                            <p class="text-muted">Risk predictions are being calculated...</p>
-                            <div class="spinner-border text-info" role="status">
+                        <div class="ai-empty-state">
+                            <div class="empty-icon-box"><i class="fas fa-brain"></i></div>
+                            <div style="font-size:0.88rem; font-weight:700; color:#475569; margin-bottom:0.15rem;">AI Analysis in Progress</div>
+                            <div style="font-size:0.74rem; color:#94a3b8; margin-bottom:0.75rem;">Risk predictions are being calculated...</div>
+                            <div class="spinner-border spinner-border-sm text-primary" role="status" style="width:1.2rem; height:1.2rem; border-width:0.18em;">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
                         </div>
                     @endif
                 </div>
 
-                <!-- Reason for Visit -->
-                <div class="table-card mb-4 shadow-sm">
-                    <div class="p-4">
-                        <h5 class="mb-4 text-primary fw-bold">
-                            <i class="fas fa-clipboard-list me-2"></i>Reason for Visit
-                        </h5>
-                        <div class="bg-light p-4 rounded" style="border-left: 4px solid #007bff;">
-                            <p class="mb-0 fs-6 lh-base">{{ e($appointment->reason) }}</p>
+                <!-- Clinical Context - enriched, replaces isolated Reason card -->
+                <div class="table-card mb-4">
+                    <div class="section-head-modern" style="margin-bottom:1.1rem;">
+                        <div class="head-left">
+                            <div class="head-icon" style="background:#f8fafc; color:#475569; border:1px solid #e2e8f0;">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div>
+                                <h5>Clinical Context</h5>
+                                <p>Chief complaint • symptoms • notes</p>
+                            </div>
                         </div>
+                        <span class="badge bg-light text-muted border fw-medium d-none d-sm-inline" style="font-size:0.72rem;">{{ ucfirst(str_replace('_',' ', $appointment->appointment_type ?? '')) }} · {{ $appointment->appointment_duration ?? $appointment->duration ?? 30 }} min</span>
                     </div>
+                    <div class="reason-content-modern">
+                        <i class="fas fa-quote-right quote-icon"></i>
+                        <p><strong class="text-dark">Reason:</strong> {{ e($appointment->reason) ?: '—' }}</p>
+                    </div>
+                    @if($appointment->symptoms)
+                    <div class="reason-content-modern mt-3" style="background:#f8fafc; border-color:#e2e8f0;">
+                        <i class="fas fa-exclamation-triangle quote-icon" style="color:#475569;"></i>
+                        <p><strong class="text-dark">Symptoms:</strong> {{ e($appointment->symptoms) }}</p>
+                    </div>
+                    @endif
+                    @if($appointment->patient_notes)
+                    <div class="reason-content-modern mt-3" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-color:#e2e8f0;">
+                        <i class="fas fa-sticky-note quote-icon" style="color:#94a3b8;"></i>
+                        <p><strong class="text-dark">Patient Notes:</strong> {{ e($appointment->patient_notes) }}</p>
+                    </div>
+                    @endif
+                    @if(!$appointment->symptoms && !$appointment->patient_notes)
+                    <p class="small text-muted mt-2 mb-0"><i class="fas fa-info-circle me-1"></i>No additional symptoms or notes provided for this visit.</p>
+                    @endif
                 </div>
 
-                <!-- Prescriptions Section -->
+                <!-- Prescriptions Section — Premium Professional -->
                 @if(auth()->check() && auth()->user()->isDoctor())
                 <div id="prescriptions" class="table-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h4 class="mb-0 fw-bold text-primary">
-                                <i class="fas fa-prescription-bottle me-2"></i>Prescriptions
-                            </h4>
-                            @if($appointment->status == 'completed')
-                            <p class="mb-0 text-muted small">Manage patient medications and treatments</p>
-                            @endif
+                    <div class="section-head-modern">
+                        <div class="head-left">
+                            <div class="head-icon" style="background:#f8fafc; color:#475569; border:1px solid #e2e8f0;">
+                                <i class="fas fa-prescription-bottle"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin:0; font-weight:800; color:#1e293b; font-size:1rem; letter-spacing:-0.01em;">Prescriptions</h4>
+                                <p style="margin:2px 0 0; font-size:0.78rem; color:#64748b; font-weight:500;">@if($appointment->status == 'completed') Manage patient medications and treatments @else Prescription management @endif</p>
+                            </div>
                         </div>
                         @if($appointment->status == 'completed')
-                        <span class="badge bg-success">
+                        <span class="badge bg-light text-muted border px-3 py-2 rounded-pill fw-semibold" style="font-size:0.72rem;">
                             <i class="fas fa-plus-circle me-1"></i>Ready to Prescribe
                         </span>
+                        @else
+                        <span class="badge bg-light text-muted border fw-medium" style="font-size:0.72rem;">{{ ucfirst($appointment->status) }}</span>
                         @endif
                     </div>
 
                     @if($appointment->prescriptions && $appointment->prescriptions->count() > 0)
-                        <h5 class="section-header">Existing Prescriptions</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0" style="font-size:0.84rem; color:#1e293b;"><i class="fas fa-list me-2 text-muted"></i>Existing Prescriptions</h6>
+                            <span class="badge bg-light text-muted border" style="font-size:0.70rem;">{{ $appointment->prescriptions->count() }} active</span>
+                        </div>
                         @foreach($appointment->prescriptions as $prescription)
-                            <div class="bg-light p-3 rounded mb-3" data-prescription-id="{{ $prescription->id }}">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <h6 class="mb-0 fw-bold">{{ $prescription->medication_name }}</h6>
+                            <div class="prescription-card-premium mb-3" data-prescription-id="{{ $prescription->id }}" style="background:#ffffff; border:1px solid #eef2f7; border-left:3px solid #e2e8f0; border-radius:12px; padding:1rem 1.1rem; transition: box-shadow 0.2s;">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center justify-content-center rounded-3" style="width:36px; height:36px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; font-size:0.9rem;">
+                                            <i class="fas fa-pills"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold" style="font-size:0.92rem; color:#1e293b;">{{ $prescription->medication_name }}</h6>
+                                            <small class="text-muted" style="font-size:0.72rem;"><i class="far fa-clock me-1"></i>{{ $prescription->created_at->format('M j, Y') }} · {{ ucfirst($prescription->form ?? 'N/A') }}</small>
+                                        </div>
+                                    </div>
                                     <div class="d-flex gap-2">
-                                        <a href="{{ route('prescriptions.show', $prescription->id) }}?pdf=1" class="btn btn-primary btn-sm">
+                                        <a href="{{ route('prescriptions.show', $prescription->id) }}?pdf=1" class="btn btn-sm fw-semibold" style="background:#eff6ff; color:#2563eb; border:1px solid #dbeafe; border-radius:8px; font-size:0.75rem;">
                                             <i class="fas fa-download me-1"></i>PDF
                                         </a>
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="deletePrescription({{ $prescription->id }}, '{{ $prescription->medication_name }}')">
+                                        <button type="button" class="btn btn-sm fw-semibold" style="background:#fef2f2; color:#dc2626; border:1px solid #fecaca; border-radius:8px; font-size:0.75rem;" onclick="deletePrescription({{ $prescription->id }}, '{{ addslashes($prescription->medication_name) }}')">
                                             <i class="fas fa-trash me-1"></i>Delete
                                         </button>
                                     </div>
                                 </div>
-                                <div class="row g-2 text-small">
-                                    <div class="col-md-3">
-                                        <strong>Dosage:</strong><br>
-                                        <span class="text-muted">{{ $prescription->dosage }}</span>
+                                <div class="row g-2" style="font-size:0.78rem;">
+                                    <div class="col-6 col-md-3">
+                                        <span class="text-muted small fw-semibold" style="font-size:0.68rem; letter-spacing:0.04em; text-transform:uppercase;">Dosage</span><br>
+                                        <span class="fw-semibold" style="color:#1e293b;">{{ $prescription->dosage }}</span>
                                     </div>
-                                    <div class="col-md-3">
-                                        <strong>Form:</strong><br>
-                                        <span class="text-muted">{{ ucfirst($prescription->form ?? 'N/A') }}</span>
+                                    <div class="col-6 col-md-3">
+                                        <span class="text-muted small fw-semibold" style="font-size:0.68rem; letter-spacing:0.04em; text-transform:uppercase;">Frequency</span><br>
+                                        <span class="fw-semibold" style="color:#1e293b;">{{ $prescription->frequency }}</span>
                                     </div>
-                                    <div class="col-md-3">
-                                        <strong>Frequency:</strong><br>
-                                        <span class="text-muted">{{ $prescription->frequency }}</span>
+                                    <div class="col-6 col-md-3">
+                                        <span class="text-muted small fw-semibold" style="font-size:0.68rem; letter-spacing:0.04em; text-transform:uppercase;">Duration</span><br>
+                                        <span class="fw-semibold" style="color:#1e293b;">{{ $prescription->duration }}</span>
                                     </div>
-                                    <div class="col-md-3">
-                                        <strong>Duration:</strong><br>
-                                        <span class="text-muted">{{ $prescription->duration }}</span>
+                                    <div class="col-6 col-md-3">
+                                        <span class="text-muted small fw-semibold" style="font-size:0.68rem; letter-spacing:0.04em; text-transform:uppercase;">Quantity</span><br>
+                                        <span class="fw-semibold" style="color:#1e293b;">{{ $prescription->quantity ?? '—' }}</span>
                                     </div>
                                 </div>
                                 @if($prescription->instructions)
-                                    <hr class="my-2">
-                                    <p class="mb-0 text-muted small"><strong>Instructions:</strong> {{ $prescription->instructions }}</p>
+                                    <div class="mt-2 pt-2" style="border-top:1px solid #f1f5f9; font-size:0.78rem; color:#475569;">
+                                        <i class="fas fa-sticky-note me-1 text-muted"></i><strong>Instructions:</strong> {{ $prescription->instructions }}
+                                    </div>
                                 @endif
                             </div>
                         @endforeach
                     @else
-                        <div class="text-center py-4">
-                            <i class="fas fa-prescription-bottle-alt text-muted mb-3 fa-3x"></i>
-                            <p class="text-muted">No prescriptions have been added for this appointment yet.</p>
+                        <div class="text-center py-4" style="background:#f8fafc; border:1px dashed #e2e8f0; border-radius:12px;">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-3 mb-3" style="width:48px; height:48px; background:#fff; border:1px solid #eef2f7; color:#94a3b8;">
+                                <i class="fas fa-prescription-bottle-alt" style="font-size:1.3rem;"></i>
+                            </div>
+                            <p class="fw-semibold mb-1" style="font-size:0.88rem; color:#475569;">No prescriptions yet</p>
+                            <p class="small text-muted mb-0" style="font-size:0.78rem;">Prescriptions you create will appear here with PDF export.</p>
                         </div>
                     @endif
 
-                    <!-- Prescription Workflow Header -->
-                    <div class="prescription-workflow">
+                    <!-- Add New Prescription — Compact Premium -->
+                    <div class="mt-4 pt-4" style="border-top:1px solid #f1f5f9;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0 text-primary fw-bold">
-                                <i class="fas fa-prescription-bottle me-2"></i>Add New Prescription
-                            </h5>
+                            <h5 class="mb-0 fw-bold" style="font-size:0.92rem; color:#1e293b;"><i class="fas fa-plus-circle me-2" style="color:#475569;"></i>Add New Prescription</h5>
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#prescriptionHelpModal">
-                                    <i class="fas fa-question-circle me-1"></i>How to Use
+                                <button type="button" class="btn btn-sm" style="background:#fff; border:1px solid #e2e8f0; color:#64748b; border-radius:8px; font-size:0.72rem;" data-bs-toggle="modal" data-bs-target="#prescriptionHelpModal">
+                                    <i class="fas fa-question-circle me-1"></i>Help
                                 </button>
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#aiDataSourcesModal">
-                                    <i class="fas fa-database me-1"></i>What Data Does AI Use?
+                                <button type="button" class="btn btn-sm" style="background:#fff; border:1px solid #e2e8f0; color:#2563eb; border-radius:8px; font-size:0.72rem;" data-bs-toggle="modal" data-bs-target="#aiDataSourcesModal">
+                                    <i class="fas fa-database me-1"></i>AI Sources
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Quick Workflow Selector -->
-                        <div class="workflow-buttons">
-                            <button type="button" class="workflow-btn active" data-workflow="manual">
-                                <i class="fas fa-user-md me-1"></i>Manual Entry
-                            </button>
-                            <button type="button" class="workflow-btn" data-workflow="ai-first">
-                                <i class="fas fa-brain me-1"></i>AI First
-                            </button>
-                            <button type="button" class="workflow-btn" data-workflow="ai-assisted">
-                                <i class="fas fa-handshake me-1"></i>AI Assisted
-                            </button>
-                            <button type="button" class="workflow-btn" data-workflow="explore">
-                                <i class="fas fa-search me-1"></i>Explore AI
-                            </button>
-                        </div>
-
-                        <!-- Workflow Description -->
-                        <div id="workflow-description" class="mt-3 small text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            <span id="workflow-text">Manual Entry: Fill the form directly with your prescription details.</span>
-                        </div>
-                    </div>
-
                         <form id="prescriptionForm" method="POST" action="{{ route('doctor.prescriptions.store', $appointment->id) }}">
                             @csrf
 
-                            <!-- Essential Information Section -->
+                            <!-- 1. Medication — premium compact -->
                             <div class="form-section">
                                 <div class="form-section-header">
                                     <h6 class="form-section-title">
-                                        <i class="fas fa-pills me-2"></i>Medication Details
+                                        <i class="fas fa-pills me-2" style="color:#475569;"></i>Medication
                                     </h6>
-                                    <span class="form-section-badge bg-danger">Required</span>
+                                    <span class="badge bg-light text-muted border fw-semibold" style="font-size:0.68rem; letter-spacing:0.04em;">REQUIRED</span>
                                 </div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label for="medication_name" class="form-label fw-semibold">
-                                            Medication Name <span class="text-danger">*</span>
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Enter the exact medication name as it appears on the drug label"></i>
-                                        </label>
-                                        <input type="text" class="form-control" id="medication_name" name="medication_name" required>
+                                        <label for="medication_name" class="form-label fw-semibold" style="font-size:0.82rem;">Medication Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="medication_name" name="medication_name" placeholder="e.g., Amoxicillin" required style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="dosage" class="form-label fw-semibold">
-                                            Dosage <span class="text-danger">*</span>
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="e.g., 500mg, 10mg/ml, 0.5% cream"></i>
-                                        </label>
-                                        <input type="text" class="form-control" id="dosage" name="dosage" placeholder="e.g., 500mg" required>
+                                    <div class="col-md-3">
+                                        <label for="dosage" class="form-label fw-semibold" style="font-size:0.82rem;">Dosage <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="dosage" name="dosage" placeholder="500mg" required style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="quantity" class="form-label fw-semibold" style="font-size:0.82rem;">Quantity <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="quantity" name="quantity" placeholder="30" min="1" required style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="form" class="form-label fw-semibold">
-                                            Form <span class="text-danger">*</span>
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Physical form of the medication"></i>
-                                        </label>
-                                        <select class="form-select" id="form" name="form" required>
-                                            <option value="">Select form</option>
+                                        <label for="form" class="form-label fw-semibold" style="font-size:0.82rem;">Form <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="form" name="form" required style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
+                                            <option value="">Select</option>
                                             <option value="tablet">Tablet</option>
                                             <option value="capsule">Capsule</option>
                                             <option value="liquid">Liquid/Syrup</option>
@@ -625,14 +862,11 @@
                                         </select>
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="route" class="form-label fw-semibold">
-                                            Route <span class="text-danger">*</span>
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="How the medication is administered"></i>
-                                        </label>
-                                        <select class="form-select" id="route" name="route" required>
-                                            <option value="">Select route</option>
-                                            <option value="oral">Oral (by mouth)</option>
-                                            <option value="topical">Topical (skin)</option>
+                                        <label for="route" class="form-label fw-semibold" style="font-size:0.82rem;">Route <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="route" name="route" required style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
+                                            <option value="">Select</option>
+                                            <option value="oral">Oral</option>
+                                            <option value="topical">Topical</option>
                                             <option value="intravenous">Intravenous</option>
                                             <option value="intramuscular">Intramuscular</option>
                                             <option value="subcutaneous">Subcutaneous</option>
@@ -642,31 +876,25 @@
                                         </select>
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="quantity" class="form-label fw-semibold">
-                                            Quantity <span class="text-danger">*</span>
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Total number of units to dispense"></i>
-                                        </label>
-                                        <input type="number" class="form-control" id="quantity" name="quantity" placeholder="e.g., 30" min="1" required>
+                                        <label for="indication" class="form-label fw-semibold" style="font-size:0.82rem;">Indication</label>
+                                        <input type="text" class="form-control" id="indication" name="indication" placeholder="Hypertension" style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Administration Section -->
+                            <!-- 2. Schedule — premium compact -->
                             <div class="form-section">
                                 <div class="form-section-header">
                                     <h6 class="form-section-title">
-                                        <i class="fas fa-clock me-2"></i>Administration Schedule
+                                        <i class="fas fa-clock me-2" style="color:#475569;"></i>Schedule & Supply
                                     </h6>
-                                    <span class="form-section-badge bg-danger">Required</span>
+                                    <span class="badge bg-light text-muted border fw-semibold" style="font-size:0.68rem; letter-spacing:0.04em;">REQUIRED</span>
                                 </div>
                                 <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label for="frequency" class="form-label fw-semibold">
-                                            Frequency <span class="text-danger">*</span>
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="How often the medication should be taken"></i>
-                                        </label>
-                                        <select class="form-select" id="frequency" name="frequency" required>
-                                            <option value="">Select frequency</option>
+                                    <div class="col-md-4">
+                                        <label for="frequency" class="form-label fw-semibold" style="font-size:0.82rem;">Frequency <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="frequency" name="frequency" required style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
+                                            <option value="">Select</option>
                                             <option value="once daily">Once daily</option>
                                             <option value="twice daily">Twice daily</option>
                                             <option value="three times daily">Three times daily</option>
@@ -678,13 +906,10 @@
                                             <option value="other">Other</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="duration" class="form-label fw-semibold">
-                                            Duration <span class="text-danger">*</span>
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="How long the medication should be taken"></i>
-                                        </label>
-                                        <select class="form-select" id="duration" name="duration" required>
-                                            <option value="">Select duration</option>
+                                    <div class="col-md-4">
+                                        <label for="duration" class="form-label fw-semibold" style="font-size:0.82rem;">Duration <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="duration" name="duration" required style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
+                                            <option value="">Select</option>
                                             <option value="3 days">3 days</option>
                                             <option value="7 days">7 days</option>
                                             <option value="10 days">10 days</option>
@@ -696,109 +921,74 @@
                                             <option value="other">Other</option>
                                         </select>
                                     </div>
+                                    <div class="col-md-2">
+                                        <label for="refills" class="form-label fw-semibold" style="font-size:0.82rem;">Refills</label>
+                                        <input type="number" class="form-control" id="refills" name="refills" placeholder="0" min="0" value="0" style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="start_date" class="form-label fw-semibold" style="font-size:0.82rem;">Start Date</label>
+                                        <input type="date" class="form-control" id="start_date" name="start_date" style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- AI Clinical Support Section - Enhanced for completed appointments -->
+                            <!-- 3. AI — collapsible premium (kept, but compact) -->
                             @if(config('ai.prescription_suggestions.enabled', true))
-                                <div class="form-section">
-                                    <div class="form-section-header">
-                                        <h6 class="form-section-title">
+                                <div class="form-section" style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-color:#ddd6fe;">
+                                    <div class="form-section-header" style="border-bottom-color:#ddd6fe;">
+                                        <h6 class="form-section-title" style="color:#6d28d9;">
                                             <i class="fas fa-brain me-2"></i>AI Clinical Support
                                         </h6>
-                                        <span class="form-section-badge bg-warning text-dark">Optional</span>
+                                        <span class="badge bg-white text-dark border fw-semibold" style="font-size:0.68rem;">Optional</span>
                                     </div>
                                     @if($appointment->status == 'completed')
-                                    <small class="text-muted d-block mb-3">
+                                    <small class="text-muted d-block mb-2" style="font-size:0.76rem;">
                                         <i class="fas fa-lightbulb text-warning me-1"></i>AI can suggest medications based on appointment data
                                     </small>
                                     @endif
                                     @include('ai.prescription_suggestion')
-
                                 </div>
                             @endif
 
-                            <!-- Additional Options Section -->
+                            <!-- 4. Directions — premium compact -->
                             <div class="form-section">
                                 <div class="form-section-header">
                                     <h6 class="form-section-title">
-                                        <i class="fas fa-cogs me-2"></i>Additional Options
+                                        <i class="fas fa-sticky-note me-2" style="color:#475569;"></i>Directions & Notes
                                     </h6>
-                                    <span class="form-section-badge bg-info">Optional</span>
+                                    <span class="badge bg-light text-muted border fw-semibold" style="font-size:0.68rem;">Optional</span>
                                 </div>
                                 <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label for="refills" class="form-label fw-semibold">
-                                            Refills
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Number of times the prescription can be refilled"></i>
-                                        </label>
-                                        <input type="number" class="form-control" id="refills" name="refills" placeholder="0" min="0" value="0">
+                                    <div class="col-md-6">
+                                        <label for="instructions" class="form-label fw-semibold" style="font-size:0.82rem;">Patient Instructions</label>
+                                        <textarea class="form-control" id="instructions" name="instructions" rows="2" placeholder="Take with food, avoid alcohol..." style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;"></textarea>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label for="start_date" class="form-label fw-semibold">
-                                            Start Date
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="When the medication should begin (leave empty for immediate)"></i>
-                                        </label>
-                                        <input type="date" class="form-control" id="start_date" name="start_date">
+                                    <div class="col-md-6">
+                                        <label for="notes" class="form-label fw-semibold" style="font-size:0.82rem;">Clinical Notes</label>
+                                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Monitoring, warnings..." style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;"></textarea>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label for="indication" class="form-label fw-semibold">
-                                            Indication
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Medical condition being treated"></i>
-                                        </label>
-                                        <input type="text" class="form-control" id="indication" name="indication" placeholder="e.g., Hypertension">
-                                    </div>
-                                    <div class="col-md-12">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="generic_allowed" name="generic_allowed" value="1" checked>
-                                            <label class="form-check-label fw-semibold" for="generic_allowed">
-                                                <i class="fas fa-info-circle text-muted me-1" data-bs-toggle="tooltip" title="Allow pharmacist to substitute with generic equivalent"></i>
-                                                Allow generic substitution
-                                            </label>
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center gap-2 p-2" style="background:#f8fafc; border:1px solid #eef2f7; border-radius:10px;">
+                                            <input class="form-check-input m-0" type="checkbox" id="generic_allowed" name="generic_allowed" value="1" checked style="width:1.1rem; height:1.1rem;">
+                                            <label class="form-check-label fw-semibold mb-0" for="generic_allowed" style="font-size:0.84rem; color:#334155;">Allow generic substitution</label>
+                                            <span class="ms-auto small text-muted" style="font-size:0.72rem;">Pharmacist may substitute equivalent</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Instructions & Notes Section -->
-                            <div class="form-section">
-                                <div class="form-section-header">
-                                    <h6 class="form-section-title">
-                                        <i class="fas fa-sticky-note me-2"></i>Instructions & Notes
-                                    </h6>
-                                    <span class="form-section-badge bg-info">Recommended</span>
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label for="instructions" class="form-label fw-semibold">
-                                            Specific Instructions
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Patient-specific directions (e.g., take with food, timing)"></i>
-                                        </label>
-                                        <textarea class="form-control" id="instructions" name="instructions" rows="2" placeholder="e.g., Take with food, avoid alcohol, take at bedtime"></textarea>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="notes" class="form-label fw-semibold">
-                                            Additional Notes
-                                            <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Clinical notes, monitoring requirements, or special considerations"></i>
-                                        </label>
-                                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Additional instructions or special considerations..."></textarea>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div class="d-flex gap-3 justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <!-- Actions — premium -->
+                            <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center mt-3 pt-3" style="border-top:1px solid #f1f5f9;">
                                 <div class="d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary-custom btn-lg fw-semibold">
+                                    <button type="submit" class="btn fw-semibold" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color:#fff; border:none; border-radius:10px; padding:0.65rem 1.4rem; font-size:0.88rem; box-shadow: 0 4px 14px rgba(37,99,235,0.25);">
                                         <i class="fas fa-save me-2"></i>Save Prescription
                                     </button>
-                                    <button type="button" class="btn btn-secondary-custom fw-semibold" onclick="resetPrescriptionForm()">
+                                    <button type="button" class="btn fw-semibold" style="background:#fff; color:#475569; border:1px solid #e2e8f0; border-radius:10px; padding:0.65rem 1.1rem; font-size:0.88rem;" onclick="resetPrescriptionForm()">
                                         <i class="fas fa-undo me-2"></i>Reset Form
                                     </button>
                                 </div>
-                                <div class="text-muted small">
-                                    <i class="fas fa-shield-alt me-1"></i>
-                                    All prescriptions require clinical review and approval
+                                <div class="small d-flex align-items-center gap-2" style="color:#64748b; font-size:0.76rem;">
+                                    <i class="fas fa-shield-alt text-success"></i> Clinical review required before dispensing
                                 </div>
                             </div>
                         </form>
@@ -806,173 +996,130 @@
                 </div>
                 @endif
 
-                <!-- Diagnosis Section -->
+                <!-- Diagnosis Section — Premium -->
                 @if(auth()->check() && auth()->user()->isDoctor())
-                <div id="diagnosis-section" class="table-card" style="@if($errors->has('diagnosis_text') || $errors->has('voice_files') || $errors->any()) display: block; @else display: none; @endif">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h4 class="mb-0 fw-bold text-warning">
-                                <i class="fas fa-stethoscope me-2"></i>Create Diagnosis
-                            </h4>
-                            <p class="mb-0 text-muted small">Document medical findings and diagnosis for this appointment</p>
+                <div id="diagnosis-section" class="table-card" style="@if($errors->has('diagnosis_text') || $errors->has('voice_files') || $errors->any()) display: block; @else display: none; @endif border-top: 1px solid #eef2f7;">
+                    <div class="section-head-modern">
+                        <div class="head-left">
+                            <div class="head-icon" style="background:#f8fafc; color:#475569; border:1px solid #e2e8f0;">
+                                <i class="fas fa-stethoscope"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin:0; font-weight:800; color:#1e293b; font-size:1rem; letter-spacing:-0.01em;">Create Diagnosis</h4>
+                                <p style="margin:2px 0 0; font-size:0.78rem; color:#64748b; font-weight:500;">Document medical findings and diagnosis for this appointment</p>
+                            </div>
                         </div>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleDiagnosisForm()">
+                        <button type="button" class="btn btn-sm" style="background:#fff; border:1px solid #e2e8f0; color:#64748b; border-radius:8px; font-size:0.75rem;" onclick="toggleDiagnosisForm()">
                             <i class="fas fa-times me-1"></i>Close
                         </button>
                     </div>
 
-                    <!-- Show validation errors if any -->
                     @if ($errors->any())
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
+                        <div class="ml-warning" style="background:#fef2f2; border-color:#fecaca; margin-bottom:1rem;">
+                            <i class="fas fa-exclamation-triangle" style="color:#dc2626; margin-top:2px;"></i>
+                            <div>
+                                <strong>Please correct:</strong>
+                                <ul class="mb-0 mt-1" style="font-size:0.78rem;">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
                     @endif
 
-                    <!-- Context Information -->
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Appointment Context:</strong> {{ $appointment->patient_name }} - {{ $appointment->reason }}
-                        @if($appointment->doctor_notes)
-                        <br><small class="text-muted"><strong>Doctor Notes:</strong> {{ Str::limit($appointment->doctor_notes, 100) }}</small>
-                        @endif
+                    <div class="ml-note" style="background:#f8fafc; border-color:#e2e8f0; margin-bottom:1rem;">
+                        <i class="fas fa-user-injured" style="color:#2563eb; margin-top:2px;"></i>
+                        <div style="font-size:0.84rem;"><strong style="color:#1e293b;">{{ e($appointment->patient_name) }}</strong> <span style="color:#64748b;">· {{ e(Str::limit($appointment->reason, 80)) }}</span>
+                        @if($appointment->doctor_notes) <br><small style="color:#64748b; font-size:0.74rem;"><strong>Doctor Notes:</strong> {{ Str::limit($appointment->doctor_notes, 100) }}</small> @endif
+                        </div>
                     </div>
 
                     <form id="diagnosisForm" method="POST" action="{{ route('doctor.appointments.create-diagnosis', $appointment) }}" enctype="multipart/form-data">
                         @csrf
 
-                        <!-- Diagnosis Input Section -->
                         <div class="form-section">
                             <div class="form-section-header">
-                                <h6 class="form-section-title">
-                                    <i class="fas fa-stethoscope me-2"></i>Diagnosis Details
-                                </h6>
-                                <span class="form-section-badge bg-warning text-dark">Required</span>
+                                <h6 class="form-section-title" style="font-size:0.86rem;"><i class="fas fa-stethoscope me-2" style="color:#475569;"></i>Diagnosis Details</h6>
+                                <span class="badge bg-light text-muted border fw-semibold" style="font-size:0.68rem;">Required</span>
                             </div>
+                            <label for="diagnosis_text" class="form-label fw-semibold" style="font-size:0.82rem;">Diagnosis Text <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="diagnosis_text" name="diagnosis_text" rows="5" placeholder="Enter medical diagnosis, clinical findings, and treatment plan..." required style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;"></textarea>
+                            <small class="form-text" style="font-size:0.72rem; color:#64748b;">Include symptoms assessment, clinical findings, diagnosis, and recommendations.</small>
+                        </div>
 
+                        <div class="form-section">
+                            <div class="form-section-header">
+                                <h6 class="form-section-title" style="font-size:0.86rem;"><i class="fas fa-microphone me-2" style="color:#475569;"></i>Voice Recording</h6>
+                                <span class="badge bg-light text-muted border fw-semibold" style="font-size:0.68rem;">Optional</span>
+                            </div>
+                            <div class="p-3" style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px;">
+                                <div class="d-flex flex-wrap gap-2 align-items-center">
+                                    <button type="button" id="startRecording" class="btn btn-sm fw-semibold" style="background:#fff; border:1px solid #dbeafe; color:#2563eb; border-radius:8px;"><i class="fas fa-microphone me-1"></i>Start Recording</button>
+                                    <button type="button" id="stopRecording" class="btn btn-sm fw-semibold" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; border-radius:8px; display:none;"><i class="fas fa-stop me-1"></i>Stop</button>
+                                    <button type="button" id="playRecording" class="btn btn-sm fw-semibold" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#059669; border-radius:8px; display:none;"><i class="fas fa-play me-1"></i>Play Back</button>
+                                    <span id="recordingStatus" class="small text-muted"></span>
+                                </div>
+                                <audio id="audioPlayback" controls style="display:none; max-width:100%; margin-top:0.7rem; border-radius:8px;"></audio>
+                                <input type="file" id="voice_files" name="voice_files[]" multiple accept="audio/*" style="display:none;">
+                                <small class="d-block mt-2" style="font-size:0.72rem; color:#64748b;">Or <a href="#" onclick="document.getElementById('voice_files').click(); return false;" style="color:#2563eb; font-weight:600;">upload audio files</a> directly.</small>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-header">
+                                <h6 class="form-section-title" style="font-size:0.86rem;"><i class="fas fa-heartbeat me-2 text-danger"></i>Vitals</h6>
+                                <span class="badge bg-light text-muted border fw-semibold" style="font-size:0.68rem;">Optional</span>
+                            </div>
                             <div class="row g-3">
-                                <div class="col-12">
-                                    <label for="diagnosis_text" class="form-label fw-semibold">
-                                        Diagnosis Text <span class="text-danger">*</span>
-                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Enter your medical diagnosis, findings, and treatment plan"></i>
-                                    </label>
-                                    <textarea class="form-control" id="diagnosis_text" name="diagnosis_text" rows="6" placeholder="Enter your medical diagnosis, clinical findings, and treatment recommendations..." required></textarea>
-                                    <div class="form-text">
-                                        Include symptoms assessment, clinical findings, diagnosis, and treatment recommendations.
-                                    </div>
+                                <div class="col-6 col-md-3">
+                                    <label for="patient_data_height" class="form-label fw-semibold" style="font-size:0.82rem;">Height (cm)</label>
+                                    <input type="number" class="form-control" id="patient_data_height" name="patient_data[height]" placeholder="170" style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label for="patient_data_weight" class="form-label fw-semibold" style="font-size:0.82rem;">Weight (kg)</label>
+                                    <input type="number" step="0.1" class="form-control" id="patient_data_weight" name="patient_data[weight]" placeholder="70.5" style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label for="patient_data_blood_pressure" class="form-label fw-semibold" style="font-size:0.82rem;">Blood Pressure</label>
+                                    <input type="text" class="form-control" id="patient_data_blood_pressure" name="patient_data[blood_pressure]" placeholder="120/80" style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label for="patient_data_temperature" class="form-label fw-semibold" style="font-size:0.82rem;">Temperature (°C)</label>
+                                    <input type="number" step="0.1" class="form-control" id="patient_data_temperature" name="patient_data[temperature]" placeholder="36.6" style="border-radius:10px; border:1px solid #e2e8f0; font-size:0.88rem;">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Voice Recording Section -->
-                        <div class="form-section">
-                            <div class="form-section-header">
-                                <h6 class="form-section-title">
-                                    <i class="fas fa-microphone me-2"></i>Voice Recording (Optional)
-                                </h6>
-                                <span class="form-section-badge bg-info">Optional</span>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="voice-recording-container">
-                                        <button type="button" id="startRecording" class="btn btn-outline-primary">
-                                            <i class="fas fa-microphone me-2"></i>Start Voice Recording
-                                        </button>
-                                        <button type="button" id="stopRecording" class="btn btn-outline-danger" style="display: none;">
-                                            <i class="fas fa-stop me-2"></i>Stop Recording
-                                        </button>
-                                        <button type="button" id="playRecording" class="btn btn-outline-success" style="display: none;">
-                                            <i class="fas fa-play me-2"></i>Play Back
-                                        </button>
-                                        <span id="recordingStatus" class="ms-3 text-muted"></span>
-                                        <audio id="audioPlayback" controls style="display: none; max-width: 300px;"></audio>
-                                    </div>
-                                    <input type="file" id="voice_files" name="voice_files[]" multiple accept="audio/*" style="display: none;">
-                                    <div class="form-text">
-                                        Alternatively, you can upload audio files directly.
-                                        <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="document.getElementById('voice_files').click()">
-                                            Upload Files
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Patient Data Section -->
-                        <div class="form-section">
-                            <div class="form-section-header">
-                                <h6 class="form-section-title">
-                                    <i class="fas fa-user-md me-2"></i>Additional Patient Information
-                                </h6>
-                                <span class="form-section-badge bg-info">Optional</span>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="patient_data_height" class="form-label fw-semibold">
-                                        Height (cm)
-                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Patient's height in centimeters"></i>
-                                    </label>
-                                    <input type="number" class="form-control" id="patient_data_height" name="patient_data[height]" placeholder="170">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="patient_data_weight" class="form-label fw-semibold">
-                                        Weight (kg)
-                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Patient's weight in kilograms"></i>
-                                    </label>
-                                    <input type="number" step="0.1" class="form-control" id="patient_data_weight" name="patient_data[weight]" placeholder="70.5">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="patient_data_blood_pressure" class="form-label fw-semibold">
-                                        Blood Pressure
-                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Systolic/Diastolic (e.g., 120/80)"></i>
-                                    </label>
-                                    <input type="text" class="form-control" id="patient_data_blood_pressure" name="patient_data[blood_pressure]" placeholder="120/80">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="patient_data_temperature" class="form-label fw-semibold">
-                                        Temperature (°C)
-                                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Body temperature in Celsius"></i>
-                                    </label>
-                                    <input type="number" step="0.1" class="form-control" id="patient_data_temperature" name="patient_data[temperature]" placeholder="36.6">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="d-flex gap-3 justify-content-between align-items-center mt-4 pt-3 border-top">
+                        <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center mt-3 pt-3" style="border-top:1px solid #f1f5f9;">
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-warning btn-lg fw-semibold" onclick="submitDiagnosisForm()">
+                                <button type="button" class="btn fw-semibold" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; border:none; border-radius:10px; padding:0.6rem 1.3rem; font-size:0.88rem;" onclick="submitDiagnosisForm()">
                                     <i class="fas fa-save me-2"></i>Create Diagnosis
                                 </button>
-                                <button type="button" class="btn btn-secondary fw-semibold" onclick="toggleDiagnosisForm()">
-                                    <i class="fas fa-times me-2"></i>Cancel
+                                <button type="button" class="btn fw-semibold" style="background:#fff; border:1px solid #e2e8f0; color:#64748b; border-radius:10px; padding:0.6rem 1.1rem; font-size:0.88rem;" onclick="toggleDiagnosisForm()">
+                                    <i class="fas fa-times me-1"></i>Cancel
                                 </button>
                             </div>
-                            <div class="text-muted small">
-                                <i class="fas fa-shield-alt me-1"></i>
-                                Diagnosis will be saved and patient will be notified
-                            </div>
+                            <small class="d-flex align-items-center gap-1" style="color:#64748b; font-size:0.74rem;"><i class="fas fa-shield-alt text-success"></i> Patient will be notified</small>
                         </div>
                     </form>
                 </div>
                 @endif
 
-                <!-- AI Medical Copilot Section -->
+                <!-- AI Medical Copilot Section — Premium -->
                 @if(auth()->check() && auth()->user()->isDoctor())
-                <div id="ai-medical-copilot-section" class="table-card" style="display: none;">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h4 class="mb-0 fw-bold text-primary">
-                                <i class="fas fa-brain me-2"></i>AI Medical Copilot
-                            </h4>
-                            <p class="mb-0 text-muted small">AI-powered clinical decision support for this appointment</p>
+                <div id="ai-medical-copilot-section" class="table-card" style="display: none; border-top: 3px solid #7c3aed;">
+                    <div class="section-head-modern">
+                        <div class="head-left">
+                            <div class="head-icon" style="background: linear-gradient(135deg, #ede9ff 0%, #ddd6fe 100%); color:#7c3aed; border:1px solid #ddd6fe;">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin:0; font-weight:800; color:#1e293b; font-size:1rem; letter-spacing:-0.01em;">AI Medical Copilot</h4>
+                                <p style="margin:2px 0 0; font-size:0.78rem; color:#64748b; font-weight:500;">AI-powered clinical decision support for this appointment</p>
+                            </div>
                         </div>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAIMedicalCopilotForm()">
+                        <button type="button" class="btn btn-sm" style="background:#fff; border:1px solid #e2e8f0; color:#64748b; border-radius:8px; font-size:0.75rem;" onclick="toggleAIMedicalCopilotForm()">
                             <i class="fas fa-times me-1"></i>Close
                         </button>
                     </div>
@@ -1245,231 +1392,132 @@
 </div>
 
 <!-- Prescription Help Modal -->
-<div class="modal fade" id="prescriptionHelpModal" tabindex="-1" aria-labelledby="prescriptionHelpModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+<div class="modal fade modal-premium" id="prescriptionHelpModal" tabindex="-1" aria-labelledby="prescriptionHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="prescriptionHelpModalLabel">
-                    <i class="fas fa-prescription-bottle me-2"></i>How to Use the Prescription Feature
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="head-icon" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); color:#059669; border:1px solid #a7f3d0;">
+                        <i class="fas fa-prescription-bottle"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0" id="prescriptionHelpModalLabel" style="font-size:0.95rem; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">How to Prescribe</h5>
+                        <div style="font-size:0.72rem; color:#94a3b8; font-weight:500;">4 workflows • Choose your path • AI is optional</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-success">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Overview:</strong> This feature allows you to create medication prescriptions for patients. You can work manually or use AI assistance for clinical decision support.
+                <div class="ml-intro">
+                    <i class="fas fa-info-circle" style="color:#059669; margin-top:2px;"></i>
+                    <div><strong style="color:#1e293b;">Overview:</strong> Create prescriptions manually or with AI assistance. AI suggestions are based on documented clinical data, not the form itself.</div>
                 </div>
 
-                <h6 class="text-success mb-3"><i class="fas fa-list-ol me-2"></i>Four Ways to Create Prescriptions:</h6>
-
-                <!-- Scenario 1 -->
-                <div class="card border-success mb-3">
-                    <div class="card-header bg-success text-white">
-                        <h6 class="mb-0"><i class="fas fa-user-md me-2"></i>Scenario 1: Manual Entry (For Experienced Doctors)</h6>
+                <div class="ml-section-title"><i class="fas fa-list-ol" style="color:#059669;"></i> Four Ways to Prescribe</div>
+                <div class="ml-method-grid">
+                    <div class="ml-mini-card" style="border-color:#a7f3d0;">
+                        <div class="mini-head" style="background:#ecfdf5; color:#059669;"><i class="fas fa-user-md"></i> Manual Entry</div>
+                        <div class="mini-body">For experienced doctors — you know the drug.<br><small><strong>Steps:</strong> Fill form → Save. <strong>Do not</strong> press AI.<br><span style="color:#6b7280;">Ex: Refill for known HTN patient.</span></small></div>
                     </div>
-                    <div class="card-body">
-                        <p class="mb-2"><strong>When to use:</strong> When you already know exactly what medication to prescribe.</p>
-                        <div class="bg-light p-3 rounded">
-                            <strong>Steps:</strong>
-                            <ol class="mb-0">
-                                <li>Fill out the prescription form manually with medication details</li>
-                                <li><strong>Do NOT press the AI button</strong></li>
-                                <li>Click "Save Prescription"</li>
-                            </ol>
-                        </div>
-                        <small class="text-muted">Example: Prescribing regular blood pressure medication for a known patient.</small>
+                    <div class="ml-mini-card" style="border-color:#93c5fd;">
+                        <div class="mini-head" style="background:#eff6ff; color:#2563eb;"><i class="fas fa-brain"></i> AI-First</div>
+                        <div class="mini-body">Complex cases — need suggestions first.<br><small><strong>Steps:</strong> Click AI (form can be empty) → Review → Use Suggestion → Save.<br><span style="color:#6b7280;">Ex: Headache, nausea → migraine suggestion.</span></small></div>
                     </div>
-                </div>
-
-                <!-- Scenario 2 -->
-                <div class="card border-primary mb-3">
-                    <div class="card-header bg-primary text-white">
-                        <h6 class="mb-0"><i class="fas fa-brain me-2"></i>Scenario 2: AI-First Approach (For Complex Cases)</h6>
+                    <div class="ml-mini-card" style="border-color:#7dd3ce;">
+                        <div class="mini-head" style="background:#ecfeff; color:#0e7490;"><i class="fas fa-handshake"></i> AI-Assisted</div>
+                        <div class="mini-body">Start manually, let AI check.<br><small><strong>Steps:</strong> Fill some fields → Click AI → Accept warnings/alternatives → Save.<br><span style="color:#6b7280;">Ex: Enter Amoxicillin → allergy warning.</span></small></div>
                     </div>
-                    <div class="card-body">
-                        <p class="mb-2"><strong>When to use:</strong> When you need AI suggestions before filling any form fields.</p>
-                        <div class="bg-light p-3 rounded">
-                            <strong>Steps:</strong>
-                            <ol class="mb-0">
-                                <li><strong>Click "AI Clinical Support" button first</strong> (form can be empty)</li>
-                                <li>AI analyzes patient data and shows medication suggestions</li>
-                                <li>Review suggestions and click "Use Suggestion" to auto-fill the form</li>
-                                <li>Modify the auto-filled form if needed</li>
-                                <li>Click "Save Prescription"</li>
-                            </ol>
-                        </div>
-                        <small class="text-muted">Example: Patient with "severe headache, nausea, light sensitivity" - AI suggests migraine treatment.</small>
+                    <div class="ml-mini-card" style="border-color:#fde68a;">
+                        <div class="mini-head" style="background:#fffbeb; color:#92400e;"><i class="fas fa-search"></i> Explore AI</div>
+                        <div class="mini-body">Research only — see suggestions without using.<br><small><strong>Steps:</strong> Click AI → Review → Dismiss → Fill manually → Save.<br><span style="color:#6b7280;">Ex: AI suggests antibiotics for viral → you choose symptomatic care.</span></small></div>
                     </div>
                 </div>
 
-                <!-- Scenario 3 -->
-                <div class="card border-info mb-3">
-                    <div class="card-header bg-info text-white">
-                        <h6 class="mb-0"><i class="fas fa-handshake me-2"></i>Scenario 3: AI-Assisted Entry (For Guidance)</h6>
-                    </div>
-                    <div class="card-body">
-                        <p class="mb-2"><strong>When to use:</strong> When you start manually but want AI to check for issues.</p>
-                        <div class="bg-light p-3 rounded">
-                            <strong>Steps:</strong>
-                            <ol class="mb-0">
-                                <li>Fill some fields in the prescription form manually</li>
-                                <li><strong>Click "AI Clinical Support" button</strong></li>
-                                <li>AI provides suggestions, warnings, or alternative options</li>
-                                <li>Accept AI suggestions to modify your form, or continue manually</li>
-                                <li>Click "Save Prescription"</li>
-                            </ol>
-                        </div>
-                        <small class="text-muted">Example: You enter "Amoxicillin" and AI warns about penicillin allergy risk.</small>
-                    </div>
+                <hr class="ml-divider">
+
+                <div class="ml-section-title"><i class="fas fa-database" style="color:#2563eb;"></i> What Data Does AI Use?</div>
+                <div class="ml-note" style="background:#f8fafc; border-color:#e2e8f0;">
+                    <i class="fas fa-check-circle" style="color:#059669; margin-top:2px;"></i>
+                    <div style="font-size:0.78rem; line-height:1.5;"><strong style="color:#1e293b;">Sources:</strong> Appointment symptoms, doctor notes, allergies, past meds, recent diagnosis, chronic conditions. If no documentation exists, AI gives general preventive guidance.</div>
                 </div>
 
-                <!-- Scenario 4 -->
-                <div class="card border-warning mb-3">
-                    <div class="card-header bg-warning text-dark">
-                        <h6 class="mb-0"><i class="fas fa-search me-2"></i>Scenario 4: AI Exploration (Research Only)</h6>
-                    </div>
-                    <div class="card-body">
-                        <p class="mb-2"><strong>When to use:</strong> When you want to see AI suggestions but plan to prescribe differently.</p>
-                        <div class="bg-light p-3 rounded">
-                            <strong>Steps:</strong>
-                            <ol class="mb-0">
-                                <li><strong>Click "AI Clinical Support" button</strong></li>
-                                <li>Review AI suggestions for educational purposes</li>
-                                <li><strong>Click "Dismiss" on all suggestions</strong></li>
-                                <li>Fill the prescription form manually with your chosen medication</li>
-                                <li>Click "Save Prescription"</li>
-                            </ol>
-                        </div>
-                        <small class="text-muted">Example: AI suggests antibiotics for viral infection, but you prescribe symptom relief instead.</small>
-                    </div>
+                <div class="ml-warning mt-3">
+                    <i class="fas fa-shield-alt" style="color:#dc2626; margin-top:2px;"></i>
+                    <div><strong>Safety:</strong> AI is clinical decision support only. Always verify allergies, interactions, age/weight, organ function. Confidence (High/Medium/Low) guides but does not replace judgment.</div>
                 </div>
 
-                <hr class="my-4">
-
-                <h6 class="text-primary mb-3"><i class="fas fa-database me-2"></i>What Data Does the AI Use?</h6>
-                <div class="alert alert-light border">
-                    <p class="mb-2"><strong>The AI analyzes clinical data that has already been documented, independent of the prescription form:</strong></p>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <ul class="mb-0">
-                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Appointment Symptoms:</strong> What patient reported</li>
-                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Doctor Notes:</strong> Your clinical observations</li>
-                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Patient Allergies:</strong> Known sensitivities</li>
-                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Past Medications:</strong> Previous prescriptions</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <ul class="mb-0">
-                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Recent Diagnosis:</strong> Latest medical findings</li>
-                                <li><i class="fas fa-check-circle text-success me-2"></i><strong>Medical History:</strong> Chronic conditions</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <small class="text-muted mt-2 d-block">
-                        <strong>Note:</strong> If no clinical documentation exists, AI provides general preventive care recommendations.
-                    </small>
-                </div>
-
-                <div class="alert alert-danger">
-                    <i class="fas fa-shield-alt me-2"></i>
-                    <strong>⚠️ CRITICAL SAFETY INFORMATION:</strong>
-                    <ul class="mb-0 mt-2">
-                        <li>AI suggestions are <strong>clinical decision support only</strong> - not automatic prescriptions</li>
-                        <li><strong>All final prescription decisions must be made by qualified healthcare professionals</strong></li>
-                        <li>Always verify patient allergies and contraindications before prescribing</li>
-                        <li>Check current medications for potential interactions</li>
-                        <li>Consider patient age, weight, and organ function</li>
-                        <li>AI confidence levels (High/Medium/Low) help guide but don't replace clinical judgment</li>
-                    </ul>
-                </div>
-
-                <div class="alert alert-info">
-                    <i class="fas fa-lightbulb me-2"></i>
-                    <strong>💡 Pro Tips:</strong>
-                    <ul class="mb-0 mt-2">
-                        <li>Use "Reset Form" button to clear everything and start over</li>
-                        <li>AI suggestions include dosage, frequency, and duration recommendations</li>
-                        <li>You can modify any AI-suggested values before saving</li>
-                        <li>Always review AI warnings and interactions carefully</li>
-                        <li>The prescription form works independently - you can prescribe without AI</li>
-                    </ul>
+                <div class="ml-note mt-3" style="background:#eff6ff; border-color:#dbeafe;">
+                    <i class="fas fa-lightbulb" style="color:#2563eb; margin-top:2px;"></i>
+                    <div><strong>Tips:</strong> Use Reset to clear; modify AI-suggested dosage/frequency; form works without AI.</div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.9rem 1.25rem;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:8px;">Close</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- AI Data Sources Modal -->
-<div class="modal fade" id="aiDataSourcesModal" tabindex="-1" aria-labelledby="aiDataSourcesModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+<!-- AI Data Sources Modal — Premium -->
+<div class="modal fade modal-premium" id="aiDataSourcesModal" tabindex="-1" aria-labelledby="aiDataSourcesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="aiDataSourcesModalLabel">
-                    <i class="fas fa-database me-2"></i>AI Clinical Data Sources
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="head-icon" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color:#2563eb; border:1px solid #bfdbfe;">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0" id="aiDataSourcesModalLabel" style="font-size:0.95rem; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">AI Clinical Data Sources</h5>
+                        <div style="font-size:0.72rem; color:#94a3b8; font-weight:500;">What AI analyzes • Prioritized by importance</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Understanding AI Data Sources:</strong> The AI analyzes clinical information to provide medication suggestions. Data sources are prioritized by importance:
-                    <ul class="mb-0 mt-2">
-                        <li><strong class="text-danger">CRITICAL:</strong> Required for AI suggestions - AI will be BLOCKED without these</li>
-                        <li><strong class="text-warning">Important:</strong> Strongly recommended for accurate suggestions</li>
-                        <li><strong class="text-info">Helpful:</strong> Provides additional context</li>
-                        <li><strong class="text-secondary">Context:</strong> Used for background information only</li>
-                    </ul>
+                <div class="ml-intro">
+                    <i class="fas fa-info-circle" style="color:#2563eb; margin-top:2px;"></i>
+                    <div><strong style="color:#1e293b;">Importance:</strong> <span style="color:#dc2626; font-weight:700;">CRITICAL</span> required (AI blocked if missing) · <span style="color:#d97706; font-weight:600;">Important</span> strongly recommended · <span style="color:#0e7490;">Helpful</span> / <span style="color:#64748b;">Context</span> adds background.</div>
                 </div>
 
-                <!-- Data Sources Table -->
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover">
-                        <thead class="table-primary">
-                            <tr>
-                                <th><i class="fas fa-clipboard-list me-1"></i>Data Source & Why It's Needed</th>
-                                <th><i class="fas fa-check-circle me-1"></i>Status</th>
-                                <th><i class="fas fa-exclamation-triangle me-1"></i>Importance</th>
-                                <th><i class="fas fa-shield-alt me-1"></i>Reliability</th>
-                                <th><i class="fas fa-info-circle me-1"></i>Current Value</th>
+                <div class="ml-section-title"><i class="fas fa-table" style="color:#2563eb;"></i> Sources</div>
+                <div class="table-responsive" style="background:#fff; border:1px solid #eef2f7; border-radius:10px; overflow:hidden;">
+                    <table class="table table-sm mb-0" style="font-size:0.78rem;">
+                        <thead style="background:#f8fafc; border-bottom:1px solid #eef2f7;">
+                            <tr style="font-size:0.72rem; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">
+                                <th style="padding:0.65rem 0.75rem; border:none; font-weight:700;"><i class="fas fa-clipboard-list me-1"></i>Source</th>
+                                <th style="padding:0.65rem 0.75rem; border:none; font-weight:700;">Status</th>
+                                <th style="padding:0.65rem 0.75rem; border:none; font-weight:700;">Importance</th>
+                                <th style="padding:0.65rem 0.75rem; border:none; font-weight:700;">Value</th>
                             </tr>
                         </thead>
-                        <tbody id="dataSourcesTableBody">
-                            <!-- Dynamic content will be populated by JavaScript -->
+                        <tbody id="dataSourcesTableBody" style="color:#334155;">
+                            <!-- Dynamic content populated by JS -->
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Data Quality Indicators -->
-                <div class="mt-4">
-                    <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Data Completeness</h6>
-                    <div class="progress mb-2" style="height: 25px;" id="dataCompletenessProgress">
-                        <div class="progress-bar bg-success" id="dataCompletenessBar" style="width: 0%">Calculating...</div>
+                <div class="mt-3">
+                    <div class="ml-section-title"><i class="fas fa-chart-line" style="color:#059669;"></i> Data Completeness</div>
+                    <div class="progress" style="height:10px; background:#f1f5f9; border-radius:99px; overflow:hidden;" id="dataCompletenessProgress">
+                        <div class="progress-bar" id="dataCompletenessBar" style="width:0%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); border-radius:99px;"> </div>
                     </div>
-                    <small class="text-muted" id="dataCompletenessText">Analyzing available clinical data...</small>
+                    <small class="d-block mt-1" style="font-size:0.72rem; color:#64748b;" id="dataCompletenessText">Analyzing available clinical data...</small>
                 </div>
 
-                <!-- Action Items -->
-                <div class="mt-4">
-                    <h6 class="text-warning mb-3"><i class="fas fa-lightbulb me-2"></i>To Improve AI Suggestions:</h6>
-                    <ul class="small text-muted" id="improvementSuggestions">
-                        <li>Complete patient allergy information in Patient Management</li>
-                        <li>Update current medications regularly</li>
-                        <li>Add detailed symptoms during appointment booking</li>
-                        <li>Create diagnosis records for better clinical context</li>
-                    </ul>
+                <div class="ml-note mt-3">
+                    <i class="fas fa-lightbulb" style="color:#d97706; margin-top:2px;"></i>
+                    <div><strong>To improve:</strong> Complete allergies, update meds, add symptoms at booking, create diagnosis. <ul class="mb-0 mt-1" style="font-size:0.74rem; color:#475569;" id="improvementSuggestions"><li>Complete patient allergy information</li><li>Update current medications</li><li>Add detailed symptoms</li><li>Create diagnosis records</li></ul></div>
                 </div>
 
-                <div class="alert alert-light border mt-4">
-                    <h6 class="text-dark mb-2"><i class="fas fa-shield-alt me-2"></i>Privacy & Security</h6>
-                    <small class="text-muted">All clinical data is encrypted and HIPAA-compliant. AI analysis occurs locally and no patient data leaves your secure environment.</small>
+                <div class="ml-note mt-3" style="background:#f8fafc; border-color:#e2e8f0;">
+                    <i class="fas fa-shield-alt" style="color:#2563eb; margin-top:2px;"></i>
+                    <div><strong>Privacy:</strong> Encrypted, HIPAA-compliant. Analysis is local — no patient data leaves your environment.</div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="refreshDataSources()">
+            <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.9rem 1.25rem;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:8px;">Close</button>
+                <button type="button" class="btn btn-primary" onclick="refreshDataSources()" style="border-radius:8px; background:#2563eb; border-color:#2563eb;">
                     <i class="fas fa-sync-alt me-1"></i>Refresh Data
                 </button>
             </div>
@@ -1477,23 +1525,29 @@
     </div>
 </div>
 
-<!-- ML Explanation Modal -->
-<div class="modal fade" id="mlExplanationModal" tabindex="-1" aria-labelledby="mlExplanationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<!-- ML Explanation Modal - Compact Premium -->
+<div class="modal fade modal-premium" id="mlExplanationModal" tabindex="-1" aria-labelledby="mlExplanationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="mlExplanationModalLabel">
-                    <i class="fas fa-brain me-2"></i>ML Risk Prediction Explanation
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="head-icon" style="background: linear-gradient(135deg, #ede9ff 0%, #ddd6fe 100%); color: #7c3aed; border: 1px solid #ddd6fe;">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0" id="mlExplanationModalLabel" style="font-size:0.95rem; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">ML Risk Prediction Explanation</h5>
+                        <div style="font-size:0.72rem; color:#94a3b8; font-weight:500;">9-feature model • How the score is calculated</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>How it works:</strong> Our machine learning model analyzes patient history, appointment patterns, and medical data to predict healthcare risks.
+                <div class="ml-intro">
+                    <i class="fas fa-info-circle" style="color:#7c3aed; margin-top:2px;"></i>
+                    <div><strong style="color:#1e293b;">How it works:</strong> Model analyzes patient history, appointment patterns and clinical data to estimate no-show and hospitalization probability.</div>
                 </div>
 
-                <h6 class="text-primary mb-3"><i class="fas fa-chart-line me-2"></i>Features Actually Analyzed:</h6>
+                <div class="ml-section-title"><i class="fas fa-chart-line" style="color:#7c3aed;"></i> Features Actually Analyzed</div>
                 @php
                     if ($appointment->patient) {
                         $extractor = app(\App\Services\FeatureExtractor::class);
@@ -1504,79 +1558,61 @@
                         $hasHighRisk = false;
                     }
                 @endphp
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Feature</th>
-                                <th>Value</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>No-Show Count</strong></td>
-                                <td class="text-center"><span class="badge bg-warning">{{ $features[0] ?? 0 }}</span></td>
-                                <td>Number of previous missed appointments</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Cancellation Count</strong></td>
-                                <td class="text-center"><span class="badge bg-secondary">{{ $features[1] ?? 0 }}</span></td>
-                                <td>Number of cancelled appointments</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Days Since Last Visit</strong></td>
-                                <td class="text-center"><span class="badge bg-info">{{ $features[2] ?? 0 }}</span></td>
-                                <td>Days since patient's last appointment</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Visit Frequency</strong></td>
-                                <td class="text-center"><span class="badge bg-primary">{{ number_format($features[3] ?? 0, 1) }}</span></td>
-                                <td>Average appointments per year</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Patient Age</strong></td>
-                                <td class="text-center"><span class="badge bg-primary">{{ $features[4] ?? 0 }}</span></td>
-                                <td>Patient's age in years</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Gender</strong></td>
-                                <td class="text-center">
-                                    <span class="badge {{ ($features[5] ?? 0) == 1 ? 'bg-danger' : 'bg-secondary' }}">
-                                        {{ ($features[5] ?? 0) == 1 ? 'Male' : 'Female/Other' }}
-                                    </span>
-                                </td>
-                                <td>Gender encoding (1=Male, 0=Female/Other)</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Chronic Conditions</strong></td>
-                                <td class="text-center">
-                                    <span class="badge {{ ($features[6] ?? 0) > 0 ? 'bg-danger' : 'bg-success' }}">
-                                        {{ $features[6] ?? 0 }}
-                                    </span>
-                                </td>
-                                <td>Count of high-risk conditions from doctor diagnoses</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Current Medications</strong></td>
-                                <td class="text-center"><span class="badge bg-info">{{ $features[7] ?? 0 }}</span></td>
-                                <td>Number of current medications</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Appointment Lead Time</strong></td>
-                                <td class="text-center"><span class="badge bg-secondary">{{ $features[8] ?? 0 }}</span></td>
-                                <td>Days between booking and appointment</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="ml-feature-grid">
+                    <div class="ml-feature">
+                        <span class="ml-feature-label">No-Show Count</span>
+                        <span class="ml-feature-value" style="background:#fffbeb; border-color:#fde68a; color:#92400e;">{{ $features[0] ?? 0 }}</span>
+                        <span class="ml-feature-desc">Previous missed appointments</span>
+                    </div>
+                    <div class="ml-feature">
+                        <span class="ml-feature-label">Cancellation Count</span>
+                        <span class="ml-feature-value">{{ $features[1] ?? 0 }}</span>
+                        <span class="ml-feature-desc">Cancelled appointments</span>
+                    </div>
+                    <div class="ml-feature">
+                        <span class="ml-feature-label">Days Since Last Visit</span>
+                        <span class="ml-feature-value" style="background:#eff6ff; border-color:#dbeafe; color:#1e40af;">{{ $features[2] ?? 0 }}</span>
+                        <span class="ml-feature-desc">Days since last appointment</span>
+                    </div>
+                    <div class="ml-feature">
+                        <span class="ml-feature-label">Visit Frequency</span>
+                        <span class="ml-feature-value" style="background:#eff6ff; border-color:#dbeafe; color:#1e40af;">{{ number_format($features[3] ?? 0, 1) }}/yr</span>
+                        <span class="ml-feature-desc">Avg appointments per year</span>
+                    </div>
+                    <div class="ml-feature">
+                        <span class="ml-feature-label">Patient Age</span>
+                        <span class="ml-feature-value">{{ $features[4] ?? 0 }} yrs</span>
+                        <span class="ml-feature-desc">Age in years</span>
+                    </div>
+                    <div class="ml-feature">
+                        <span class="ml-feature-label">Gender</span>
+                        <span class="ml-feature-value" style="{{ ($features[5] ?? 0) == 1 ? 'background:#fef2f2; border-color:#fecaca; color:#dc2626;' : 'background:#f8fafc; border-color:#e2e8f0; color:#64748b;' }}">{{ ($features[5] ?? 0) == 1 ? 'Male' : 'Female/Other' }}</span>
+                        <span class="ml-feature-desc">Encoded 1=Male, 0=Other</span>
+                    </div>
+                    <div class="ml-feature">
+                        <span class="ml-feature-label">Chronic Conditions</span>
+                        <span class="ml-feature-value" style="{{ ($features[6] ?? 0) > 0 ? 'background:#fef2f2; border-color:#fecaca; color:#dc2626;' : 'background:#ecfdf5; border-color:#a7f3d0; color:#059669;' }}">{{ $features[6] ?? 0 }}</span>
+                        <span class="ml-feature-desc">High-risk from diagnoses</span>
+                    </div>
+                    <div class="ml-feature">
+                        <span class="ml-feature-label">Current Medications</span>
+                        <span class="ml-feature-value" style="background:#eff6ff; border-color:#dbeafe; color:#1e40af;">{{ $features[7] ?? 0 }}</span>
+                        <span class="ml-feature-desc">Active prescriptions</span>
+                    </div>
+                    <div class="ml-feature">
+                        <span class="ml-feature-label">Lead Time</span>
+                        <span class="ml-feature-value">{{ $features[8] ?? 0 }} days</span>
+                        <span class="ml-feature-desc">Booking → appointment</span>
+                    </div>
                 </div>
-                <div class="alert alert-info mt-3">
-                    <small><i class="fas fa-info-circle me-1"></i><strong>Enhanced ML Features:</strong> Now using 9 features including cancellations, visit frequency, medications, and appointment lead time for improved accuracy.</small>
+                <div class="ml-note">
+                    <i class="fas fa-check-circle" style="color:#2563eb; margin-top:2px;"></i>
+                    <div><strong>Enhanced 9-feature model:</strong> Includes cancellations, visit frequency, meds and lead time for improved accuracy.</div>
                 </div>
 
-                <hr class="my-4">
+                <hr class="ml-divider">
 
-                <h6 class="text-primary mb-3"><i class="fas fa-cogs me-2"></i>Prediction Method Used:</h6>
+                <div class="ml-section-title"><i class="fas fa-cogs" style="color:#64748b;"></i> Prediction Method Used</div>
                 @php
                     $service = app(\App\Services\PredictiveAnalyticsService::class);
                     $reflection = new ReflectionClass($service);
@@ -1585,104 +1621,58 @@
                     $adequacy = $method->invoke($service);
                     $usingML = $adequacy['adequate'];
                 @endphp
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card border-{{ $usingML ? 'success' : 'warning' }} mb-3">
-                            <div class="card-body p-3">
-                                <h6 class="card-title mb-2">
-                                    <i class="fas fa-{{ $usingML ? 'brain' : 'calculator' }} me-2"></i>
-                                    {{ $usingML ? 'Machine Learning' : 'Rule-Based' }}
-                                </h6>
-                                <p class="card-text small mb-1">
-                                    {{ $usingML ? 'Using trained ML models for predictions' : 'Using rule-based calculations (ML models not adequately trained)' }}
-                                </p>
-                                <small class="text-muted">
-                                    Training Data: {{ $adequacy['total_appointments'] }} appointments
-                                    ({{ $adequacy['no_show_count'] }} no-shows, {{ $adequacy['high_risk_count'] }} high-risk)
-                                </small>
-                            </div>
+                <div class="ml-method-grid">
+                    <div class="ml-mini-card" style="border-color: {{ $usingML ? '#a7f3d0' : '#fde68a' }};">
+                        <div class="mini-head" style="background: {{ $usingML ? '#ecfdf5' : '#fffbeb' }}; color: {{ $usingML ? '#059669' : '#92400e' }};">
+                            <i class="fas fa-{{ $usingML ? 'brain' : 'calculator' }}"></i> {{ $usingML ? 'Machine Learning' : 'Rule-Based' }}
+                        </div>
+                        <div class="mini-body">
+                            {{ $usingML ? 'Trained ML models active' : 'Rule-based (ML not adequately trained)' }}
+                            <small class="d-block mt-1">{{ $adequacy['total_appointments'] }} appts • {{ $adequacy['no_show_count'] }} no-shows • {{ $adequacy['high_risk_count'] }} high-risk</small>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card border-info mb-3">
-                            <div class="card-body p-3">
-                                <h6 class="card-title mb-2">
-                                    <i class="fas fa-chart-bar me-2"></i>Model Status
-                                </h6>
-                                <p class="card-text small mb-1">
-                                    @if($usingML)
-                                        <span class="text-success">✓ ML Models Active</span>
-                                    @else
-                                        <span class="text-warning">⚠ Rule-Based Fallback</span>
-                                    @endif
-                                </p>
-                                <small class="text-muted">
-                                    Minimum required: 50 appointments, 2% no-show rate, 5% high-risk rate
-                                </small>
-                            </div>
+                    <div class="ml-mini-card">
+                        <div class="mini-head" style="background:#eff6ff; color:#1e40af;"><i class="fas fa-chart-bar"></i> Model Status</div>
+                        <div class="mini-body">
+                            @if($usingML)<span style="color:#059669; font-weight:700;">✓ ML Models Active</span>@else<span style="color:#d97706; font-weight:700;">⚠ Rule-Based Fallback</span>@endif
+                            <small class="d-block mt-1">Need: 50 appts, 2% no-show, 5% high-risk</small>
                         </div>
                     </div>
                 </div>
 
-                <hr class="my-4">
+                <hr class="ml-divider">
 
-                <h6 class="text-primary mb-3"><i class="fas fa-calculator me-2"></i>Risk Calculations:</h6>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card border-warning mb-3">
-                            <div class="card-header bg-warning text-dark">
-                                <h6 class="mb-0"><i class="fas fa-user-times me-2"></i>No-Show Risk</h6>
-                            </div>
-                            <div class="card-body">
-                                <p class="mb-2">Probability that the patient will miss this appointment.</p>
-                                <small class="text-muted">
-                                    <strong>Current Result:</strong>
-                                    @if(isset($riskScore))
-                                        {{ number_format($riskScore->no_show_risk * 100, 1) }}%
-                                    @else
-                                        N/A
-                                    @endif
-                                </small>
-                            </div>
+                <div class="ml-section-title"><i class="fas fa-calculator" style="color:#7c3aed;"></i> Risk Calculations</div>
+                <div class="ml-risk-grid">
+                    <div class="ml-mini-card" style="border-color:#fde68a;">
+                        <div class="mini-head" style="background:#fffbeb; color:#92400e;"><i class="fas fa-user-times"></i> No-Show Risk</div>
+                        <div class="mini-body">
+                            Likelihood patient misses appointment.
+                            <small class="d-block mt-2"><strong>Current:</strong> @if(isset($riskScore)) {{ number_format($riskScore->no_show_risk * 100, 1) }}% @else N/A @endif</small>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card border-danger mb-3">
-                            <div class="card-header bg-danger text-white">
-                                <h6 class="mb-0"><i class="fas fa-hospital me-2"></i>Hospitalization Risk</h6>
-                            </div>
-                            <div class="card-body">
-                                <p class="mb-2">Probability that the patient may require hospitalization based on current health indicators.</p>
-                                <small class="text-muted">
-                                    <strong>Current Result:</strong>
-                                    @if(isset($riskScore))
-                                        {{ number_format($riskScore->hospitalization_risk * 100, 1) }}%
-                                    @else
-                                        N/A
-                                    @endif
-                                </small>
-                            </div>
+                    <div class="ml-mini-card" style="border-color:#fecaca;">
+                        <div class="mini-head" style="background:#fef2f2; color:#dc2626;"><i class="fas fa-hospital"></i> Hospitalization Risk</div>
+                        <div class="mini-body">
+                            Likelihood requiring hospitalization.
+                            <small class="d-block mt-2"><strong>Current:</strong> @if(isset($riskScore)) {{ number_format($riskScore->hospitalization_risk * 100, 1) }}% @else N/A @endif</small>
                         </div>
                     </div>
                 </div>
 
-                <div class="alert alert-light border">
-                    <h6 class="text-dark mb-2"><i class="fas fa-lightbulb me-2"></i>Understanding the Results:</h6>
-                    <ul class="mb-0 small">
-                        <li><strong>Low Risk (< 30%):</strong> Patient shows strong compliance patterns and stable health indicators</li>
-                        <li><strong>Medium Risk (30-70%):</strong> Moderate concern - consider follow-up reminders or additional monitoring</li>
-                        <li><strong>High Risk (> 70%):</strong> Significant risk - immediate intervention may be needed</li>
-                    </ul>
+                <div class="ml-legend" style="margin-top:0.85rem;">
+                    <div class="ml-legend-item"><span class="ml-legend-dot low"></span><span><strong>Low &lt;30%:</strong> Strong compliance, stable indicators</span></div>
+                    <div class="ml-legend-item"><span class="ml-legend-dot med"></span><span><strong>Medium 30-70%:</strong> Moderate concern — follow-up reminders</span></div>
+                    <div class="ml-legend-item"><span class="ml-legend-dot high"></span><span><strong>High &gt;70%:</strong> Significant risk — immediate attention</span></div>
                 </div>
 
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Important:</strong> These predictions are statistical estimates based on historical data and should be used as a clinical decision support tool, not as definitive medical advice.
+                <div class="ml-warning">
+                    <i class="fas fa-exclamation-triangle" style="margin-top:2px;"></i>
+                    <div><strong>Important:</strong> Statistical estimates for clinical decision support only — not definitive medical advice.</div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer" style="background:#f8fafc; border-top:1px solid #f1f5f9; padding:0.75rem 1.25rem;">
+                <button type="button" class="btn btn-secondary btn-sm" style="border-radius:8px; padding:0.35rem 0.9rem;" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -2494,41 +2484,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Workflow selector functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const workflowButtons = document.querySelectorAll('.workflow-btn');
-    const workflowText = document.getElementById('workflow-text');
-
-    const workflowDescriptions = {
-        'manual': 'Manual Entry: Fill the form directly with your prescription details.',
-        'ai-first': 'AI First: Click AI button first, then review and use suggestions to fill the form.',
-        'ai-assisted': 'AI Assisted: Fill some form fields, then use AI for additional guidance.',
-        'explore': 'Explore AI: Review AI suggestions for learning, then fill form manually.'
-    };
-
-    workflowButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all buttons
-            workflowButtons.forEach(btn => btn.classList.remove('active'));
-            // Add active class to clicked button
-            this.classList.add('active');
-
-            // Update description
-            const workflow = this.dataset.workflow;
-            workflowText.textContent = workflowDescriptions[workflow];
-
-            // Optional: Show/hide AI section based on workflow
-            const aiSection = document.querySelector('.ai-section');
-            if (aiSection) {
-                if (workflow === 'manual') {
-                    aiSection.style.display = 'none';
-                } else {
-                    aiSection.style.display = 'block';
-                }
-            }
-        });
-    });
-
     // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -3350,6 +3306,52 @@ function displayQuestionsSection(questions) {
 function displayRedFlagsSection(flags) {
     if (!flags || flags.length === 0) return '<li class="text-success">No red flags detected</li>';
     return flags.slice(0, 3).map(flag => `<li class="text-danger">${flag}</li>`).join('');
+}
+
+// Header phone call — works from header action button (future confirmed phone appointments)
+function headerShowPatientPhone(appointmentId, btn) {
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    fetch(`/api/appointments/${appointmentId}/patient-phone`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        if (data.success && data.phone) {
+            // also update the component display if present
+            const nameEl = document.getElementById(`patient-name-${appointmentId}`);
+            const phoneEl = document.getElementById(`patient-phone-${appointmentId}`);
+            const display = document.getElementById(`phone-display-${appointmentId}`);
+            const compBtn = document.getElementById(`phone-btn-${appointmentId}`);
+            if (nameEl) nameEl.textContent = data.patient_name || '';
+            if (phoneEl) { phoneEl.textContent = data.phone; phoneEl.href = `tel:${data.phone}`; }
+            if (display) display.style.display = 'block';
+            if (compBtn) compBtn.style.display = 'none';
+            // also show quick alert
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'success', title: data.patient_name || 'Patient', html: `<a href="tel:${data.phone}" style="font-size:1.4em;font-weight:700;">${data.phone}</a>`, confirmButtonText: 'Call' });
+            } else {
+                showNotification(`Patient phone: ${data.phone}`, 'success');
+            }
+        } else {
+            if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Phone not available' });
+            else showNotification(data.error || 'Phone not available', 'error');
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to get phone. Try again.' });
+        else showNotification('Failed to get phone. Try again.', 'error');
+    });
 }
 </script>
 @endpush

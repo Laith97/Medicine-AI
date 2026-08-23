@@ -14,7 +14,6 @@ it('tests enhanced prescription workflow with new fields', function () {
 
     $doctorProfile = Doctor::factory()->create([
         'user_id' => $doctor->id,
-        'specialty' => 'Internal Medicine',
         'is_active' => true,
     ]);
 

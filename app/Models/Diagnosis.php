@@ -14,6 +14,8 @@ class Diagnosis extends Model
         'patient_id',
         'appointment_id',
         'diagnosis_text',
+        'severity',
+        'requires_hospitalization',
         'voice_transcripts',
         'voice_files',
         'patient_data',
@@ -31,6 +33,7 @@ class Diagnosis extends Model
         'patient_notified' => 'boolean',
         'patient_reviewed' => 'boolean',
         'patient_viewed_at' => 'datetime',
+        'requires_hospitalization' => 'boolean',
     ];
 
     /**

@@ -30,7 +30,6 @@ it('completes the full AI-enhanced e-prescribing workflow', function () {
 
     $doctorProfile = Doctor::factory()->create([
         'user_id' => $doctor->id,
-        'specialty' => 'Internal Medicine',
         'is_active' => true,
     ]);
 

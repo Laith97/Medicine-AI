@@ -28,7 +28,6 @@ class DiagnosisFactory extends Factory
         return [
             'patient_id' => User::factory()->create()->id,
             'doctor_id' => User::factory()->create()->id,
-            'type' => $this->faker->randomElement(['manual', 'ai']),
             'diagnosis_text' => $this->faker->paragraph(),
             'voice_transcript' => $this->faker->paragraph(),
             'voice_file_path' => $this->faker->word . '.mp3',
