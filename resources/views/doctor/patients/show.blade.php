@@ -20,8 +20,15 @@
                     <h2><i class="fas fa-user me-2"></i>Patient Details</h2>
                     <p class="text-muted mb-0">View patient information and history</p>
                 </div>
-                <a href="{{ route('doctor.patients.index') }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Patients
+                @php
+                    $prev = url()->previous();
+                    $isCases = str_contains($prev, 'cases-overview') || str_contains($prev, 'cases');
+                    $isPatients = str_contains($prev, '/doctor/patients');
+                    $backUrl = $prev !== url()->current() && str_contains($prev, '/doctor/') ? $prev : route('doctor.patients.index');
+                    $backLabel = $isCases ? 'Back to Cases' : ($isPatients ? 'Back to Patients' : 'Back');
+                @endphp
+                <a href="{{ $backUrl }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                    <i class="fas fa-arrow-left me-2"></i>{{ $backLabel }}
                 </a>
             </div>
         </div>
