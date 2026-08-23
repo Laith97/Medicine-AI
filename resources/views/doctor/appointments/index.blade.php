@@ -141,21 +141,21 @@
             </div>
         </div>
 
-        <!-- Appointments List - premium doctor-table -->
+        <!-- Appointments List - premium doctor-table (restored professional) -->
         @if($appointments->count() > 0)
-            <div class="card border-0 shadow-sm cases-panel">
+            <div class="card border-0 shadow-sm cases-panel table-professional" style="overflow:hidden; border: 1px solid #dee2e6;">
                 <div class="doctor-table-container">
                     <div class="table-responsive">
-                        <table class="doctor-table mb-0">
-                            <thead>
+                        <table class="table doctor-table table-hover mb-0">
+                            <thead style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
                                 <tr>
-                                    <th>Patient</th>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Status</th>
-                                    <th>Risk</th>
-                                    <th>Complaint</th>
-                                    <th class="text-end">Actions</th>
+                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Patient</th>
+                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Date</th>
+                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Type</th>
+                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Status</th>
+                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Risk</th>
+                                    <th style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Complaint</th>
+                                    <th class="text-end" style="color:#495057; font-weight:600; padding:1rem 0.75rem; border:none; font-size:0.9rem;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
