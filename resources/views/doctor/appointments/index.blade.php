@@ -104,7 +104,7 @@
             </div>
             <div class="card-body p-3">
                 <form method="GET" action="{{ route('doctor.appointments.index') }}" class="row g-2 align-items-end">
-                    <div class="col-md-2 col-6">
+                    <div class="col-md-3 col-6">
                         <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">Status</label>
                         <select name="status" class="form-select form-select-sm cases-sort">
                             <option value="">All Statuses</option>
@@ -115,24 +115,15 @@
                             <option value="no_show" {{ request('status') == 'no_show' ? 'selected' : '' }}>No Show</option>
                         </select>
                     </div>
-                    <div class="col-md-2 col-6">
-                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">Risk</label>
-                        <select name="risk_category" class="form-select form-select-sm cases-sort">
-                            <option value="">All Risk</option>
-                            <option value="low" {{ request('risk_category') == 'low' ? 'selected' : '' }}>Low</option>
-                            <option value="medium" {{ request('risk_category') == 'medium' ? 'selected' : '' }}>Medium</option>
-                            <option value="high" {{ request('risk_category') == 'high' ? 'selected' : '' }}>High</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 col-6">
+                    <div class="col-md-3 col-6">
                         <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">From</label>
                         <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control form-control-sm">
                     </div>
-                    <div class="col-md-2 col-6">
+                    <div class="col-md-3 col-6">
                         <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">To</label>
                         <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control form-control-sm">
                     </div>
-                    <div class="col-md-4 d-flex align-items-end gap-2">
+                    <div class="col-md-3 d-flex align-items-end gap-2">
                         <button type="submit" class="doctor-btn doctor-btn-primary doctor-btn-sm flex-grow-1"><i class="fas fa-search me-1"></i>Apply</button>
                         <a href="{{ route('doctor.appointments.index') }}" class="doctor-btn doctor-btn-outline doctor-btn-sm"><i class="fas fa-rotate-left"></i></a>
                     </div>
@@ -152,8 +143,6 @@
                                     <th style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0; white-space: nowrap;"><i class="far fa-calendar me-1 opacity-60"></i> Date</th>
                                     <th class="d-none d-md-table-cell" style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0;">Type</th>
                                     <th style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0;">Status</th>
-                                    <th class="d-none d-lg-table-cell" style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0;">Risk</th>
-                                    <th class="d-none d-xl-table-cell" style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0; max-width:220px;">Complaint</th>
                                     <th class="text-end" style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0;">Actions</th>
                                 </tr>
                             </thead>
@@ -176,7 +165,6 @@
                                                 <div class="min-w-0">
                                                     <div class="fw-medium text-dark text-truncate" style="max-width:160px;">{{ $appointment->patient_name }}</div>
                                                     <small class="text-muted text-truncate d-block" style="max-width:160px;">{{ $appointment->patient_email }}</small>
-                                                    <small class="text-muted d-xl-none text-truncate d-block" style="max-width:160px; font-size:0.72rem;" title="{{ $appointment->reason }}">{{ Str::limit($appointment->reason, 30) }}</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -188,29 +176,7 @@
                                         <td>
                                             @php $statusClasses = ['pending'=>'warning','confirmed'=>'success','completed'=>'info','cancelled'=>'danger','no_show'=>'secondary']; @endphp
                                             <span class="doctor-badge doctor-badge-{{ $statusClasses[$appointment->status] ?? 'secondary' }}">{{ ucfirst(str_replace('_',' ',$appointment->status)) }}</span>
-                                            <!-- show risk inline on small where Risk col hidden -->
-                                            <span class="d-lg-none ms-1">
-                                                @php $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first(); @endphp
-                                                @if($riskScore)
-                                                    @php $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk); @endphp
-                                                    @if($maxRisk < 0.3)<span class="doctor-badge doctor-badge-success" style="font-size:0.65rem;">Low</span>
-                                                    @elseif($maxRisk < 0.7)<span class="doctor-badge doctor-badge-warning" style="font-size:0.65rem;">Med</span>
-                                                    @else<span class="doctor-badge doctor-badge-danger" style="font-size:0.65rem;">High</span>
-                                                    @endif
-                                                @endif
-                                            </span>
                                         </td>
-                                        <td class="d-none d-lg-table-cell">
-                                            @php $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first(); @endphp
-                                            @if($riskScore)
-                                                @php $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk); @endphp
-                                                @if($maxRisk < 0.3)<span class="doctor-badge doctor-badge-success">Low</span>
-                                                @elseif($maxRisk < 0.7)<span class="doctor-badge doctor-badge-warning">Medium</span>
-                                                @else<span class="doctor-badge doctor-badge-danger">High</span>
-                                                @endif
-                                            @else<span class="text-muted small">—</span>@endif
-                                        </td>
-                                        <td class="d-none d-xl-table-cell"><div class="text-truncate" style="max-width:180px;" title="{{ $appointment->reason }}">{{ Str::limit($appointment->reason, 40) }}</div></td>
                                         <td class="text-end">
                                             <div class="d-inline-flex gap-1">
                                                 <a href="{{ route('doctor.appointments.show', $appointment) }}" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="View"><i class="fas fa-eye"></i></a>
