@@ -2,34 +2,24 @@
 
 @section('title', 'Testimonials Management')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
+@endpush
 @section('content')
-<style>
-.app-main {
-    background-color: #f8f9fa;
-}
-.dashboard-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
-    border-radius: 12px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
-}
-</style>
-<div class="container-fluid" style="background-color: #f8f9fa;">
-    <div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="dashboard-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2><i class="fas fa-star me-2"></i>Testimonials</h2>
-                        <p class="text-muted mb-0">Manage which reviews appear publicly on your landing page</p>
-                    </div>
+<div class="container-fluid" style="background-color: var(--bg-secondary, #f8f9fa);">
+    <div class="container py-4">
+        <div class="dashboard-header cases-header-compact">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-star me-2"></i>Testimonials</h2>
+                    <p>Manage which reviews appear publicly on your landing page</p>
                 </div>
+                <span class="doctor-badge doctor-badge-success d-none d-md-inline-flex"><i class="fas fa-check-circle me-1"></i> Public</span>
             </div>
         </div>
     </div>
-    </div>
-    </div>
+</div>
 
 @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">

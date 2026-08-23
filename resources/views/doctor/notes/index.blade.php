@@ -110,14 +110,17 @@
     height: 44px;
 }
 </style>
-<div class="container-fluid" style="background-color: #f8f9fa;">
-    <div class="container">
-        <div class="dashboard-header">
+<div class="container-fluid" style="background-color: var(--bg-secondary, #f8f9fa);">
+    <div class="container py-4">
+        <div class="dashboard-header cases-header-compact">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h2><i class="fas fa-sticky-note me-2"></i>Doctor Notes</h2>
-                    <p class="text-muted mb-0">View and manage doctor notes</p>
+                    <p>View and manage doctor notes</p>
                 </div>
+                <a href="{{ route('doctor.notes.create') }}" class="btn btn-primary d-none d-md-inline-flex">
+                    <i class="fas fa-plus me-2"></i>New Note
+                </a>
             </div>
         </div>
     </div>
@@ -299,27 +302,13 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
 <style>
-.empty-state {
-    padding: 3rem 1rem;
-}
-
-.badge {
-    font-size: 0.75rem;
-}
-
-.table td {
-    vertical-align: middle;
-}
-
-.btn-group .btn {
-    border-radius: 0.25rem;
-    margin-right: 0.25rem;
-}
-
-.btn-group .btn:last-child {
-    margin-right: 0;
-}
+.empty-state { padding: 3rem 1rem; }
+.badge { font-size: 0.75rem; }
+.table td { vertical-align: middle; }
+.btn-group .btn { border-radius: 0.25rem; margin-right: 0.25rem; }
+.btn-group .btn:last-child { margin-right: 0; }
 </style>
 @endpush
 
