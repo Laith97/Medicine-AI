@@ -26,7 +26,9 @@
         width: 2.2rem; height: 1.15rem; margin: 0; cursor: pointer;
     }
     .auto-approve-compact .form-check-input:checked { background-color: #10b981; border-color: #10b981; }
-    .cases-panel .doctor-table thead th { font-size: 0.76rem; letter-spacing: 0.03em; }
+    .cases-panel .doctor-table thead th { font-size: 0.76rem; letter-spacing: 0.03em; white-space: normal; }
+    .cases-panel .doctor-table tbody td { white-space: normal; word-break: break-word; }
+    .doctor-table { table-layout: auto; }
     .patient-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
     .patient-avatar-male { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); }
     .patient-avatar-female { background: linear-gradient(135deg, #e83e8c 0%, #c21e56 100%); }
@@ -142,10 +144,10 @@
 
         <!-- Appointments List - same as patients -->
         @if($appointments->count() > 0)
-            <div class="card border-0 shadow-sm cases-panel">
-                <div class="doctor-table-container">
-                    <div class="table-responsive" style="overflow-x: visible;">
-                        <table class="doctor-table mb-0" style="min-width: 0;">
+            <div class="card border-0 shadow-sm cases-panel" style="overflow: hidden;">
+                <div class="doctor-table-container" style="overflow: hidden;">
+                    <div style="overflow: hidden;">
+                        <table class="doctor-table mb-0 w-100" style="width:100%; table-layout:auto;">
                             <thead>
                                 <tr>
                                     <th>Patient</th>
