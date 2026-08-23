@@ -3,6 +3,7 @@
 @section('title', 'Manage Appointments')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/doctor-design-system.css') }}">
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
 <link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
 <style>
