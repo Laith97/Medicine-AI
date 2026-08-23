@@ -144,16 +144,16 @@
         @if($appointments->count() > 0)
             <div class="card border-0 shadow-sm cases-panel">
                 <div class="doctor-table-container">
-                    <div class="table-responsive">
-                        <table class="doctor-table mb-0">
+                    <div class="table-responsive" style="overflow-x: visible;">
+                        <table class="doctor-table mb-0" style="min-width: 0;">
                             <thead>
                                 <tr>
                                     <th>Patient</th>
                                     <th>Date</th>
-                                    <th>Type</th>
+                                    <th class="d-none d-md-table-cell">Type</th>
                                     <th>Status</th>
-                                    <th>Risk</th>
-                                    <th>Complaint</th>
+                                    <th class="d-none d-lg-table-cell">Risk</th>
+                                    <th class="d-none d-xl-table-cell" style="max-width:220px;">Complaint</th>
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
@@ -176,6 +176,7 @@
                                                 <div class="min-w-0">
                                                     <div class="fw-medium text-dark text-truncate" style="max-width:160px;">{{ $appointment->patient_name }}</div>
                                                     <small class="text-muted text-truncate d-block" style="max-width:160px;">{{ $appointment->patient_email }}</small>
+                                                    <small class="text-muted d-xl-none text-truncate d-block" style="max-width:160px; font-size:0.72rem;" title="{{ $appointment->reason }}">{{ Str::limit($appointment->reason, 30) }}</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -183,12 +184,23 @@
                                             <div class="fw-medium text-dark">{{ $appointment->appointment_date->format('M j, Y') }}</div>
                                             <small class="text-muted">{{ $appointment->appointment_date->format('g:i A') }}</small>
                                         </td>
-                                        <td><span class="doctor-badge doctor-badge-secondary text-capitalize">{{ str_replace('_', ' ', $appointment->appointment_type) }}</span></td>
+                                        <td class="d-none d-md-table-cell"><span class="doctor-badge doctor-badge-secondary text-capitalize" style="font-size:0.72rem;">{{ str_replace('_', ' ', $appointment->appointment_type) }}</span></td>
                                         <td>
                                             @php $statusClasses = ['pending'=>'warning','confirmed'=>'success','completed'=>'info','cancelled'=>'danger','no_show'=>'secondary']; @endphp
                                             <span class="doctor-badge doctor-badge-{{ $statusClasses[$appointment->status] ?? 'secondary' }}">{{ ucfirst(str_replace('_',' ',$appointment->status)) }}</span>
+                                            <!-- show risk inline on small where Risk col hidden -->
+                                            <span class="d-lg-none ms-1">
+                                                @php $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first(); @endphp
+                                                @if($riskScore)
+                                                    @php $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk); @endphp
+                                                    @if($maxRisk < 0.3)<span class="doctor-badge doctor-badge-success" style="font-size:0.65rem;">Low</span>
+                                                    @elseif($maxRisk < 0.7)<span class="doctor-badge doctor-badge-warning" style="font-size:0.65rem;">Med</span>
+                                                    @else<span class="doctor-badge doctor-badge-danger" style="font-size:0.65rem;">High</span>
+                                                    @endif
+                                                @endif
+                                            </span>
                                         </td>
-                                        <td>
+                                        <td class="d-none d-lg-table-cell">
                                             @php $riskScore = $appointment->patient?->patientRiskScores?->where('appointment_id', $appointment->id)?->first(); @endphp
                                             @if($riskScore)
                                                 @php $maxRisk = max($riskScore->no_show_risk, $riskScore->hospitalization_risk); @endphp
@@ -198,7 +210,7 @@
                                                 @endif
                                             @else<span class="text-muted small">—</span>@endif
                                         </td>
-                                        <td><div class="text-truncate" style="max-width:180px;" title="{{ $appointment->reason }}">{{ $appointment->reason }}</div></td>
+                                        <td class="d-none d-xl-table-cell"><div class="text-truncate" style="max-width:180px;" title="{{ $appointment->reason }}">{{ Str::limit($appointment->reason, 40) }}</div></td>
                                         <td class="text-end">
                                             <div class="d-inline-flex gap-1">
                                                 <a href="{{ route('doctor.appointments.show', $appointment) }}" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="View"><i class="fas fa-eye"></i></a>
