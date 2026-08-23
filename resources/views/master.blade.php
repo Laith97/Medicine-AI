@@ -1806,11 +1806,6 @@ body .dropdown .dropdown-menu.show,
             </main>
         </div>
 
-        <!-- Floating Assistant -->
-        @auth
-            @include('components.floating-assistant')
-        @endauth
-
     </div><!-- #wrapper end -->
 		<!-- Footer -->
 

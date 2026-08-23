@@ -1,12 +1,12 @@
 <!-- Floating Help Assistant -->
-<div class="floating-assistant" id="floatingAssistant">
+<div class="floating-assistant">
     <div class="assistant-bubble" id="assistantBubble" style="display: none;">
         <div class="bubble-content">
             <p id="contextual-tip">💡 Tip: Click "Start Consultation" to begin AI-assisted diagnosis</p>
             <button class="close-bubble" onclick="hideAssistantBubble()">&times;</button>
         </div>
     </div>
-    <button class="assistant-toggle" id="assistantToggle" onclick="toggleAssistant()">
+    <button class="assistant-toggle" onclick="toggleAssistant()">
         <i class="fas fa-question-circle"></i>
     </button>
 </div>
