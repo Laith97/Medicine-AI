@@ -12,8 +12,15 @@
                     <h2><i class="fas fa-clipboard-check me-2"></i>Diagnosis Details</h2>
                     <p class="text-muted">Created on {{ $diagnosis->created_at->format('F j, Y \a\t g:i A') }}</p>
                 </div>
-                <a href="{{ route('doctor.cases.overview') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Cases
+                @php
+                    $prevDiag = url()->previous();
+                    $isRec = str_contains($prevDiag, 'recorded-voices');
+                    $isHist = str_contains($prevDiag, 'history') || str_contains($prevDiag, 'ambient-listening');
+                    $diagBackUrl = $prevDiag !== url()->current() && (str_contains($prevDiag, '/ai/') || str_contains($prevDiag, '/doctor/')) ? $prevDiag : route('doctor.cases.overview');
+                    $diagBackLabel = $isRec ? 'Back to Recorded Voices' : ($isHist ? 'Back to History' : 'Back to Cases');
+                @endphp
+                <a href="{{ $diagBackUrl }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>{{ $diagBackLabel }}
                 </a>
             </div>
 
@@ -334,8 +341,15 @@
             <div class="card">
                 <div class="card-body text-center">
                     <div class="btn-group" role="group">
-                        <a href="{{ route('doctor.cases.overview') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Back to Cases
+                        @php
+                            $prevDiag2 = url()->previous();
+                            $isRec2 = str_contains($prevDiag2, 'recorded-voices');
+                            $isHist2 = str_contains($prevDiag2, 'history') || str_contains($prevDiag2, 'ambient-listening');
+                            $diagBackUrl2 = $prevDiag2 !== url()->current() && (str_contains($prevDiag2, '/ai/') || str_contains($prevDiag2, '/doctor/')) ? $prevDiag2 : route('doctor.cases.overview');
+                            $diagBackLabel2 = $isRec2 ? 'Back to Recorded Voices' : ($isHist2 ? 'Back to History' : 'Back to Cases');
+                        @endphp
+                        <a href="{{ $diagBackUrl2 }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>{{ $diagBackLabel2 }}
                         </a>
                         @if(!$diagnosis->patient_notified && $diagnosis->patient->email)
                             <button class="btn btn-info" onclick="resendNotification()">

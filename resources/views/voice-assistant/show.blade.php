@@ -24,9 +24,16 @@
                             </p>
                         </div>
                         <div class="btn-group">
-                            <a href="{{ route('ai.ambient-listening.history') }}" class="btn btn-light">
+                            @php
+                                $prev = url()->previous();
+                                $isRecorded = str_contains($prev, 'recorded-voices');
+                                $isHistory = str_contains($prev, 'history');
+                                $backUrl = $prev !== url()->current() && (str_contains($prev, '/ai/ambient') || str_contains($prev, '/doctor/')) ? $prev : route('ai.ambient-listening.history');
+                                $backLabel = $isRecorded ? 'Back to Recorded Voices' : 'Back to History';
+                            @endphp
+                            <a href="{{ $backUrl }}" class="btn btn-light">
                                 <i class="fas fa-arrow-left me-2"></i>
-                                Back to History
+                                {{ $backLabel }}
                             </a>
                             <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-outline-light">
                                 <i class="fas fa-microphone me-2"></i>
@@ -355,9 +362,15 @@
                 <div class="card-body">
                     <h5 class="card-title">Actions</h5>
                     <div class="btn-group" role="group">
-                        <a href="{{ route('ai.ambient-listening.history') }}" class="btn btn-secondary">
+                        @php
+                            $prev2 = url()->previous();
+                            $isRecorded2 = str_contains($prev2, 'recorded-voices');
+                            $backUrl2 = $prev2 !== url()->current() && (str_contains($prev2, '/ai/ambient') || str_contains($prev2, '/doctor/')) ? $prev2 : route('ai.ambient-listening.history');
+                            $backLabel2 = $isRecorded2 ? 'Back to Recorded Voices' : 'Back to History';
+                        @endphp
+                        <a href="{{ $backUrl2 }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-2"></i>
-                            Back to History
+                            {{ $backLabel2 }}
                         </a>
                         <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-primary">
                             <i class="fas fa-microphone me-2"></i>
