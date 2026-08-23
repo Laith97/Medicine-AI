@@ -146,9 +146,9 @@
 
         <!-- Appointments List - same as patients -->
         @if($appointments->count() > 0)
-            <div class="card border-0 shadow-sm cases-panel" style="overflow: hidden;">
-                <div class="doctor-table-container" style="overflow: hidden;">
-                    <div style="overflow: hidden;">
+            <div class="card border-0 shadow-sm cases-panel" style="overflow: visible;">
+                <div class="doctor-table-container" style="overflow: visible;">
+                    <div style="overflow: visible;">
                         <table class="doctor-table mb-0 w-100" style="width:100%; table-layout:auto;">
                             <thead>
                                 <tr>
@@ -215,24 +215,30 @@
                                             @else<span class="text-muted small">—</span>@endif
                                         </td>
                                         <td class="d-none d-xl-table-cell"><div class="text-truncate" style="max-width:180px;" title="{{ $appointment->reason }}">{{ Str::limit($appointment->reason, 40) }}</div></td>
-                                        <td class="text-end" style="white-space: normal; min-width: 140px;">
-                                            <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
-                                                <a href="{{ route('doctor.appointments.show', $appointment) }}" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="View"><i class="fas fa-eye"></i></a>
-                                                @if($appointment->status == 'pending')
-                                                    <button onclick="confirmAppointment({{ $appointment->id }})" class="doctor-btn doctor-btn-success doctor-btn-sm" title="Confirm"><i class="fas fa-check"></i></button>
-                                                @endif
-                                                @if($appointment->status == 'confirmed')
-                                                    @if($appointment->appointment_type == 'video_call')
-                                                        <a href="{{ route('video.room', $appointment->id) }}" target="_blank" class="doctor-btn doctor-btn-primary doctor-btn-sm" title="Video"><i class="fas fa-video"></i></a>
+                                        <td class="text-end" style="white-space: nowrap; min-width: 90px;">
+                                            <div class="dropdown">
+                                                <button class="doctor-btn doctor-btn-outline doctor-btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+                                                    <i class="fas fa-ellipsis-h"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 190px; border-radius: 10px; border: 1px solid #e2e8f0; padding: 0.35rem; font-size: 0.84rem;">
+                                                    <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('doctor.appointments.show', $appointment) }}"><i class="fas fa-eye text-primary" style="width:16px;"></i> View Details</a></li>
+                                                    @if($appointment->status == 'pending')
+                                                        <li><button class="dropdown-item d-flex align-items-center gap-2 py-2" onclick="confirmAppointment({{ $appointment->id }})"><i class="fas fa-check text-success" style="width:16px;"></i> Confirm Appointment</button></li>
                                                     @endif
-                                                    @if(!$appointment->appointment_date || !$appointment->appointment_date->isFuture())
-                                                        <button onclick="completeAppointment({{ $appointment->id }})" class="doctor-btn doctor-btn-primary doctor-btn-sm" title="Complete"><i class="fas fa-check-circle"></i></button>
-                                                        <button onclick="markNoShow({{ $appointment->id }})" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="No Show"><i class="fas fa-user-times"></i></button>
+                                                    @if($appointment->status == 'confirmed')
+                                                        @if($appointment->appointment_type == 'video_call')
+                                                            <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('video.room', $appointment->id) }}" target="_blank"><i class="fas fa-video text-info" style="width:16px;"></i> Start Video Call</a></li>
+                                                        @endif
+                                                        @if(!$appointment->appointment_date || !$appointment->appointment_date->isFuture())
+                                                            <li><button class="dropdown-item d-flex align-items-center gap-2 py-2" onclick="completeAppointment({{ $appointment->id }})"><i class="fas fa-check-circle text-primary" style="width:16px;"></i> Complete</button></li>
+                                                            <li><button class="dropdown-item d-flex align-items-center gap-2 py-2" onclick="markNoShow({{ $appointment->id }})"><i class="fas fa-user-times text-secondary" style="width:16px;"></i> Mark No Show</button></li>
+                                                        @endif
                                                     @endif
-                                                @endif
-                                                @if(in_array($appointment->status, ['pending','confirmed']))
-                                                    <button onclick="cancelAppointment({{ $appointment->id }})" class="doctor-btn doctor-btn-danger doctor-btn-sm" title="Cancel"><i class="fas fa-times"></i></button>
-                                                @endif
+                                                    @if(in_array($appointment->status, ['pending','confirmed']))
+                                                        <li><hr class="dropdown-divider" style="margin: 0.35rem 0;"></li>
+                                                        <li><button class="dropdown-item d-flex align-items-center gap-2 py-2 text-danger" onclick="cancelAppointment({{ $appointment->id }})"><i class="fas fa-times" style="width:16px;"></i> Cancel Appointment</button></li>
+                                                    @endif
+                                                </ul>
                                             </div>
                                         </td>
                                     </tr>
