@@ -111,7 +111,12 @@ class PredictiveAnalyticsService
         }
 
         $dataset = new Labeled($samples, $labels);
-        $classifier = new RandomForest(100, 0.5, 5, 3, 1e-7, 10); // trees, ratio, maxDepth etc
+        // Compatible with rubix/ml 2.x where __construct(?Learner $base, int $estimators...)
+        try {
+            $classifier = new RandomForest(null, 100, 0.5, true);
+        } catch (\ArgumentCountError $e) {
+            $classifier = new RandomForest();
+        }
 
         try {
             $classifier->train($dataset);
