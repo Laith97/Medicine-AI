@@ -95,6 +95,17 @@ class DashboardController extends Controller
 
         $query = $doctor->appointments()->with(['patient.patientRiskScores']);
 
+        // Search by patient name, email, phone, complaint
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function($q) use ($search) {
+                $q->where('patient_name', 'like', "%{$search}%")
+                  ->orWhere('patient_email', 'like', "%{$search}%")
+                  ->orWhere('patient_phone', 'like', "%{$search}%")
+                  ->orWhere('reason', 'like', "%{$search}%");
+            });
+        }
+
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);

@@ -104,7 +104,17 @@
             </div>
             <div class="card-body p-3">
                 <form method="GET" action="{{ route('doctor.appointments.index') }}" class="row g-2 align-items-end">
-                    <div class="col-md-3 col-6">
+                    <div class="col-md-3 col-12">
+                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">Search</label>
+                        <div class="input-group input-group-sm cases-search" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow:hidden; background:#fff;">
+                            <span class="input-group-text" style="background:#fff; border:none; color:#94a3b8;"><i class="fas fa-search"></i></span>
+                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Patient, email, complaint..." class="form-control form-control-sm" style="border:none; box-shadow:none;">
+                            @if(request('search'))
+                                <a href="{{ route('doctor.appointments.index', array_filter(['status'=>request('status'),'date_from'=>request('date_from'),'date_to'=>request('date_to')])) }}" class="btn btn-sm" style="border:none; background:#fff; color:#94a3b8;"><i class="fas fa-times"></i></a>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-6">
                         <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">Status</label>
                         <select name="status" class="form-select form-select-sm cases-sort">
                             <option value="">All Statuses</option>
@@ -115,11 +125,11 @@
                             <option value="no_show" {{ request('status') == 'no_show' ? 'selected' : '' }}>No Show</option>
                         </select>
                     </div>
-                    <div class="col-md-3 col-6">
+                    <div class="col-md-2 col-6">
                         <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">From</label>
                         <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control form-control-sm">
                     </div>
-                    <div class="col-md-3 col-6">
+                    <div class="col-md-2 col-6">
                         <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">To</label>
                         <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control form-control-sm">
                     </div>
