@@ -142,19 +142,19 @@
 
         <!-- Appointments List - same as patients -->
         @if($appointments->count() > 0)
-            <div class="card border-0 shadow-sm cases-panel">
-                <div class="doctor-table-container">
-                    <div class="table-responsive" style="overflow-x: visible;">
-                        <table class="doctor-table mb-0" style="min-width: 0;">
-                            <thead>
+            <div class="card border-0 shadow-sm cases-panel" style="overflow:hidden; border: 1px solid #eef0f3; border-radius: 12px;">
+                <div class="doctor-table-container" style="background: #fff;">
+                    <div class="table-responsive">
+                        <table class="doctor-table table-hover mb-0" style="width:100%;">
+                            <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #f1f5f9 100%);">
                                 <tr>
-                                    <th>Patient</th>
-                                    <th>Date</th>
-                                    <th class="d-none d-md-table-cell">Type</th>
-                                    <th>Status</th>
-                                    <th class="d-none d-lg-table-cell">Risk</th>
-                                    <th class="d-none d-xl-table-cell" style="max-width:220px;">Complaint</th>
-                                    <th class="text-end">Actions</th>
+                                    <th style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0; white-space: nowrap;"><i class="fas fa-user me-1 opacity-60"></i> Patient</th>
+                                    <th style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0; white-space: nowrap;"><i class="far fa-calendar me-1 opacity-60"></i> Date</th>
+                                    <th class="d-none d-md-table-cell" style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0;">Type</th>
+                                    <th style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0;">Status</th>
+                                    <th class="d-none d-lg-table-cell" style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0;">Risk</th>
+                                    <th class="d-none d-xl-table-cell" style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0; max-width:220px;">Complaint</th>
+                                    <th class="text-end" style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; padding:0.9rem 1rem; border-bottom: 2px solid #e2e8f0;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
