@@ -1436,22 +1436,33 @@ body .dropdown .dropdown-menu.show,
     <!-- Wrapper -->
     <div id="wrapper">
 
-        <!-- Top Bar Start -->
-        <div id="top-bar" class="py-1 border-bottom"
+        <!-- Top Bar Start - slim 52px -->
+        <div id="top-bar" class="py-0 border-bottom"
             style="background: white; color: #333; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
             <div class="container">
                 <div class="row justify-content-between align-items-center">
 
-                    <!-- Left Side: Logo & Navigation -->
+                    <!-- Left Side: Status / Navigation -->
                     <div class="col-md-auto d-flex align-items-center gap-3 flex-nowrap">
-                        <!-- Logo in Top Bar -->
-                        <div class="top-bar-logo">
+                        @auth
+                        <!-- Logo - mobile only for logged-in (desktop logo is in sidebar) -->
+                        <div class="top-bar-logo d-flex d-lg-none">
                             <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
-                                <img style="width: 100px; height: 75px;" class="logo-default img-fluid"
+                                <img style="width:100px;height:75px;" class="logo-default"
                                       src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}"
                                       alt="Medcura Logo">
                             </a>
                         </div>
+                        @else
+                        <!-- Logo - always visible for guest -->
+                        <div class="top-bar-logo d-flex">
+                            <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
+                                <img style="width:100px;height:75px;" class="logo-default"
+                                      src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}"
+                                      alt="Medcura Logo">
+                            </a>
+                        </div>
+                        @endauth
 
                         <!-- Quick Info & Status / Navigation Links -->
                         <div class="d-none d-md-flex align-items-center gap-3 small">
@@ -1484,21 +1495,21 @@ body .dropdown .dropdown-menu.show,
                             <!-- Notifications Bell -->
                             @include('components.notification-dropdown')
 
-                            <!-- User Dropdown -->
+                            <!-- User Dropdown - modern -->
                             <div class="dropdown">
-                                <button class="btn btn-sm d-flex align-items-center gap-2 dropdown-toggle user-dropdown-toggle" type="button"
+                                <button class="btn d-flex align-items-center gap-2 dropdown-toggle user-dropdown-toggle" type="button"
                                     data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true"
-                                    style="background: #f8f9fa; color: #333; border: 1px solid #dee2e6; font-weight: 500; border-radius: 25px;">
-                                    <i class="bi bi-person-circle" aria-hidden="true"></i>
-                                    <div class="d-flex flex-column align-items-start d-none d-sm-flex">
-                                        <span class="small fw-semibold">{{ Auth::user()->name }}</span>
+                                    style="background: #ffffff; color: #334155; border: 1px solid #e2e8f0; font-weight: 500; border-radius: 10px; padding: 4px 8px; font-size: 0.875rem;">
+                                    <span class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width:32px;height:32px;background:rgba(222,98,98,0.1);color:#DE6262;font-weight:700;font-size:0.85rem;line-height:1;">{{ strtoupper(substr(Auth::user()->name,0,1)) }}</span>
+                                    <div class="d-flex flex-column align-items-start d-none d-sm-flex text-start" style="line-height:1.1;">
+                                        <span class="fw-semibold" style="font-size:0.875rem;color:#0f172a;">{{ Str::limit(Auth::user()->name,18) }}</span>
                                         @if (Auth::user()->isSubUser())
-                                            <small class="opacity-75 small text-truncate" style="max-width: 120px;">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
+                                            <small class="text-truncate" style="max-width: 120px;font-size:0.7rem;color:#64748b;">{{ \App\Helpers\MenuHelper::getUserRoleDisplay(Auth::user()) }}</small>
+                                        @else
+                                            <small style="font-size:0.7rem;color:#64748b;">{{ Auth::user()->isDoctor() ? 'Doctor' : 'Patient' }}</small>
                                         @endif
                                     </div>
-                                    <span class="d-sm-none">
-                                        <i class="bi bi-chevron-down" aria-hidden="true"></i>
-                                    </span>
+                                    <i class="bi bi-chevron-down ms-1" style="font-size:0.7rem;color:#94a3b8;" aria-hidden="true"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow user-dropdown-menu">
                                     @if (Auth::guard('admin')->check())

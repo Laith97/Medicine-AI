@@ -103,8 +103,8 @@
     padding: 0.35rem 1.25rem 0;
 }
 @media (min-width: 768px){
-    .cases-toolbar{ position: sticky; top: 84px; z-index: 4; }
-    .cases-tabs-wrapper{ position: sticky; top: 135px; z-index: 3; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+    .cases-toolbar{ position: sticky; top: 52px; z-index: 4; }
+    .cases-tabs-wrapper{ position: sticky; top: 103px; z-index: 3; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
 }
 .cases-tabs.nav-tabs {
     background: transparent;
