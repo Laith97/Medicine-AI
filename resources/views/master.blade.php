@@ -1377,7 +1377,7 @@ body .dropdown .dropdown-menu.show,
 
     {{-- Sidebar CSS/JS --}}
     @auth
-    <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}?v={{ filemtime(public_path('css/sidebar.css')) }}">
     @include('layouts.sidebar')
     <style>#header{display:none !important;}</style>
     @endauth
