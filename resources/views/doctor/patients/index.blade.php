@@ -247,68 +247,59 @@
             </div>
         </div>
 
-        <!-- Filters + List - unified like cases-overview -->
+        <!-- Filters - like cases-overview (instant) -->
         <div class="card border-0 shadow-sm cases-panel mb-4">
-            <form method="GET" action="{{ route('doctor.patients.index') }}" class="m-0">
-                <div class="cases-toolbar">
-                    <div class="cases-toolbar__title">
-                        <h6 class="mb-0 fw-semibold"><i class="fas fa-users me-2 text-primary"></i>Patients ({{ $patients->total() }})</h6>
-                        @if(request()->hasAny(['search', 'gender', 'status', 'sort']))
-                            <a href="{{ route('doctor.patients.index') }}" class="btn btn-outline-secondary btn-sm ms-2">
-                                <i class="fas fa-times me-1"></i>Clear
-                            </a>
-                        @endif
-                    </div>
-                    <div class="cases-toolbar__controls">
-                        <div class="input-group input-group-sm cases-search">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" name="search" id="patientSearch" class="form-control" placeholder="Search by name, age, gender..." value="{{ request('search') }}">
-                            <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Clear search">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <select name="gender" class="form-select form-select-sm cases-sort">
-                            <option value="">All Genders</option>
-                            <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>Male</option>
-                            <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>Female</option>
-                            <option value="other" {{ request('gender') == 'other' ? 'selected' : '' }}>Other</option>
-                        </select>
-                        <select name="status" class="form-select form-select-sm cases-sort">
-                            <option value="">All Status</option>
-                            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                        </select>
-                        <select name="sort" class="form-select form-select-sm cases-sort">
-                            <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Newest</option>
-                            <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Oldest</option>
-                            <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Name A-Z</option>
-                        </select>
-                        <button type="submit" class="doctor-btn doctor-btn-primary doctor-btn-sm">
-                            <i class="fas fa-filter me-1"></i>Filter
+            <div class="cases-toolbar">
+                <div class="cases-toolbar__title">
+                    <h6 class="mb-0 fw-semibold"><i class="fas fa-users me-2 text-primary"></i>Patients ({{ $patients->total() }})</h6>
+                    <span class="cases-toolbar__meta d-none d-md-inline">— Instant search</span>
+                </div>
+                <div class="cases-toolbar__controls">
+                    <div class="input-group input-group-sm cases-search">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="patientSearch" class="form-control" placeholder="Search by name, age, gender...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Clear search">
+                            <i class="fas fa-times"></i>
                         </button>
-                        <a href="{{ route('doctor.patients.index') }}" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="Reset">
-                            <i class="fas fa-rotate-left"></i>
+                    </div>
+                    <select id="filterGender" class="form-select form-select-sm cases-sort">
+                        <option value="">All Genders</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <select id="filterStatus" class="form-select form-select-sm cases-sort">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <select id="sortPatients" class="form-select form-select-sm cases-sort" title="Sort">
+                        <option value="recent">Most recent</option>
+                        <option value="name_asc">Name A → Z</option>
+                    </select>
+                    <a href="{{ route('doctor.patients.index') }}" class="doctor-btn doctor-btn-outline doctor-btn-sm" title="Reset server filters">
+                        <i class="fas fa-rotate-left"></i>
                         </a>
                     </div>
                 </div>
-            </form>
+        </div>
         @if($patients->count() > 0)
             <div class="doctor-table-container">
                 <div class="table-responsive">
-                    <table class="doctor-table mb-0">
-                        <thead>
+                    <table class="doctor-table table-hover mb-0" style="width:100%">
+                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #f1f5f9 100%);">
                             <tr>
-                                <th>Patient</th>
-                                <th>Age / Gender</th>
-                                <th>Contact</th>
-                                <th>Last Visit</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;white-space:nowrap"><i class="fas fa-user me-1 opacity-60"></i> Patient</th>
+                                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0">Age / Gender</th>
+                                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0">Contact</th>
+                                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0">Last Visit</th>
+                                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0">Status</th>
+                                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($patients as $patient)
-                                <tr>
+                                <tr class="patient-row" data-patient-name="{{ strtolower($patient->name) }}" data-gender="{{ strtolower($patient->gender ?? '') }}" data-status="{{ $patient->is_active ? 'active' : 'inactive' }}">
                                     <!-- Patient Info -->
                                     <td>
                                         <div class="d-flex align-items-center">
@@ -416,7 +407,7 @@
                 <!-- Pagination -->
                 @if($patients->hasPages())
                     <div class="d-flex justify-content-center mt-4">
-                        {{ $patients->links() }}
+                        {{ $patients->links('pagination::bootstrap-5') }}
                     </div>
                 @endif
             </div>
@@ -475,8 +466,37 @@ function deletePatient(id, name) {
     modal.show();
 }
 document.addEventListener('DOMContentLoaded', function(){
-    const s=document.getElementById('patientSearch'), c=document.getElementById('clearSearch');
-    if(c && s){ c.addEventListener('click', function(){ s.value=''; s.focus(); s.form.submit(); }); }
+    const searchInput=document.getElementById('patientSearch'), clearBtn=document.getElementById('clearSearch'), genderSelect=document.getElementById('filterGender'), statusSelect=document.getElementById('filterStatus'), sortSelect=document.getElementById('sortPatients');
+    function filterPatients(){
+        const term=(searchInput?.value||'').toLowerCase().trim();
+        const gender=genderSelect?.value||'';
+        const status=statusSelect?.value||'';
+        document.querySelectorAll('tbody tr.patient-row').forEach(row=>{
+            const name=row.getAttribute('data-patient-name')||'';
+            const rowGender=row.getAttribute('data-gender')||'';
+            const rowStatus=row.getAttribute('data-status')||'';
+            const text=row.textContent.toLowerCase();
+            const matchesSearch=!term || name.includes(term) || text.includes(term);
+            const matchesGender=!gender || rowGender===gender;
+            const matchesStatus=!status || rowStatus===status;
+            row.style.display=(matchesSearch && matchesGender && matchesStatus)?'':'none';
+        });
+    }
+    function sortPatients(mode){
+        document.querySelectorAll('tbody').forEach(tbody=>{
+            const rows=Array.from(tbody.querySelectorAll('tr.patient-row'));
+            rows.sort((a,b)=>{
+                if(mode==='name_asc') return (a.getAttribute('data-patient-name')||'').localeCompare(b.getAttribute('data-patient-name')||'');
+                return 0;
+            });
+            rows.forEach(r=>tbody.appendChild(r));
+        });
+    }
+    if(searchInput) searchInput.addEventListener('input', filterPatients);
+    if(clearBtn) clearBtn.addEventListener('click', ()=>{searchInput.value='';filterPatients();searchInput.focus()});
+    if(genderSelect) genderSelect.addEventListener('change', filterPatients);
+    if(statusSelect) statusSelect.addEventListener('change', filterPatients);
+    if(sortSelect) sortSelect.addEventListener('change', function(){sortPatients(this.value)});
 });
 </script>
 @endsection

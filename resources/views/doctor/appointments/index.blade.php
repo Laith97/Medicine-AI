@@ -83,61 +83,55 @@
             </div>
         </div>
 
-        <!-- Filters + Auto-approve compact (not full-width) -->
+        <!-- Filters - like cases-overview -->
         <div class="card border-0 shadow-sm cases-panel mb-3">
             <div class="cases-toolbar">
                 <div class="cases-toolbar__title">
-                    <h6 class="mb-0 fw-semibold"><i class="fas fa-filter me-2 text-primary"></i>Filter Appointments</h6>
-                    @if(request()->hasAny(['status','risk_category','date_from','date_to']))
-                        <a href="{{ route('doctor.appointments.index') }}" class="btn btn-outline-secondary btn-sm ms-2">Clear</a>
-                    @endif
+                    <h6 class="mb-0 fw-semibold"><i class="fas fa-calendar-check me-2 text-primary"></i>Appointments ({{ $appointments->total() }})</h6>
+                    <span class="cases-toolbar__meta d-none d-md-inline">— Instant search</span>
                 </div>
                 <div class="cases-toolbar__controls">
-                    <!-- Compact auto-approve (not full-width toggle-section) -->
                     <div class="auto-approve-compact" title="When enabled, new requests are auto-confirmed">
                         <i class="fas fa-bolt text-warning"></i> Auto-approve
-                        <div class="form-check form-switch">
+                        <div class="form-check form-switch m-0">
                             <input class="form-check-input" type="checkbox" id="auto_approve_toggle" {{ Auth::user()->doctor->auto_approve_appointments ? 'checked' : '' }}>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="card-body p-3">
-                <form method="GET" action="{{ route('doctor.appointments.index') }}" class="row g-2 align-items-end">
-                    <div class="col-md-3 col-12">
-                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">Search</label>
-                        <div class="input-group input-group-sm cases-search" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow:hidden; background:#fff;">
-                            <span class="input-group-text" style="background:#fff; border:none; color:#94a3b8;"><i class="fas fa-search"></i></span>
-                            <input type="text" name="search" value="{{ request('search') }}" placeholder="Patient, email, complaint..." class="form-control form-control-sm" style="border:none; box-shadow:none;">
-                            @if(request('search'))
-                                <a href="{{ route('doctor.appointments.index', array_filter(['status'=>request('status'),'date_from'=>request('date_from'),'date_to'=>request('date_to')])) }}" class="btn btn-sm" style="border:none; background:#fff; color:#94a3b8;"><i class="fas fa-times"></i></a>
-                            @endif
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <div class="input-group input-group-sm cases-search" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#ffffff">
+                            <span class="input-group-text" style="background:#ffffff;border:none;color:#94a3b8"><i class="fas fa-search"></i></span>
+                            <input type="text" id="appointmentSearch" class="form-control" placeholder="Search patient, email..." style="border:none;box-shadow:none">
+                            <button class="btn btn-outline-secondary" type="button" id="clearAppointmentSearch" style="border:none;background:#ffffff;color:#94a3b8" title="Clear"><i class="fas fa-times"></i></button>
                         </div>
                     </div>
                     <div class="col-md-2 col-6">
-                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">Status</label>
-                        <select name="status" class="form-select form-select-sm cases-sort">
+                        <select id="filterStatus" class="form-select form-select-sm cases-sort">
                             <option value="">All Statuses</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                            <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                            <option value="no_show" {{ request('status') == 'no_show' ? 'selected' : '' }}>No Show</option>
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="no_show">No Show</option>
                         </select>
                     </div>
                     <div class="col-md-2 col-6">
-                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">From</label>
-                        <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control form-control-sm">
+                        <input type="date" id="filterFrom" class="form-control form-control-sm cases-date" title="From">
                     </div>
                     <div class="col-md-2 col-6">
-                        <label class="form-label small fw-semibold text-muted mb-1" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;">To</label>
-                        <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control form-control-sm">
+                        <input type="date" id="filterTo" class="form-control form-control-sm cases-date" title="To">
                     </div>
-                    <div class="col-md-3 d-flex align-items-end gap-2">
-                        <button type="submit" class="doctor-btn doctor-btn-primary doctor-btn-sm flex-grow-1"><i class="fas fa-search me-1"></i>Apply</button>
-                        <a href="{{ route('doctor.appointments.index') }}" class="doctor-btn doctor-btn-outline doctor-btn-sm"><i class="fas fa-rotate-left"></i></a>
+                    <div class="col-md-2 col-6">
+                        <select id="sortAppointments" class="form-select form-select-sm cases-sort" title="Sort">
+                            <option value="recent">Most recent</option>
+                            <option value="name_asc">Name A → Z</option>
+                            <option value="status">Status</option>
+                        </select>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -158,7 +152,7 @@
                             </thead>
                             <tbody>
                                 @foreach($appointments as $appointment)
-                                    <tr>
+                                    <tr class="appointment-row" data-patient-name="{{ strtolower($appointment->patient_name) }}" data-status="{{ $appointment->status }}" data-date="{{ $appointment->appointment_date->timestamp }}">
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 @php
@@ -213,8 +207,8 @@
                         </table>
                     </div>
                     @if($appointments->hasPages())
-                        <div class="table-footer d-flex justify-content-center p-3">
-                            {{ $appointments->links() }}
+                        <div class="d-flex justify-content-center p-3" style="background:#f8fafc;border-top:1px solid #f1f5f9">
+                            {{ $appointments->links('pagination::bootstrap-5') }}
                         </div>
                     @endif
                 </div>
@@ -1039,6 +1033,41 @@ document.addEventListener('DOMContentLoaded', function() {
             liveRegion.textContent = '';
         }, 1000);
     };
+});
+
+// Live filter like cases-overview - instant search without reload
+document.addEventListener('DOMContentLoaded', function(){
+    const searchInput=document.getElementById('appointmentSearch');
+    const clearBtn=document.getElementById('clearAppointmentSearch');
+    const statusSelect=document.getElementById('filterStatus');
+    const sortSelect=document.getElementById('sortAppointments');
+    function filterAppointments(){
+        const term=(searchInput?.value||'').toLowerCase().trim();
+        const status=statusSelect?.value||'';
+        document.querySelectorAll('tbody tr.appointment-row').forEach(row=>{
+            const name=row.getAttribute('data-patient-name')||'';
+            const rowStatus=row.getAttribute('data-status')||'';
+            const text=row.textContent.toLowerCase();
+            const matchesSearch=!term || name.includes(term) || text.includes(term);
+            const matchesStatus=!status || rowStatus===status;
+            row.style.display=(matchesSearch && matchesStatus)?'':'none';
+        });
+    }
+    function sortAppointments(mode){
+        document.querySelectorAll('tbody').forEach(tbody=>{
+            const rows=Array.from(tbody.querySelectorAll('tr.appointment-row'));
+            rows.sort((a,b)=>{
+                if(mode==='name_asc') return (a.getAttribute('data-patient-name')||'').localeCompare(b.getAttribute('data-patient-name')||'');
+                if(mode==='status') return (a.getAttribute('data-status')||'').localeCompare(b.getAttribute('data-status')||'');
+                return parseInt(b.getAttribute('data-date')||0)-parseInt(a.getAttribute('data-date')||0);
+            });
+            rows.forEach(r=>tbody.appendChild(r));
+        });
+    }
+    if(searchInput) searchInput.addEventListener('input', filterAppointments);
+    if(clearBtn) clearBtn.addEventListener('click', ()=>{searchInput.value='';filterAppointments();searchInput.focus()});
+    if(statusSelect) statusSelect.addEventListener('change', filterAppointments);
+    if(sortSelect) sortSelect.addEventListener('change', function(){sortAppointments(this.value)});
 });
 
 // Error boundary for JavaScript errors

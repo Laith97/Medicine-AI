@@ -1,14 +1,14 @@
 @if(count($patients) > 0)
 <div class="table-responsive">
-    <table class="doctor-table mb-0" id="patients-table-{{ $category }}">
-        <thead>
+    <table class="doctor-table table-hover mb-0" id="patients-table-{{ $category }}" style="width:100%">
+        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #f1f5f9 100%);">
             <tr>
-                <th class="text-nowrap"><i class="fas fa-user me-1 opacity-75"></i> Patient</th>
-                <th class="text-center" style="width:80px">Age</th>
-                <th class="text-center" style="width:110px">Gender</th>
-                <th class="text-center" style="width:110px">Visits</th>
-                <th class="text-nowrap"><i class="far fa-calendar me-1 opacity-75"></i> Last Visit</th>
-                <th class="text-end" style="width:200px">Actions</th>
+                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;white-space:nowrap"><i class="fas fa-user me-1 opacity-60"></i> Patient</th>
+                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:center;width:80px">Age</th>
+                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:center;width:110px">Gender</th>
+                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:center;width:110px">Visits</th>
+                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;white-space:nowrap"><i class="far fa-calendar me-1 opacity-60"></i> Last Visit</th>
+                <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:right;width:200px">Actions</th>
             </tr>
         </thead>
         <tbody>

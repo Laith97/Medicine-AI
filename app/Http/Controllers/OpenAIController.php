@@ -357,6 +357,20 @@ class OpenAIController extends Controller
         // with the main dashboard and Patients page cards.
         $totalPatients = $user->getEffectiveDoctorUser()->getDoctorPatientsCount();
 
+        // Paginate patientGroups for professional pagination (15 per page)
+        $perPage = 15;
+        $currentPage = (int) request()->get('page', 1);
+        $totalGroups = count($patientGroups);
+        $offset = ($currentPage - 1) * $perPage;
+        $paginatedGroups = array_slice($patientGroups, $offset, $perPage, true);
+        $patientGroups = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedGroups,
+            $totalGroups,
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
         // Handle AJAX requests for dynamic content loading
         if (request()->ajax()) {
             return response()->view('cases', compact('records', 'patientGroups', 'totalPatients'))->header('Content-Type', 'text/html');

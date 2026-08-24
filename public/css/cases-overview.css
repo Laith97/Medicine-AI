@@ -337,6 +337,21 @@
     }
 }
 
+/* Fix bottom scrollbar - hide on desktop where table fits */
+@media (min-width: 992px){
+    .doctor-table-container .table-responsive{overflow-x:visible !important}
+    .doctor-table{width:100% !important;min-width:0 !important}
+}
+@media (max-width: 991.98px){
+    .doctor-table-container .table-responsive{overflow-x:auto !important;-webkit-overflow-scrolling:touch}
+}
+
+/* Modern pagination - light 8px */
+.pagination{--bs-pagination-bg:#ffffff;--bs-pagination-border-color:#e2e8f0;--bs-pagination-color:#475569;--bs-pagination-hover-bg:#f1f5f9;--bs-pagination-hover-border-color:#e2e8f0;--bs-pagination-hover-color:#0f172a;--bs-pagination-active-bg:rgba(222,98,98,0.08);--bs-pagination-active-border-color:rgba(222,98,98,0.15);--bs-pagination-active-color:#DE6262;gap:6px;justify-content:center}
+.pagination .page-link{border-radius:8px !important;padding:0.45rem 0.75rem;font-size:0.84rem;font-weight:500;min-width:36px;text-align:center;transition:all .15s}
+.pagination .page-item.active .page-link{font-weight:600;box-shadow:none}
+.pagination .page-item.disabled .page-link{background:#f8fafc;opacity:0.6}
+
 /* Critical: modal must be above fixed navbar/sidebar/dropdowns - matches master 9999999 */
 .modal{ z-index: 10000010 !important; }
 .modal-backdrop{ z-index: 10000000 !important; }

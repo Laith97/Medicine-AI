@@ -123,7 +123,7 @@
                                 @include('cases.partials.patient-table', ['patients' => $patientGroups, 'category' => 'all'])
                                 @if(count($patientGroups) > 0)
                                 <div class="table-footer">
-                                    <span><i class="fas fa-info-circle me-1"></i> Showing {{ count($patientGroups) }} patients</span>
+                                    <span><i class="fas fa-info-circle me-1"></i> Showing {{ $patientGroups instanceof \Illuminate\Pagination\LengthAwarePaginator ? $patientGroups->count() : count($patientGroups) }} of {{ $patientGroups instanceof \Illuminate\Pagination\LengthAwarePaginator ? $patientGroups->total() : count($patientGroups) }} patients</span>
                                     <span class="d-none d-sm-inline">Use search or tabs to filter</span>
                                 </div>
                                 @endif
@@ -141,6 +141,11 @@
                             </div>
                         </div>
                     </div>
+                    @if($patientGroups instanceof \Illuminate\Pagination\LengthAwarePaginator && $patientGroups->hasPages())
+                        <div class="d-flex justify-content-center mt-3">
+                            {{ $patientGroups->links('pagination::bootstrap-5') }}
+                        </div>
+                    @endif
                 </div>
             </div>
         @endif
