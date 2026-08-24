@@ -1823,9 +1823,9 @@ body .dropdown .dropdown-menu.show,
 
 
     @if (!auth()->check())
-        <!-- Footer -->
-        <footer id="footer" class="text-white py-5" role="contentinfo"
-    style="background: white; color: #333;">
+        <!-- Footer - light modern with subtle top shadow to separate from white content -->
+        <footer id="footer" class="py-4" role="contentinfo"
+    style="background: #ffffff; color: #334155; border-top:1px solid #e2e8f0; box-shadow:0 -4px 20px rgba(0,0,0,0.06);">
     <div class="container">
         <div class="row g-4">
             <!-- Company Info -->
@@ -1844,19 +1844,19 @@ body .dropdown .dropdown-menu.show,
                     <!-- Social Links -->
                     <div class="social-links">
                         <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
+                            style="width: 36px; height: 36px; border-color: #e2e8f0; color: #475569; border-radius:8px">
                             <i class="bi bi-facebook"></i>
                         </a>
                         <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
+                            style="width: 36px; height: 36px; border-color: #e2e8f0; color: #475569; border-radius:8px">
                             <i class="bi bi-twitter"></i>
                         </a>
                         <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
+                            style="width: 36px; height: 36px; border-color: #e2e8f0; color: #475569; border-radius:8px">
                             <i class="bi bi-linkedin"></i>
                         </a>
                         <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
-                            style="width: 40px; height: 40px; border-color: #dee2e6; color: #333;">
+                            style="width: 36px; height: 36px; border-color: #e2e8f0; color: #475569; border-radius:8px">
                             <i class="bi bi-instagram"></i>
                         </a>
                     </div>
@@ -1930,7 +1930,7 @@ body .dropdown .dropdown-menu.show,
                     <h6 class="mb-2" style="color: #333;">Need Help?</h6>
                     <p class="text-muted small mb-3">Our AI-powered support is here to assist you</p>
                     <a href="{{ route('contact') }}" class="btn btn-sm"
-                        style="background: #DE6262; color: white; border: none; border-radius: 25px;">
+                        style="background: #DE6262; color: white; border: 1px solid #DE6262; border-radius: 8px; font-weight:600">
                         <i class="bi bi-chat-dots me-2"></i>Contact Support
                     </a>
                 </div>

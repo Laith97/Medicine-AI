@@ -2,39 +2,71 @@
 
 @section('title', 'About Us')
 
+@push('styles')
+<style>
+.hero-premium{background:linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(254,242,242,0.78) 55%, rgba(248,250,252,0.88) 100%), url('{{ asset('demos/medical/images/about-us/page-title/1.jpg') }}') center/cover no-repeat;border-bottom:1px solid #e2e8f0;padding:4rem 0 3.5rem;position:relative;overflow:hidden}
+.hero-premium::before{content:'';position:absolute;top:-40px;right:-80px;width:420px;height:420px;background:radial-gradient(circle, rgba(222,98,98,0.06) 0%, transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:0.4rem;background:#ffffff;border:1px solid #e2e8f0;border-radius:99px;padding:0.35rem 0.85rem;font-size:0.72rem;font-weight:600;color:#475569;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+.hero-badge i{color:#DE6262}
+.hero-title{font-size:2.4rem;font-weight:800;color:#0f172a;letter-spacing:-0.03em;line-height:1.1;margin:1rem 0 0.75rem}
+.hero-title span{color:#DE6262}
+.hero-sub{font-size:1rem;color:#475569;line-height:1.6;max-width:560px}
+.hero-cta{margin-top:1.5rem;display:flex;gap:0.75rem;flex-wrap:wrap}
+.btn-hero-primary{background:#0f172a;color:#ffffff;border:1px solid #0f172a;border-radius:10px;padding:0.7rem 1.25rem;font-weight:600;font-size:0.875rem}
+.btn-hero-primary:hover{background:#1e293b;color:#ffffff}
+.btn-hero-ghost{background:#ffffff;border:1px solid #e2e8f0;color:#334155;border-radius:10px;padding:0.7rem 1.25rem;font-weight:600;font-size:0.875rem}
+.btn-hero-ghost:hover{background:#f8fafc}
+.hero-visual{background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 8px 24px rgba(15,23,42,0.06);padding:1.25rem;position:relative}
+.hero-visual-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+.hero-visual-card{background:#f8fafc;border:1px solid #f1f5f9;border-radius:12px;padding:1rem;text-align:center}
+.hero-visual-card i{color:#DE6262;margin-bottom:0.5rem}
+.hero-visual-card strong{display:block;font-size:1.4rem;font-weight:800;color:#0f172a;line-height:1}
+.hero-visual-card span{font-size:0.72rem;color:#64748b;font-weight:500}
+.section-label{font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#DE6262;margin:0 0 0.5rem}
+.section-h{font-size:1.5rem;font-weight:700;color:#0f172a;letter-spacing:-0.02em;margin:0 0 0.5rem}
+.section-p{font-size:0.9rem;color:#64748b;line-height:1.6;margin:0}
+.feature-modern{padding:1.25rem 0;border-bottom:1px solid #f1f5f9}
+.feature-modern:last-child{border-bottom:none}
+.feature-modern-icon{width:40px;height:40px;border-radius:10px;background:#ffffff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#DE6262;flex-shrink:0}
+.feature-modern h5{font-size:0.95rem;font-weight:600;color:#0f172a;margin:0}
+.feature-modern p{font-size:0.84rem;color:#64748b;margin:0.25rem 0 0;line-height:1.5}
+.stats-bar{background:#0f172a;border-radius:16px;padding:1.5rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+.stat-item{text-align:center;color:#ffffff}
+.stat-item strong{display:block;font-size:1.5rem;font-weight:800;line-height:1;color:#ffffff}
+.stat-item span{font-size:0.72rem;color:#94a3b8;font-weight:500}
+@media(max-width:768px){.hero-title{font-size:1.8rem}.stats-bar{grid-template-columns:repeat(2,1fr)}}
+</style>
+@endpush
+
 @section('content')
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="dashboard-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2><i class="fas fa-info-circle me-2"></i>About</h2>
-                        <p class="text-muted mb-0">Learn more about us</p>
-                    </div>
+<section class="hero-premium">
+    <div class="container position-relative">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-6">
+                <div class="hero-badge"><i class="fas fa-shield-halved"></i> Trusted by 1,200+ professionals</div>
+                <h1 class="hero-title">{{ $aboutTitle ?? 'Healthcare,' }} <span>reimagined</span> with AI</h1>
+                <p class="hero-sub">{{ $aboutTagline ?? 'MedCura unifies clinical decision support, voice assistance and patient growth in one calm, compliant workspace.' }}</p>
+                <div class="hero-cta">
+                    <a href="/register" class="btn-hero-primary">Start free trial</a>
+                    <a href="/doctors" class="btn-hero-ghost">Browse doctors</a>
+                </div>
+                <div class="d-flex align-items-center gap-3 mt-4" style="font-size:0.78rem;color:#64748b">
+                    <span class="d-flex align-items-center gap-1"><i class="fas fa-check" style="color:#10b981"></i> HIPAA compliant</span>
+                    <span class="d-flex align-items-center gap-1"><i class="fas fa-check" style="color:#10b981"></i> No credit card</span>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Hero Section with Image Slider -->
-<section class="page-title dark page-title-center p-0 position-relative" style="min-height: 350px; overflow: hidden;">
-    <div class="fslider" data-arrows="false" data-pagi="false" data-animation="fade" data-hover="false">
-        <div class="flexslider">
-            <div class="slider-wrap">
-                <div class="slide"><img src="demos/medical/images/about-us/page-title/1.jpg" alt="Page Title Image" style="width:100%;height:350px;object-fit:cover;"></div>
-                <div class="slide"><img src="demos/medical/images/about-us/page-title/2.jpg" alt="Page Title Image" style="width:100%;height:350px;object-fit:cover;"></div>
-                <div class="slide"><img src="demos/medical/images/about-us/page-title/3.jpg" alt="Page Title Image" style="width:100%;height:350px;object-fit:cover;"></div>
-                <div class="slide"><img src="demos/medical/images/about-us/page-title/4.jpg" alt="Page Title Image" style="width:100%;height:350px;object-fit:cover;"></div>
-            </div>
-            <div class="vertical-middle vertical-middle-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(224,234,252,0.7);">
-                <div class="container py-5">
-                    <div class="page-title-row text-center">
-                        <div class="page-title-content">
-                            <h1 class="display-4 fw-bold mb-2" style="color: #1b1b18;">{{ $aboutTitle }}</h1>
-                            <span class="lead" style="color: #444;">{{ $aboutTagline }}</span>
-                        </div>
+            <div class="col-lg-6">
+                <div class="hero-visual">
+                    <div class="hero-visual-grid">
+                        <div class="hero-visual-card"><i class="fas fa-stethoscope fa-lg"></i><strong>15k+</strong><span>Consultations</span></div>
+                        <div class="hero-visual-card"><i class="fas fa-user-md fa-lg"></i><strong>1.2k</strong><span>Professionals</span></div>
+                        <div class="hero-visual-card"><i class="fas fa-calendar-check fa-lg"></i><strong>75k</strong><span>Appointments</span></div>
+                        <div class="hero-visual-card"><i class="fas fa-star fa-lg" style="color:#f59e0b"></i><strong>4.8</strong><span>Satisfaction</span></div>
+                    </div>
+                    <div class="mt-3 p-3 rounded" style="background:#f8fafc;border:1px solid #f1f5f9;display:flex;align-items:center;gap:0.75rem">
+                        <span class="d-flex align-items-center justify-content-center" style="width:36px;height:36px;border-radius:8px;background:#DE6262;color:#ffffff"><i class="fas fa-microphone"></i></span>
+                        <div><div style="font-size:0.84rem;font-weight:600;color:#0f172a">Voice assistant live</div><div style="font-size:0.72rem;color:#94a3b8">Transcribing · Summarizing · Coding</div></div>
+                        <span class="ms-auto" style="width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 0 6px rgba(16,185,129,0.15)"></span>
                     </div>
                 </div>
             </div>
@@ -42,23 +74,19 @@
     </div>
 </section>
 
-<!-- Features Section -->
-<section class="py-5" style="background: #f8f9fa;">
+<section class="py-5" style="background:#ffffff">
     <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="fw-bold mb-3">Key Features</h2>
-            <p class="text-muted">Discover what makes our platform unique for doctors and patients.</p>
-        </div>
-        <div class="row g-4 justify-content-center">
-            @foreach($features as $feature)
-            <div class="col-sm-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body text-center">
-                        <div class="mb-3">
-                            <i class="{{ $feature['icon'] }}" style="font-size: 2.5rem; color: #DE6262;"></i>
-                        </div>
-                        <h5 class="card-title fw-semibold">{{ $feature['title'] }}</h5>
-                        <p class="card-text text-muted">{{ $feature['description'] }}</p>
+        <div class="section-label">Platform</div>
+        <h2 class="section-h">Everything for modern practice</h2>
+        <p class="section-p" style="max-width:600px">From intake to follow-up, one consistent interface - no heavy gradients, no clutter.</p>
+        <div class="row g-0 mt-4" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+            @foreach($features ?? [] as $feature)
+            <div class="col-md-4">
+                <div class="feature-modern d-flex gap-3 p-4 h-100" style="border-right:1px solid #f1f5f9">
+                    <div class="feature-modern-icon"><i class="{{ $feature['icon'] }}"></i></div>
+                    <div>
+                        <h5>{{ $feature['title'] }}</h5>
+                        <p>{{ $feature['description'] }}</p>
                     </div>
                 </div>
             </div>
@@ -67,122 +95,47 @@
     </div>
 </section>
 
-<!-- Counters Section -->
-<section class="py-5" style="background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);">
+<section class="py-4" style="background:#f8fafc">
     <div class="container">
-        <div class="row text-center g-4">
-            <div class="col-md-3">
-                <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="fas fa-stethoscope fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">15,000+</h2>
-                    <p class="mb-0 text-muted">Consultations Completed</p>
+        <div class="stats-bar">
+            <div class="stat-item"><strong>15,000+</strong><span>Consultations</span></div>
+            <div class="stat-item"><strong>1,200+</strong><span>Professionals</span></div>
+            <div class="stat-item"><strong>75,000+</strong><span>Appointments</span></div>
+            <div class="stat-item"><strong>4.8★</strong><span>Satisfaction</span></div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5" style="background:#ffffff">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="section-label">Workflow</div>
+                <h2 class="section-h">{{ $whatWeDoTitle ?? 'What we do, clearly' }}</h2>
+                <p class="section-p mb-4">{{ $whatWeDoDescription ?? 'Intake, transcription, diagnosis support and patient communication without switching tools.' }}</p>
+                @foreach($whatWeDoFeatures ?? [] as $f)
+                <div class="d-flex gap-3 mb-3">
+                    <span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;color:#DE6262"><i class="{{ $f['icon'] }}" style="font-size:0.85rem"></i></span>
+                    <span style="font-size:0.875rem;color:#334155;line-height:1.5">{{ $f['description'] }}</span>
                 </div>
+                @endforeach
             </div>
-            <div class="col-md-3">
-                <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="fas fa-user-md fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">1,200+</h2>
-                    <p class="mb-0 text-muted">Healthcare Professionals</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="fas fa-calendar-check fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">75,000+</h2>
-                    <p class="mb-0 text-muted">Patient Appointments</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="p-4 rounded shadow-sm bg-white">
-                    <i class="fas fa-microphone fa-3x mb-2" style="color: #DE6262;"></i>
-                    <h2 class="fw-bold mb-0">4.8★</h2>
-                    <p class="mb-0 text-muted">Patient Satisfaction</p>
+            <div class="col-lg-6">
+                <div class="p-4" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px">
+                    <h4 style="font-size:1rem;font-weight:600;color:#0f172a;margin:0 0 0.5rem">How it works</h4>
+                    <div class="d-flex justify-content-between text-center">
+                        @foreach([['user-plus','Register'],['cog','Setup'],['stethoscope','Care'],['users','Manage'],['chart-line','Grow']] as $s)
+                        <div style="flex:1">
+                            <div class="mx-auto d-flex align-items-center justify-content-center" style="width:40px;height:40px;border-radius:50%;background:#0f172a;color:#ffffff"><i class="fas fa-{{ $s[0] }}" style="font-size:0.85rem"></i></div>
+                            <div style="font-size:0.75rem;font-weight:600;color:#0f172a;margin-top:0.4rem">{{ $s[1] }}</div>
+                        </div>
+                        @if(!$loop->last)<div style="flex:0 0 12px;height:1px;background:#e2e8f0;margin-top:20px"></div>@endif
+                        @endforeach
+                    </div>
+                    <a href="/register" class="btn w-100 mt-4" style="background:#DE6262;color:#ffffff;border-radius:8px;font-weight:600;font-size:0.875rem;padding:0.65rem">Get started</a>
                 </div>
             </div>
         </div>
     </div>
 </section>
-
-<!-- What We Do Section -->
-<section class="py-5" style="background: #fff;">
-    <div class="container">
-        <div class="row align-items-center justify-content-between">
-            <div class="col-lg-6 mb-4 mb-lg-0">
-                <div class="mb-4">
-                    <h2 class="fw-bold mb-3">{{ $whatWeDoTitle }}</h2>
-                    <p class="lead text-muted">{{ $whatWeDoDescription }}</p>
-                </div>
-                <div class="row g-3">
-                    @foreach($whatWeDoFeatures as $wwdFeature)
-                    <div class="col-12">
-                        <div class="d-flex align-items-start">
-                            <i class="{{ $wwdFeature['icon'] }} me-3" style="font-size: 1.5rem; color: #DE6262;"></i>
-                            <span class="text-muted">{{ $wwdFeature['description'] }}</span>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-            <div class="col-lg-5">
-                <!-- How It Works Section (Stepper Style) -->
-                <div class="how-it-works p-4 rounded shadow-sm bg-white mb-4">
-                    <div class="heading-block mb-3 border-bottom-0 text-center">
-                        <h4 class="fw-bold mb-2" style="color: #DE6262;"><i class="fas fa-clipboard-list me-2"></i>How It Works</h4>
-                        <span class="text-muted">Complete healthcare platform workflow</span>
-                    </div>
-                    <div class="row text-center align-items-center justify-content-center g-0 mb-3">
-                        <div class="col-6 col-md-2">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-user-plus"></i></div>
-                            <div class="fw-semibold small">Register</div>
-                            <div class="small text-muted">Create account</div>
-                        </div>
-                        <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
-                        <div class="col-6 col-md-2">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-cog"></i></div>
-                            <div class="fw-semibold small">Setup</div>
-                            <div class="small text-muted">Configure profile</div>
-                        </div>
-                        <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
-                        <div class="col-6 col-md-2">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-stethoscope"></i></div>
-                            <div class="fw-semibold small">Patient Care</div>
-                            <div class="small text-muted">Provide treatment</div>
-                        </div>
-                        <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
-                        <div class="col-6 col-md-2">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-users"></i></div>
-                            <div class="fw-semibold small">Manage</div>
-                            <div class="small text-muted">Handle patients</div>
-                        </div>
-                        <div class="col-1 d-none d-md-block"><div style="height:2px;width:100%;background:#DE6262;margin:0 0.5rem;"></div></div>
-                        <div class="col-6 col-md-2">
-                            <div class="step-circle mx-auto mb-2" style="background:#DE6262;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="fas fa-chart-line"></i></div>
-                            <div class="fw-semibold small">Grow</div>
-                            <div class="small text-muted">Expand practice</div>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-center">
-                        <a href="/login" class="btn btn-lg rounded-pill px-4 shadow" style="background:#DE6262;color:#fff;border:none;">Get Started Today</a>
-                    </div>
-                </div>
-                <!-- Core Principles Section -->
-                <div class="core-principles p-4 rounded shadow-sm bg-white mt-4">
-                    <div class="heading-block mb-3 border-bottom-0">
-                        <h4 class="fw-bold mb-2"><i class="fas fa-heart me-2" style="color: #DE6262;"></i>Core Principles</h4>
-                        <span class="text-muted">What drives MedCura AI Platform</span>
-                    </div>
-                    <ul class="list-unstyled mb-0">
-                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Evidence-based medical practice</li>
-                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Comprehensive patient management</li>
-                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> HIPAA-compliant security standards</li>
-                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Professional practice growth tools</li>
-                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Multi-channel patient communication</li>
-                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Automated workflow optimization</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
 @endsection

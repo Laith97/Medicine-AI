@@ -8,6 +8,15 @@
 <link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
 
 <style>
+/* Fix bottom scrollbar on desktop - hide when not needed */
+@media (min-width: 992px){
+    .doctor-table-container .table-responsive{overflow-x:visible !important}
+    .doctor-table{width:100% !important;min-width:0 !important}
+}
+@media (max-width: 991.98px){
+    .doctor-table-container .table-responsive{overflow-x:auto !important;-webkit-overflow-scrolling:touch}
+    .doctor-table{min-width:720px}
+}
 
 /* Patient avatar */
 .patient-avatar {

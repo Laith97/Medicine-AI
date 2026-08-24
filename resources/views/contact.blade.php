@@ -2,527 +2,118 @@
 
 @section('title', 'Contact Us - MedCura Clinical Platform')
 
+@push('styles')
+<style>
+.hero-contact{background:linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(248,250,252,0.88) 100%), url('{{ asset('demos/medical/images/contact/page-title.jpg') }}') center/cover no-repeat;border-bottom:1px solid #e2e8f0;padding:3rem 0 2.5rem;box-shadow:0 1px 3px rgba(15,23,42,0.04)}
+.hero-contact h1{font-size:1.9rem;font-weight:800;color:#0f172a;letter-spacing:-0.02em;margin:0 0 0.5rem}
+.hero-contact p{font-size:0.9rem;color:#475569;line-height:1.6;max-width:600px}
+.contact-card{background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.contact-card h3{font-size:1.1rem;font-weight:600;color:#0f172a;margin:0 0 0.35rem}
+.contact-card .sub{font-size:0.84rem;color:#64748b;margin:0 0 1.25rem}
+.form-label{font-size:0.84rem;font-weight:500;color:#334155;margin-bottom:0.35rem}
+.form-control,.form-select{border:1px solid #e2e8f0 !important;border-radius:8px !important;padding:0.6rem 0.85rem !important;font-size:0.875rem !important}
+.form-control:focus,.form-select:focus{border-color:#DE6262 !important;box-shadow:0 0 0 3px rgba(222,98,98,0.12) !important}
+.btn-send{background:#0f172a;border:1px solid #0f172a;color:#ffffff;border-radius:8px;padding:0.65rem 1.25rem;font-weight:600;font-size:0.875rem}
+.btn-send:hover{background:#1e293b;border-color:#1e293b;color:#ffffff}
+.info-highlight{background:#0f172a;border-radius:12px;padding:1.5rem;color:#ffffff;position:relative;overflow:hidden}
+.info-highlight::after{content:'';position:absolute;top:-30px;right:-30px;width:160px;height:160px;background:radial-gradient(circle, rgba(222,98,98,0.15) 0%, transparent 70%)}
+.info-item{display:flex;gap:0.75rem;margin-bottom:1rem}
+.info-icon{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;color:#ffffff;flex-shrink:0}
+</style>
+@endpush
+
 @section('content')
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="dashboard-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2><i class="fas fa-envelope me-2"></i>Contact</h2>
-                        <p class="text-muted mb-0">Get in touch with us</p>
-                    </div>
+<section class="hero-contact">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-6">
+                <div style="display:inline-flex;align-items:center;gap:0.4rem;background:#ffffff;border:1px solid #e2e8f0;border-radius:99px;padding:0.3rem 0.75rem;font-size:0.72rem;font-weight:600;color:#475569"><span style="width:6px;height:6px;border-radius:50%;background:#10b981"></span> Response in 2 hours</div>
+                <h1>Talk to our clinical team</h1>
+                <p>Questions on AI diagnosis, voice assistance or patient growth? We answer with clinicians, not bots.</p>
+                <div class="d-flex gap-4 mt-3" style="font-size:0.82rem;color:#475569">
+                    <span class="d-flex align-items-center gap-1"><i class="fas fa-shield-halved" style="color:#10b981"></i> HIPAA</span>
+                    <span class="d-flex align-items-center gap-1"><i class="fas fa-lock" style="color:#10b981"></i> Encrypted</span>
+                    <span class="d-flex align-items-center gap-1"><i class="fas fa-clock" style="color:#94a3b8"></i> 24/7</span>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="info-highlight">
+                    <h5 style="font-size:1rem;font-weight:600;margin:0 0 1rem;position:relative;color:#ffffff">Direct contacts</h5>
+                    <div class="info-item"><div class="info-icon"><i class="fas fa-envelope"></i></div><div><div style="font-size:0.82rem;color:#94a3b8">Email</div><div style="font-size:0.9rem;font-weight:600">info@medcuraai.com</div></div></div>
+                    <div class="info-item"><div class="info-icon"><i class="fas fa-headset"></i></div><div><div style="font-size:0.82rem;color:#94a3b8">Support</div><div style="font-size:0.9rem;font-weight:600">AI assistance · Clinical help</div></div></div>
+                    <div class="info-item mb-0"><div class="info-icon"><i class="fas fa-brain"></i></div><div><div style="font-size:0.82rem;color:#94a3b8">Expertise</div><div style="font-size:0.9rem;font-weight:600">Medical + AI specialists</div></div></div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<!-- Page Title -->
-<section class="page-title page-title-parallax parallax scroll-detect dark page-title-center" style="padding: 140px 0;">
-    <img src="demos/medical/images/contact/page-title.jpg" class="parallax-bg">
-    <div class="container z-2">
-        <div class="page-title-row">
-            <div class="page-title-content">
-                <div class="emphasis-title dark mb-0">
-                    <span class="before-heading text-white fst-italic">info@medcuraai.com</span>
-                    <h2 class="fw-bold ls-0 text-white">Contact Us</h2>
-                </div>
-                <span class="fw-semibold ls-1 text-uppercase" style="color: #EEE;">
-                    Get support for our complete AI healthcare platform
-                </span>
-            </div>
-        </div>
-    </div>
-    <div class="video-overlay z-1" style="background: rgba(222,98,98,0.85);"></div>
 </section>
 
-<section id="content">
-    <div class="content-wrap">
-        <div class="container">
-            <div class="row">
-                <!-- Contact Form -->
-                <div class="col-lg-8">
-                    <h3 class="mb-4">Get in Touch with Our Healthcare AI Experts</h3>
-                    <p class="text-muted mb-4">Questions about our comprehensive AI healthcare platform? Need support with diagnosis tools, voice assistant, patient management, or practice growth features? Our team of medical AI specialists and healthcare technology experts is here to help you maximize your practice potential.</p>
-
-                    @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <strong>Success!</strong> {{ session('success') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    @endif
-
-                    @if(session('error'))
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <strong>Error!</strong> {{ session('error') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    @endif
-
-                    <div class="form-widget">
-                        <div class="form-result"></div>
-                        <form class="row mb-0" id="contact-form" method="post" action="{{ route('contact.store') }}">
-                            @csrf
-                            <div class="form-process" style="display: none;">
-                                <div class="css3-spinner">
-                                    <div class="css3-spinner-scaler"></div>
-                                </div>
+<section style="background:#f8fafc;padding:2rem 0 3rem">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="contact-card">
+                    <h3>Send a message</h3>
+                    <p class="sub">We typically reply within 2 hours during business hours.</p>
+                    @if(session('success'))<div class="alert" style="background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:8px">{{ session('success') }}</div>@endif
+                    <form method="post" action="{{ route('contact.store') }}">
+                        @csrf
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Full name *</label>
+                                <input type="text" name="name" value="{{ old('name') }}" class="form-control" required>
+                                @error('name')<div style="font-size:0.78rem;color:#ef4444;margin-top:0.25rem">{{ $message }}</div>@enderror
                             </div>
-
-                            <div class="col-md-6 form-group">
-                                <label for="name">Full Name <small>*</small></label>
-                                <input type="text" id="name" name="name" value="{{ old('name') }}" class="form-control required" required>
-                                @error('name')
-                                    <div class="text-danger mt-1">{{ $message }}</div>
-                                @enderror
+                            <div class="col-md-6">
+                                <label class="form-label">Email *</label>
+                                <input type="email" name="email" value="{{ old('email') }}" class="form-control" required>
+                                @error('email')<div style="font-size:0.78rem;color:#ef4444;margin-top:0.25rem">{{ $message }}</div>@enderror
                             </div>
-
-                            <div class="col-md-6 form-group">
-                                <label for="email">Email Address <small>*</small></label>
-                                <input type="email" id="email" name="email" value="{{ old('email') }}" class="form-control required" required>
-                                @error('email')
-                                    <div class="text-danger mt-1">{{ $message }}</div>
-                                @enderror
+                            <div class="col-md-6">
+                                <label class="form-label">Phone</label>
+                                <input type="text" name="phone" value="{{ old('phone') }}" class="form-control">
                             </div>
-
-                            <div class="col-md-6 form-group">
-                                <label for="phone">Phone Number</label>
-                                <input type="text" id="phone" name="phone" value="{{ old('phone') }}" class="form-control">
-                                @error('phone')
-                                    <div class="text-danger mt-1">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-6 form-group">
-                                <label for="service">Inquiry Type</label>
-                                <select id="service" name="service" class="form-select">
-                                    <option value="">-- Select One --</option>
-                                    <option value="General Inquiry" {{ old('service') == 'General Inquiry' ? 'selected' : '' }}>General Inquiry</option>
-                                    <option value="AI Diagnosis Support" {{ old('service') == 'AI Diagnosis Support' ? 'selected' : '' }}>AI Diagnosis Support</option>
-                                    <option value="Voice Assistant Help" {{ old('service') == 'Voice Assistant Help' ? 'selected' : '' }}>Voice Assistant Help</option>
-                                    <option value="Patient Management" {{ old('service') == 'Patient Management' ? 'selected' : '' }}>Patient Management</option>
-                                    <option value="Landing Page Setup" {{ old('service') == 'Landing Page Setup' ? 'selected' : '' }}>Landing Page Setup</option>
-                                    <option value="Technical Support" {{ old('service') == 'Technical Support' ? 'selected' : '' }}>Technical Support</option>
-                                    <option value="Billing & Subscription" {{ old('service') == 'Billing & Subscription' ? 'selected' : '' }}>Billing & Subscription</option>
-                                    <option value="Partnership" {{ old('service') == 'Partnership' ? 'selected' : '' }}>Partnership Opportunities</option>
-                                    <option value="Demo Request" {{ old('service') == 'Demo Request' ? 'selected' : '' }}>Platform Demo Request</option>
-                                    <option value="Integration Support" {{ old('service') == 'Integration Support' ? 'selected' : '' }}>Integration Support</option>
+                            <div class="col-md-6">
+                                <label class="form-label">Topic</label>
+                                <select name="service" class="form-select">
+                                    <option value="">Select one</option>
+                                    <option value="General Inquiry">General Inquiry</option>
+                                    <option value="AI Diagnosis Support">AI Diagnosis</option>
+                                    <option value="Voice Assistant Help">Voice Assistant</option>
+                                    <option value="Technical Support">Technical Support</option>
+                                    <option value="Demo Request">Demo Request</option>
                                 </select>
-                                @error('service')
-                                    <div class="text-danger mt-1">{{ $message }}</div>
-                                @enderror
                             </div>
-
-                            <div class="col-12 form-group">
-                                <label for="subject">Subject <small>*</small></label>
-                                <input type="text" id="subject" name="subject" value="{{ old('subject') }}" class="form-control required" required>
-                                @error('subject')
-                                    <div class="text-danger mt-1">{{ $message }}</div>
-                                @enderror
+                            <div class="col-12">
+                                <label class="form-label">Subject *</label>
+                                <input type="text" name="subject" value="{{ old('subject') }}" class="form-control" required>
                             </div>
-
-                            <div class="col-12 form-group">
-                                <label for="message">Message <small>*</small></label>
-                                <textarea class="form-control required" id="message" name="message" rows="6" cols="30" placeholder="Tell us about your needs or questions regarding our AI healthcare platform - diagnosis tools, voice assistant, patient management, landing pages, or any other features..." required>{{ old('message') }}</textarea>
-                                @error('message')
-                                    <div class="text-danger mt-1">{{ $message }}</div>
-                                @enderror
+                            <div class="col-12">
+                                <label class="form-label">Message *</label>
+                                <textarea name="message" rows="5" class="form-control" required placeholder="How can we help?">{{ old('message') }}</textarea>
                             </div>
-
-                            <div class="col-12 form-group">
-                                <button class="button button-3d m-0" style="background-color: #DE6262; border-color: #DE6262;" type="submit" id="contact-submit">
-                                    <span id="submit-text">Send Message</span>
-                                    <span id="submit-loading" style="display: none;">
-                                        <i class="fas fa-spinner fa-spin"></i> Sending...
-                                    </span>
-                                </button>
+                            <div class="col-12">
+                                <button type="submit" class="btn-send">Send message</button>
+                                <span style="font-size:0.78rem;color:#94a3b8;margin-left:0.75rem">Encrypted & HIPAA compliant</span>
                             </div>
-                        </form>
-                    </div>
+                        </div>
+                    </form>
                 </div>
-
-                <!-- Contact Information -->
-                <div class="col-lg-4">
-                    <div class="bg-light p-4 rounded mb-4">
-                        <div class="text-center">
-                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
-                                <i class="fas fa-headset"></i>
-                            </div>
-                            <h5 class="fw-bold">24/7 Platform Support</h5>
-                            <p class="text-muted">Our AI healthcare platform is available around the clock with dedicated support for all features.</p>
-                            <p class="mb-0"><strong>Response Time:</strong> Within 2 hours</p>
-                        </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="d-flex flex-column gap-3">
+                    <div class="contact-card" style="text-align:center;padding:2rem 1.5rem">
+                        <span class="d-inline-flex align-items-center justify-content-center" style="width:44px;height:44px;border-radius:10px;background:rgba(222,98,98,0.08);color:#DE6262;border:1px solid rgba(222,98,98,0.15)"><i class="fas fa-clock"></i></span>
+                        <h5 class="mt-3" style="font-size:0.95rem;font-weight:600;color:#0f172a">Fast response</h5>
+                        <p style="font-size:0.84rem;color:#64748b;margin:0">Average first reply under 2 hours on weekdays.</p>
                     </div>
-
-                    <div class="bg-light p-4 rounded mb-4">
-                        <div class="text-center">
-                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
-                                <i class="fas fa-brain"></i>
-                            </div>
-                            <h5 class="fw-bold">AI Expertise</h5>
-                            <p class="text-muted">Specialized support for AI diagnosis, voice assistant, and automated patient management features.</p>
-                            <p class="mb-0"><strong>Specialization:</strong> Healthcare AI Technology</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-light p-4 rounded mb-4">
-                        <div class="text-center">
-                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <h5 class="fw-bold">HIPAA Compliance</h5>
-                            <p class="text-muted">All communications and data are encrypted and HIPAA compliant with enterprise-grade security.</p>
-                            <p class="mb-0"><strong>Security Level:</strong> Enterprise Grade</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-light p-4 rounded">
-                        <div class="text-center">
-                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 50px; height: 50px; background-color: #DE6262; color: white; font-size: 20px;">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <h5 class="fw-bold">Healthcare Technology Experts</h5>
-                            <p class="text-muted">Our team includes medical professionals, AI specialists, and healthcare technology experts.</p>
-                            <p class="mb-0"><strong>Expertise:</strong> Complete Healthcare Solutions</p>
-                        </div>
+                    <div class="contact-card" style="display:flex;gap:0.75rem;align-items:center">
+                        <span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569"><i class="fas fa-shield-alt"></i></span>
+                        <div><div style="font-size:0.84rem;font-weight:600;color:#0f172a">Privacy first</div><div style="font-size:0.78rem;color:#64748b">All data encrypted, HIPAA compliant.</div></div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="clear"></div>
-
-
     </div>
 </section>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('contact-form');
-    const submitBtn = document.getElementById('contact-submit');
-    const submitText = document.getElementById('submit-text');
-    const submitLoading = document.getElementById('submit-loading');
-    const formResult = document.querySelector('.form-result');
-
-    // Check if elements exist
-    if (!form || !submitBtn || !submitText || !submitLoading || !formResult) {
-        console.error('Contact form elements not found');
-        return;
-    }
-
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        // Show loading state
-        submitBtn.disabled = true;
-        submitText.style.display = 'none';
-        submitLoading.style.display = 'inline';
-
-        // Clear previous results
-        formResult.innerHTML = '';
-
-        // Gather form data
-        const formData = new FormData(form);
-
-        // Form data ready to submit
-
-        // Make AJAX request
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                formResult.innerHTML = `
-                    <div class="contact-success-notification">
-                        <div class="notification-content">
-                            <div class="notification-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                            <div class="notification-message">
-                                <h5>Message Sent Successfully!</h5>
-                                <p>${data.message}</p>
-                            </div>
-                            <button type="button" class="notification-close" onclick="this.parentElement.parentElement.style.display='none'">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                form.reset();
-            } else {
-                formResult.innerHTML = `
-                    <div class="contact-error-notification">
-                        <div class="notification-content">
-                            <div class="notification-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                            <div class="notification-message">
-                                <h5>Error Sending Message</h5>
-                                <p>${data.message || 'Please check your form and try again.'}</p>
-                            </div>
-                            <button type="button" class="notification-close" onclick="this.parentElement.parentElement.style.display='none'">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Contact form error:', error);
-            formResult.innerHTML = `
-                <div class="contact-error-notification">
-                    <div class="notification-content">
-                        <div class="notification-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <div class="notification-message">
-                            <h5>Connection Error</h5>
-                            <p>Something went wrong. Please try again later.</p>
-                        </div>
-                        <button type="button" class="notification-close" onclick="this.parentElement.parentElement.style.display='none'">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            `;
-        })
-        .finally(() => {
-            // Reset button state
-            submitBtn.disabled = false;
-            submitText.style.display = 'inline';
-            submitLoading.style.display = 'none';
-        });
-    });
-
-    // Add fallback for direct form submission if JavaScript fails
-    form.addEventListener('submit', function(e) {
-        // If AJAX is not supported or fails, allow normal form submission
-        if (!window.fetch) {
-            // Allow normal form submission
-            return true;
-        }
-    });
-});
-</script>
-
-<style>
-/* Custom Contact Form Notifications */
-.contact-success-notification, .contact-error-notification {
-    margin: 20px 0;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    animation: slideInDown 0.5s ease-out;
-}
-
-.contact-success-notification {
-    background: linear-gradient(135deg, #10B981, #059669);
-    border: 1px solid #059669;
-    color: white;
-}
-
-.contact-error-notification {
-    background: linear-gradient(135deg, #EF4444, #DC2626);
-    border: 1px solid #DC2626;
-    color: white;
-}
-
-.notification-content {
-    display: flex;
-    align-items: flex-start;
-    padding: 20px;
-    position: relative;
-}
-
-.notification-icon {
-    flex-shrink: 0;
-    margin-right: 15px;
-    margin-top: 2px;
-}
-
-.notification-icon svg {
-    width: 24px;
-    height: 24px;
-    color: white;
-}
-
-.notification-message {
-    flex: 1;
-}
-
-.notification-message h5 {
-    margin: 0 0 8px 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: white;
-}
-
-.notification-message p {
-    margin: 0;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.9);
-    line-height: 1.5;
-}
-
-.notification-close {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    color: white;
-    cursor: pointer;
-    padding: 5px;
-    border-radius: 50%;
-    transition: background-color 0.2s;
-}
-
-.notification-close:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-.notification-close svg {
-    width: 18px;
-    height: 18px;
-}
-
-@keyframes slideInDown {
-    from {
-        transform: translateY(-100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-/* Medical theme colors - complementing your site */
-.contact-success-notification {
-    background: linear-gradient(135deg, #0369A1, #0284C7);
-    border: 1px solid #0284C7;
-    box-shadow: 0 4px 12px rgba(3, 105, 161, 0.2);
-}
-
-.contact-error-notification {
-    background: linear-gradient(135deg, #DC2626, #B91C1C);
-    border: 1px solid #B91C1C;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
-}
-
-/* Dark theme support */
-@media (prefers-color-scheme: dark) {
-    .contact-success-notification {
-        background: linear-gradient(135deg, #0369A1, #0284C7);
-        box-shadow: 0 4px 12px rgba(3, 105, 161, 0.3);
-    }
-
-    .contact-error-notification {
-        background: linear-gradient(135deg, #DC2626, #B91C1C);
-        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-    }
-}
-</style>
-<style>
-/* Professional Dashboard Header Styling */
-.dashboard-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    border-radius: 15px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(222, 98, 98, 0.2);
-    position: relative;
-    overflow: hidden;
-}
-
-.dashboard-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
-}
-
-.dashboard-header h2 {
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.dashboard-header h2::before {
-    content: '📞';
-    font-size: 2rem;
-}
-
-.dashboard-header p {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1.1rem;
-    font-weight: 500;
-    margin-bottom: 0;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .dashboard-header {
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .dashboard-header h2 {
-        font-size: 2rem;
-    }
-
-    .dashboard-header p {
-        font-size: 1rem;
-    }
-
-    .notification-content {
-        padding: 15px;
-    }
-
-    .notification-message h5 {
-        font-size: 16px;
-    }
-
-    .notification-message p {
-        font-size: 13px;
-    }
-
-    .notification-icon {
-        margin-right: 12px;
-    }
-}
-</style>
-
 @endsection
