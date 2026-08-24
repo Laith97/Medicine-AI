@@ -940,7 +940,22 @@ function populateDataSourcesModal() {
 
 function refreshDataSources() {
     populateDataSourcesModal();
-    showNotification('Data sources refreshed successfully.', 'success');
+    const modalBody = document.querySelector('#aiDataSourcesModal .modal-body');
+    if(modalBody){
+        let fb = document.getElementById('refreshInlineFeedback');
+        if(!fb){
+            fb = document.createElement('div');
+            fb.id = 'refreshInlineFeedback';
+            fb.style.cssText = 'background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:8px;padding:0.6rem 0.75rem;font-size:0.82rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem';
+            fb.innerHTML = '<i class="fas fa-check-circle"></i><span>Data sources refreshed successfully.</span><span style="margin-left:auto;font-weight:400;color:#047857;font-size:0.74rem">'+new Date().toLocaleTimeString()+'</span>';
+            modalBody.prepend(fb);
+        } else {
+            fb.style.display='flex';
+            fb.querySelector('span:last-child').textContent = new Date().toLocaleTimeString();
+        }
+        clearTimeout(window._refreshFbTimer);
+        window._refreshFbTimer = setTimeout(()=>{ if(fb) fb.style.display='none'; }, 2500);
+    }
 }
 
 // Initialize data sources modal when opened

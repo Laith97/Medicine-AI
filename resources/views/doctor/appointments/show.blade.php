@@ -373,13 +373,7 @@
                 <div>
                     <h2><i class="fas fa-user-injured me-2"></i>{{ e($appointment->patient_name ?? 'Unknown Patient') }}</h2>
                     <p>
-                        <i class="fas fa-hashtag me-1"></i>Appointment #{{ $appointment->id }}
-                        @if($appointment->appointment_type) · {{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }}@endif
-                        · <i class="far fa-calendar me-1"></i>{{ $appointment->appointment_date->format('M j, Y \a\t g:i A') }}
-                    </p>
-                    <p class="mt-1" style="font-size:0.92rem; opacity:0.85;">
-                        <i class="fas fa-envelope me-1"></i>{{ e($appointment->patient_email) }}
-                        @if($appointment->patient_phone) · <i class="fas fa-phone me-1"></i>{{ e($appointment->patient_phone) }}@endif
+                        @if($appointment->appointment_type){{ ucfirst(str_replace('_', ' ', $appointment->appointment_type)) }} · @endif<i class="far fa-calendar me-1"></i>{{ $appointment->appointment_date->format('M j, Y \a\t g:i A') }}
                     </p>
                 </div>
 
@@ -434,6 +428,12 @@
                                 <i class="fas fa-times"></i>Cancel
                             </button>
                         </div>
+                        @elseif($appointment->status == 'completed')
+                        <div class="appointment-actions" role="group" aria-label="Appointment actions">
+                            <button onclick="toggleDiagnosisForm()" class="btn action-btn" style="background:#f59e0b;color:#fff;border-color:#f59e0b" title="Create diagnosis for this appointment">
+                                <i class="fas fa-stethoscope"></i>New Diagnosis
+                            </button>
+                        </div>
                         @endif
                     @endif
                 </div>
@@ -477,8 +477,8 @@
                                 <div class="info-row">
                                     <div class="info-row-icon"><i class="fas fa-hashtag"></i></div>
                                     <div class="flex-grow-1">
-                                        <span class="info-row-label">Appointment ID</span>
-                                        <span class="info-row-value">#{{ $appointment->id }}</span>
+                                        <span class="info-row-label">Ref</span>
+                                        <span class="info-row-value" style="font-family: ui-monospace, SFMono-Regular, monospace; font-size:0.78rem; color:#475569;">{{ $appointment->appointment_number ?? '#'.$appointment->id }}</span>
                                     </div>
                                     <span class="badge bg-light text-dark border small">{{ ucfirst($appointment->status) }}</span>
                                 </div>
@@ -507,9 +507,14 @@
                                         <div class="card-subtitle">Contact & personal details</div>
                                     </div>
                                 </div>
-                                <div class="card-badge-duration">
-                                    <strong><i class="fas fa-user"></i></strong>
-                                    <span>Patient</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if($appointment->patient_id)
+                                    <a href="{{ route('doctor.patients.show', $appointment->patient_id) }}" class="btn btn-sm" style="background:#fff;border:1px solid #e2e8f0;color:#475569;border-radius:8px;padding:0.35rem 0.6rem;font-size:0.76rem;font-weight:600" title="View full patient profile, history & diagnoses"><i class="fas fa-external-link-alt me-1"></i>View Patient</a>
+                                    @endif
+                                    <div class="card-badge-duration">
+                                        <strong><i class="fas fa-user"></i></strong>
+                                        <span>Patient</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -566,7 +571,7 @@
                             </div>
                         </div>
                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill fw-semibold d-none d-md-inline-flex align-items-center gap-2">
-                            <span class="bg-success rounded-circle d-inline-block" style="width:8px;height:8px;"></span> Completed #{{ $appointment->id }}
+                            <span class="bg-success rounded-circle d-inline-block" style="width:8px;height:8px;"></span> Completed {{ $appointment->appointment_number ?? '#'.$appointment->id }}
                         </span>
                     </div>
 
@@ -1104,6 +1109,19 @@
                         </div>
                     </form>
                 </div>
+                @endif
+
+                @php $appointmentDiagnoses = $appointment->diagnoses ?? $appointment->diagnosis ?? collect(); if($appointmentDiagnoses instanceof \Illuminate\Database\Eloquent\Model) $appointmentDiagnoses = collect([$appointmentDiagnoses]); @endphp
+                @if($appointmentDiagnoses && count($appointmentDiagnoses) > 0)
+                    <div class="mt-4 p-3" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px">
+                        <h6 style="font-size:0.9rem;font-weight:600;color:#0f172a;margin:0 0 0.75rem"><i class="fas fa-clipboard-check me-2" style="color:#10b981"></i>Existing Diagnoses</h6>
+                        @foreach($appointmentDiagnoses as $diag)
+                            <a href="{{ route('diagnosis.show', $diag->id) }}" class="d-flex align-items-center justify-content-between p-2 mb-2" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px;text-decoration:none;color:#334155">
+                                <span style="font-size:0.84rem"><i class="fas fa-file-medical me-2" style="color:#64748b"></i>Diagnosis #{{ $diag->id }} — {{ \Illuminate\Support\Str::limit($diag->diagnosis_text ?? 'No text', 60) }}</span>
+                                <i class="fas fa-chevron-right" style="color:#94a3b8;font-size:0.75rem"></i>
+                            </a>
+                        @endforeach
+                    </div>
                 @endif
 
                 <!-- AI Medical Copilot Section — Premium -->
@@ -1953,10 +1971,10 @@ function showNotification(message, type = 'info') {
         error: 'fas fa-times-circle'
     };
 
-    // Create notification element
+    // Toast above modal - centered top, above backdrop (modal 1055/backdrop 1050)
     const notification = document.createElement('div');
-    notification.className = `alert ${alertTypes[type]} alert-dismissible fade show position-fixed`;
-    notification.style.cssText = 'top: 100px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px; margin-top: 10px;';
+    notification.className = `alert ${alertTypes[type]} alert-dismissible fade show position-fixed shadow`;
+    notification.style.cssText = 'top: 85px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 320px; max-width: 460px;';
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'd-flex align-items-center';
@@ -2061,11 +2079,10 @@ function showNotification(message, type = 'info') {
         error: 'fas fa-times-circle'
     };
 
-    // Create notification element
+    // Toast above modal - centered top, above backdrop (modal 1055)
     const notification = document.createElement('div');
-    notification.className = `alert ${alertTypes[type]} alert-dismissible fade show position-fixed`;
-    // Position below the top navigation bar (assuming ~80px height) and to the right
-    notification.style.cssText = 'top: 100px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px; margin-top: 10px;';
+    notification.className = `alert ${alertTypes[type]} alert-dismissible fade show position-fixed shadow`;
+    notification.style.cssText = 'top: 85px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 320px; max-width: 460px;';
 
     // Create content safely to prevent XSS
     const contentDiv = document.createElement('div');
@@ -3079,44 +3096,41 @@ function createAIHistorySection() {
     const section = document.createElement('div');
     section.id = 'ai-history-section';
     section.className = 'table-card';
-    section.style.display = 'block'; // Start visible to show loading
+    section.style.display = 'block';
+    section.style.marginTop = '1.25rem';
 
     section.innerHTML = `
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h4 class="mb-0 fw-bold text-info">
-                    <i class="fas fa-history me-2"></i>Patient AI Analysis History
-                </h4>
-                <p class="mb-0 text-muted small">Previous AI Medical Copilot analyses for this patient</p>
+        <div class="section-head-modern">
+            <div class="head-left">
+                <div class="head-icon" style="background:#f8fafc;color:#475569;border:1px solid #e2e8f0"><i class="fas fa-history"></i></div>
+                <div>
+                    <h4 style="margin:0;font-weight:800;color:#1e293b;font-size:1rem;letter-spacing:-0.01em">Patient AI Analysis History</h4>
+                    <p style="margin:2px 0 0;font-size:0.78rem;color:#64748b;font-weight:500">Previous AI Medical Copilot analyses for this patient</p>
+                </div>
             </div>
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAIHistorySection()">
+            <button type="button" class="btn btn-sm" style="background:#fff;border:1px solid #e2e8f0;color:#64748b;border-radius:8px;font-size:0.75rem" onclick="toggleAIHistorySection()">
                 <i class="fas fa-times me-1"></i>Close
             </button>
         </div>
 
         <div id="aiHistoryContentSection">
             <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Loading AI analysis history...</p>
+                <div class="spinner-border" role="status" style="color:#475569;width:1.4rem;height:1.4rem;border-width:0.18em"><span class="visually-hidden">Loading...</span></div>
+                <p class="mt-2" style="font-size:0.84rem;color:#64748b">Loading AI analysis history...</p>
             </div>
         </div>
     `;
 
-    // Insert the section after the AI Medical Copilot section or at the end of content
-    const copilotSection = document.getElementById('ai-medical-copilot-section');
-    const diagnosisSection = document.getElementById('diagnosis-section');
-
-    if (copilotSection) {
-        copilotSection.parentNode.insertBefore(section, copilotSection.nextSibling);
-    } else if (diagnosisSection) {
-        diagnosisSection.parentNode.insertBefore(section, diagnosisSection.nextSibling);
+    // Insert as last section in main content column - after Existing Diagnoses, not inside Next Steps grid
+    const mainCol = document.querySelector('.col-lg-12');
+    if (mainCol) {
+        mainCol.appendChild(section);
     } else {
-        // If neither section exists, append to the main content area
-        const mainContent = document.querySelector('.dashboard-container .container');
-        if (mainContent) {
-            mainContent.appendChild(section);
+        const copilotSection = document.getElementById('ai-medical-copilot-section');
+        if (copilotSection && copilotSection.parentNode) {
+            copilotSection.parentNode.insertBefore(section, copilotSection.nextSibling);
+        } else {
+            document.querySelector('.dashboard-container .container')?.appendChild(section);
         }
     }
 }
@@ -3207,75 +3221,71 @@ function displayAIAnalysesSection(analyses) {
 
     if (!analyses || analyses.length === 0) {
         contentElement.innerHTML = `
-            <div class="text-center py-5">
-                <i class="fas fa-brain fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No AI Analyses Found</h5>
-                <p class="text-muted">This patient hasn't had any AI Medical Copilot analyses saved yet.</p>
+            <div class="text-center py-4" style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:12px">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-3 mb-3" style="width:48px;height:48px;background:#fff;border:1px solid #eef2f7;color:#94a3b8"><i class="fas fa-brain" style="font-size:1.3rem"></i></div>
+                <p class="fw-semibold mb-1" style="font-size:0.88rem;color:#475569">No AI analyses yet</p>
+                <p class="small text-muted mb-0" style="font-size:0.78rem">This patient hasn't had any AI Medical Copilot analyses saved yet.</p>
             </div>
         `;
         return;
     }
 
-    let html = '<div class="ai-analyses-timeline">';
+    let html = '<div class="ai-analyses-timeline" style="display:flex;flex-direction:column;gap:0.9rem">';
 
     analyses.forEach(analysis => {
         const analysisData = typeof analysis.analysis_data === 'string' ?
             JSON.parse(analysis.analysis_data) : analysis.analysis_data;
 
         html += `
-            <div class="ai-analysis-card mb-4">
-                <div class="card border-primary">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-0">
-                                <i class="fas fa-brain me-2"></i>AI Medical Copilot Analysis
-                            </h6>
-                            <small>${new Date(analysis.generated_at).toLocaleDateString()} at ${new Date(analysis.generated_at).toLocaleTimeString()}</small>
+            <div class="ai-analysis-card" style="background:#fff;border:1px solid #eef2f7;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(15,23,42,0.04)">
+                <div class="d-flex justify-content-between align-items-center" style="padding:0.85rem 1rem;background:#f8fafc;border-bottom:1px solid #eef2f7">
+                    <div>
+                        <div style="font-weight:700;color:#1e293b;font-size:0.88rem"><i class="fas fa-brain me-2" style="color:#475569"></i>AI Medical Copilot Analysis</div>
+                        <small style="color:#64748b;font-size:0.72rem">${new Date(analysis.generated_at).toLocaleDateString()} at ${new Date(analysis.generated_at).toLocaleTimeString()}</small>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        ${analysis.status === 'reviewed' ?
+                            '<span class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:99px;font-size:0.70rem"><i class="fas fa-check-circle me-1"></i>Reviewed</span>' :
+                            '<span class="badge" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;border-radius:99px;font-size:0.70rem"><i class="fas fa-clock me-1"></i>Pending</span>'}
+                        <a href="/ai/ai-analyses/${analysis.id}" class="btn btn-sm" style="background:#fff;border:1px solid #e2e8f0;color:#475569;border-radius:8px;font-size:0.74rem;padding:0.3rem 0.5rem" target="_blank">
+                            <i class="fas fa-eye me-1"></i>View
+                        </a>
+                    </div>
+                </div>
+                <div class="p-3">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div style="font-size:0.78rem;font-weight:700;color:#1e293b;margin-bottom:0.35rem"><i class="fas fa-file-medical me-1" style="color:#475569"></i>Summary</div>
+                            <p class="mb-0" style="font-size:0.84rem;color:#334155;line-height:1.5">${analysisData.medical_case_summary || 'No summary available'}</p>
                         </div>
-                        <div class="d-flex gap-2">
-                            ${analysis.status === 'reviewed' ?
-                                '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Reviewed</span>' :
-                                '<span class="badge bg-warning"><i class="fas fa-clock me-1"></i>Pending Review</span>'}
-                            <a href="/ai/ai-analyses/${analysis.id}" class="btn btn-sm btn-primary" target="_blank">
-                                <i class="fas fa-eye me-1"></i>View Details
-                            </a>
+                        <div class="col-md-6">
+                            <div style="font-size:0.78rem;font-weight:700;color:#1e293b;margin-bottom:0.35rem"><i class="fas fa-list-check me-1" style="color:#b45309"></i>Key Considerations</div>
+                            <ul class="mb-0" style="font-size:0.82rem;color:#334155;padding-left:1.1rem">
+                                ${displayConsiderationsSection(analysisData.differential_considerations || [])}
+                            </ul>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="text-primary"><i class="fas fa-file-medical me-1"></i>Summary</h6>
-                                <p class="mb-3">${analysisData.medical_case_summary || 'No summary available'}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-warning"><i class="fas fa-list-check me-1"></i>Key Considerations</h6>
-                                <ul class="mb-3 small">
-                                    ${displayConsiderationsSection(analysisData.differential_considerations || [])}
-                                </ul>
-                            </div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <div style="font-size:0.78rem;font-weight:700;color:#1e293b;margin-bottom:0.35rem"><i class="fas fa-question-circle me-1" style="color:#0e7490"></i>Follow-up Questions</div>
+                            <ul class="mb-0" style="font-size:0.82rem;color:#334155;padding-left:1.1rem">
+                                ${displayQuestionsSection(analysisData.follow_up_questions || [])}
+                            </ul>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="text-info"><i class="fas fa-question-circle me-1"></i>Follow-up Questions</h6>
-                                <ul class="mb-3 small">
-                                    ${displayQuestionsSection(analysisData.follow_up_questions || [])}
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-danger"><i class="fas fa-flag me-1"></i>Red Flags</h6>
-                                <ul class="mb-3 small">
-                                    ${displayRedFlagsSection(analysisData.red_flags || [])}
-                                </ul>
-                            </div>
+                        <div class="col-md-6">
+                            <div style="font-size:0.78rem;font-weight:700;color:#1e293b;margin-bottom:0.35rem"><i class="fas fa-flag me-1" style="color:#dc2626"></i>Red Flags</div>
+                            <ul class="mb-0" style="font-size:0.82rem;color:#334155;padding-left:1.1rem">
+                                ${displayRedFlagsSection(analysisData.red_flags || [])}
+                            </ul>
                         </div>
-                        ${analysis.reviewed_at ? `
-                            <div class="border-top pt-3 mt-3">
-                                <h6 class="text-success"><i class="fas fa-user-md me-1"></i>Physician Review</h6>
-                                <p class="mb-1 small text-muted">Reviewed by Dr. ${analysis.reviewer?.name || 'Unknown'} on ${new Date(analysis.reviewed_at).toLocaleDateString()}</p>
-                                ${analysis.doctor_notes ? `<p class="mb-0">${analysis.doctor_notes}</p>` : '<p class="text-muted small">No additional notes</p>'}
-                            </div>
-                        ` : ''}
                     </div>
+                    ${analysis.reviewed_at ? `
+                        <div class="mt-3 pt-3" style="border-top:1px solid #f1f5f9">
+                            <div style="font-size:0.78rem;font-weight:700;color:#065f46"><i class="fas fa-user-md me-1"></i>Physician Review</div>
+                            <p class="mb-1" style="font-size:0.72rem;color:#64748b">Reviewed by Dr. ${analysis.reviewer?.name || 'Unknown'} on ${new Date(analysis.reviewed_at).toLocaleDateString()}</p>
+                            ${analysis.doctor_notes ? `<p class="mb-0" style="font-size:0.84rem;color:#334155">${analysis.doctor_notes}</p>` : '<p class="text-muted small mb-0" style="font-size:0.78rem">No additional notes</p>'}
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;

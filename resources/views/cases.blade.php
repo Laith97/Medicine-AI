@@ -12,12 +12,12 @@
 <div class="container-fluid" style="background-color: var(--bg-secondary, #f8f9fa);">
     <div class="container py-4">
 
-        <!-- Page Header - same as /dashboard -->
+        <!-- Page Header - clarified -->
         <div class="dashboard-header cases-header-compact">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
-                    <h2><i class="fas fa-folder-open me-2"></i>Cases Overview</h2>
-                    <p>Manage and review your patient medical records</p>
+                    <h2><i class="fas fa-folder-open me-2"></i>Patient Cases</h2>
+                    <p>Visit history grouped by patient — review diagnoses, trends and AI summaries</p>
                 </div>
                 <a href="{{ route('ai.ambient-listening.index') }}" class="btn">
                     <i class="fas fa-microphone me-2"></i>Start Consultation
@@ -78,8 +78,8 @@
             <div class="card border-0 shadow-sm cases-panel">
                 <div class="cases-toolbar">
                     <div class="cases-toolbar__title">
-                        <h5 class="mb-0 fw-semibold"><i class="fas fa-users me-2 text-primary"></i>Patient Records</h5>
-                        <span class="cases-toolbar__meta">— {{ count($patientGroups) }} patients · {{ collect($patientGroups)->sum('visit_count') }} visits</span>
+                        <h5 class="mb-0 fw-semibold"><i class="fas fa-users me-2 text-primary"></i>Patient Cases</h5>
+                        <span class="cases-toolbar__meta" title="Grouped visits per patient">— {{ $patientGroups instanceof \Illuminate\Pagination\LengthAwarePaginator ? $patientGroups->total() : count($patientGroups) }} patients · {{ $patientGroups instanceof \Illuminate\Pagination\LengthAwarePaginator ? collect($patientGroups->items())->sum('visit_count') : collect($patientGroups)->sum('visit_count') }} visits</span>
                     </div>
                     <div class="cases-toolbar__controls">
                         <div class="input-group input-group-sm cases-search">
@@ -100,49 +100,17 @@
                 </div>
 
                 <div class="card-body p-0">
-                    <div class="cases-tabs-wrapper">
-                    <ul class="nav nav-tabs cases-tabs" id="patientTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-patients" type="button" role="tab">
-                                <i class="fas fa-users me-2"></i>All Patients
-                                <span class="badge ms-2">{{ count($patientGroups) }}</span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="diagnosed-tab" data-bs-toggle="tab" data-bs-target="#diagnosed-patients" type="button" role="tab">
-                                <i class="fas fa-check-circle me-2"></i>Diagnosed
-                                <span class="badge ms-2">{{ collect($patientGroups)->where('category', 'diagnosed')->count() }}</span>
-                            </button>
-                        </li>
-                    </ul>
-                    </div>
-
-                    <div class="tab-content" id="patientTabContent">
-                        <div class="tab-pane fade show active" id="all-patients" role="tabpanel">
-                            <div class="doctor-table-container">
-                                @include('cases.partials.patient-table', ['patients' => $patientGroups, 'category' => 'all'])
-                                @if(count($patientGroups) > 0)
-                                <div class="table-footer">
-                                    <span><i class="fas fa-info-circle me-1"></i> Showing {{ $patientGroups instanceof \Illuminate\Pagination\LengthAwarePaginator ? $patientGroups->count() : count($patientGroups) }} of {{ $patientGroups instanceof \Illuminate\Pagination\LengthAwarePaginator ? $patientGroups->total() : count($patientGroups) }} patients</span>
-                                    <span class="d-none d-sm-inline">Use search or tabs to filter</span>
-                                </div>
-                                @endif
-                            </div>
+                    <div class="doctor-table-container">
+                        @include('cases.partials.patient-table', ['patients' => $patientGroups, 'category' => 'all'])
+                        @if(count($patientGroups) > 0)
+                        <div class="table-footer">
+                            <span><i class="fas fa-info-circle me-1"></i> Showing {{ $patientGroups instanceof \Illuminate\Pagination\LengthAwarePaginator ? $patientGroups->count() : count($patientGroups) }} of {{ $patientGroups instanceof \Illuminate\Pagination\LengthAwarePaginator ? $patientGroups->total() : count($patientGroups) }} patients</span>
+                            <span class="d-none d-sm-inline">Use search to filter</span>
                         </div>
-                        <div class="tab-pane fade" id="diagnosed-patients" role="tabpanel">
-                            <div class="doctor-table-container">
-                                @include('cases.partials.patient-table', ['patients' => $patientGroups, 'category' => 'diagnosed'])
-                                @if(collect($patientGroups)->where('category', 'diagnosed')->count() > 0)
-                                <div class="table-footer">
-                                    <span>{{ collect($patientGroups)->where('category', 'diagnosed')->count() }} diagnosed</span>
-                                    <span class="d-none d-sm-inline">Filtered view</span>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
+                        @endif
                     </div>
                     @if($patientGroups instanceof \Illuminate\Pagination\LengthAwarePaginator && $patientGroups->hasPages())
-                        <div class="d-flex justify-content-center mt-3">
+                        <div class="d-flex justify-content-center p-3" style="background:#f8fafc;border-top:1px solid #f1f5f9">
                             {{ $patientGroups->links('pagination::bootstrap-5') }}
                         </div>
                     @endif
@@ -316,6 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const patientKey = button.getAttribute('data-patient-key');
                 
                 document.getElementById('patientName').textContent = name;
+                const initialEl=document.getElementById('patientInitial'); if(initialEl) initialEl.textContent=(name||'?').charAt(0).toUpperCase();
                 document.getElementById('patientAge').textContent = age;
                 document.getElementById('patientGender').textContent = gender;
                 
@@ -398,7 +367,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Show loading state
                     document.getElementById('aiSummaryContent').innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Generating AI summary...</div>';
 
+                    // Abort previous summary fetch if View Full Details clicked
+                    if(window.currentSummaryController) window.currentSummaryController.abort();
+                    window.currentSummaryController = new AbortController();
                     fetch('/patient/summary', {
+                        signal: window.currentSummaryController.signal,
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -424,6 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     })
                     .catch(error => {
+                        if(error.name === 'AbortError') return;
                         console.error('Fetch Error:', error);
                         document.getElementById('aiSummaryContent').innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Error generating AI summary: ${error.message}</div>`;
                     });
@@ -436,16 +410,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('aiSummaryContent').innerHTML = '<span class="text-muted">No data for summary</span>';
                 }
                 
-                // Set up the View Details button
+                // Set up the View Details button - abort AI fetch on click so navigation is instant
                 const viewDetailsBtn = document.getElementById('viewDetailsBtn');
                 if (viewDetailsBtn && patientRecords.length > 0) {
                     const latest = patientRecords[patientRecords.length - 1];
                     const patientId = latest.patient_id || latest.id;
                     
                     viewDetailsBtn.href = `/doctor/patients/${patientId}`;
+                    viewDetailsBtn.onclick = function(){ if(window.currentSummaryController) window.currentSummaryController.abort(); };
                 }
             }
         });
+        // Abort AI fetch if modal closed
+        const summaryModalEl=document.getElementById('summaryModal');
+        if(summaryModalEl) summaryModalEl.addEventListener('hidden.bs.modal', function(){ if(window.currentSummaryController) window.currentSummaryController.abort(); });
     }
 });
 </script>

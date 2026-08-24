@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-.hero-search{background:linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(248,250,252,0.88) 100%), url('{{ asset('demos/medical/images/doctors/3.jpg') }}') center/cover no-repeat;border-bottom:1px solid #e2e8f0;padding:2.5rem 0 2rem;box-shadow:0 1px 3px rgba(15,23,42,0.04)}
+.hero-search{background:linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(248,250,252,0.88) 100%), url('{{ asset('demos/medical/images/doctors/3.jpg') }}') center/cover no-repeat;border-bottom:1px solid #e2e8f0;padding:2.5rem 0 2rem;box-shadow:0 1px 3px rgba(15,23,42,0.04);margin-top:-1px}
 .hero-search h1{font-size:1.9rem;font-weight:800;color:#0f172a;letter-spacing:-0.02em;margin:0 0 0.4rem}
 .hero-search p{font-size:0.9rem;color:#64748b;margin:0 0 1.25rem}
 .search-bar{background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 12px rgba(15,23,42,0.04);padding:6px;display:flex;gap:6px;max-width:720px}

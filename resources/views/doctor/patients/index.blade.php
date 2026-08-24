@@ -201,10 +201,10 @@
 <div class="container-fluid" style="background-color: #f8f9fa;">
     <div class="container py-4">
         <div class="dashboard-header cases-header-compact">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                     <h2><i class="fas fa-users me-2"></i>My Patients</h2>
-                    <p>Your assigned patient profiles and records</p>
+                    <p>Manage demographics, contact and status — for visit history and AI summaries, see <a href="{{ route('doctor.cases.overview') }}" style="color:rgba(255,255,255,0.9);text-decoration:underline">Patient Cases</a></p>
                 </div>
                 <a href="{{ route('doctor.appointments.create') }}" class="btn">
                     <i class="fas fa-user-plus me-2"></i>New Appointment

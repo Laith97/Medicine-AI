@@ -100,13 +100,13 @@
 }
 
 .notification-item:hover {
-    background-color: rgba(222, 98, 98, 0.05) !important;
+    background-color: #f8fafc !important;
     transform: translateX(4px);
 }
 
 .notification-item.unread {
-    background-color: rgba(222, 98, 98, 0.02) !important;
-    border-left: 3px solid #DE6262;
+    background-color: #f8fafc !important;
+    border-left: 3px solid #2563eb;
 }
 
 .notification-item.read {
@@ -119,13 +119,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(222, 98, 98, 0.1);
+    background: #f8fafc; border:1px solid #e2e8f0;
     border-radius: 50%;
     font-size: 14px;
 }
 
 .notification-item.unread .notification-icon {
-    background: rgba(222, 98, 98, 0.2);
+    background: #eff6ff; border:1px solid #dbeafe;
     color: #DE6262;
 }
 

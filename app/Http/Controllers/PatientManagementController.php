@@ -85,15 +85,17 @@ class PatientManagementController extends Controller
         $patient = User::where('role', 'patient')->findOrFail($id);
         $doctor = Auth::user()->doctor;
         
-        // Get patient's history with this doctor
+        // Get patient's history with this doctor - limit 50 for speed, View Full Details should be instant
         $appointments = Appointment::where('patient_id', $patient->id)
             ->where('doctor_id', $doctor->id)
             ->latest()
+            ->limit(50)
             ->get();
         
         $diagnoses = Diagnosis::where('patient_id', $patient->id)
             ->where('doctor_id', Auth::id())
             ->latest()
+            ->limit(50)
             ->get();
         
         // Check access

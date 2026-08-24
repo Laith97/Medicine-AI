@@ -20,6 +20,8 @@ use OpenAI\Laravel\Facades\OpenAI;
 
 class DiagnosisController extends Controller
 {
+    use \App\Traits\HandlesEffectiveDoctor;
+
     protected $smsService;
 
     public function __construct(SmsService $smsService)
@@ -363,7 +365,8 @@ class DiagnosisController extends Controller
         // Check if user can view this diagnosis
         /** @var User $user */
         $user = Auth::user();
-        if ($user->isDoctor() && $diagnosis->doctor_id !== $user->id) {
+        $effectiveDoctorUser = $this->getEffectiveDoctorUser();
+        if (($user->isDoctor() || $user->isSubUser()) && $effectiveDoctorUser && $diagnosis->doctor_id !== $effectiveDoctorUser->id) {
             abort(403, 'Access denied.');
         }
 
@@ -372,9 +375,9 @@ class DiagnosisController extends Controller
         }
 
         // Log doctor access to patient diagnosis
-        if ($user->isDoctor() && $diagnosis->patient_id) {
+        if (($user->isDoctor() || $user->isSubUser()) && $diagnosis->patient_id) {
             \App\Services\AuditLoggingService::logDoctorAccessPatient(
-                Auth::id(),
+                $effectiveDoctorUser->id ?? Auth::id(),
                 $diagnosis->patient_id,
                 ['diagnosis_id' => $diagnosis->id]
             );
@@ -415,9 +418,10 @@ class DiagnosisController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        // Check if user can submit follow-up for this diagnosis
+        // Check if user can submit follow-up for this diagnosis (support sub-users via effective doctor)
+        $effectiveDoctorUser = $this->getEffectiveDoctorUser();
         $isAuthorized = ($user->isPatient() && $diagnosis->patient_id === $user->id) ||
-                       ($user->isDoctor() && $diagnosis->doctor_id === $user->id);
+                       (($user->isDoctor() || $user->isSubUser()) && $effectiveDoctorUser && $diagnosis->doctor_id === $effectiveDoctorUser->id);
 
         if (!$isAuthorized) {
             abort(403, 'Access denied.');
@@ -985,12 +989,19 @@ class DiagnosisController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
-        if (!$user->isDoctor()) {
+        if (!$user->isDoctor() && !$user->isSubUser()) {
             abort(403, 'Access denied. Doctor access required.');
         }
 
-        // Check if the appointment belongs to the doctor
-        if ($appointment->doctor_id !== $user->id) {
+        $effectiveDoctor = $this->getEffectiveDoctor();
+        $effectiveDoctorUser = $this->getEffectiveDoctorUser();
+
+        if (!$effectiveDoctor || !$effectiveDoctorUser) {
+            abort(403, 'Access denied. Doctor profile not found.');
+        }
+
+        // Check if the appointment belongs to the doctor (appointments.doctor_id is doctors.id, not users.id)
+        if ($appointment->doctor_id !== $effectiveDoctor->id) {
             abort(403, 'Access denied. You can only create diagnoses for your own appointments.');
         }
 
@@ -1056,9 +1067,9 @@ class DiagnosisController extends Controller
                 }
             }
 
-            // Create diagnosis linked to the appointment's patient
+            // Create diagnosis linked to the appointment's patient (use effective doctor user for sub-users)
             $diagnosis = Diagnosis::create([
-                'doctor_id' => Auth::id(),
+                'doctor_id' => $effectiveDoctorUser->id,
                 'patient_id' => $appointment->patient_id,
                 'appointment_id' => $appointment->id,
                 'type' => 'appointment',
@@ -1073,7 +1084,7 @@ class DiagnosisController extends Controller
 
             // Log diagnosis creation
             \App\Services\AuditLoggingService::logDiagnosisCreated(
-                Auth::id(),
+                $effectiveDoctorUser->id,
                 $appointment->patient_id,
                 $diagnosis->id,
                 ['appointment_id' => $appointment->id]
@@ -1121,8 +1132,9 @@ class DiagnosisController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        // Doctors can access their own diagnoses
-        if ($user->isDoctor() && $diagnosis->doctor_id == $user->id) {
+        // Doctors (and their sub-users via effective doctor) can access their own diagnoses
+        $effectiveDoctorUser = $this->getEffectiveDoctorUser();
+        if (($user->isDoctor() || $user->isSubUser()) && $effectiveDoctorUser && $diagnosis->doctor_id == $effectiveDoctorUser->id) {
             return true;
         }
 

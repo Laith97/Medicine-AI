@@ -1175,6 +1175,13 @@ class OpenAIController extends Controller
                 'visits' => 'required|array'
             ]);
 
+            // Cache summary for 60min to make View Full Details instant on repeat
+            $cacheKey = 'patient_summary_' . $request->patient_id . '_' . md5(json_encode($request->visits));
+            if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+                \Log::info('Returning cached patient summary for ' . $request->patient_id);
+                return response()->json(\Illuminate\Support\Facades\Cache::get($cacheKey));
+            }
+
             $user = auth()->user();
             \Log::info('User authenticated: ' . $user->id . ' (' . $user->name . ')');
 
@@ -1273,11 +1280,14 @@ class OpenAIController extends Controller
             // Format the response using existing AI formatting patterns
             $formattedSummary = $this->formatPatientSummaryResponse($aiSummary);
 
-            return response()->json([
+            $cachedResponse = [
                 'success' => true,
                 'summary' => $formattedSummary,
                 'raw_response' => $aiSummary
-            ]);
+            ];
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $cachedResponse, 3600);
+
+            return response()->json($cachedResponse);
 
         } catch (\Exception $e) {
             \Log::error('Exception in generatePatientSummary: ' . $e->getMessage());

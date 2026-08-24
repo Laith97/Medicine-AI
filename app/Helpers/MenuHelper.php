@@ -102,7 +102,7 @@ class MenuHelper
                         'restricted' => true,
                     ],
                     [
-                        'name' => 'Cases Overview',
+                        'name' => 'Patient Cases',
                         'route' => 'doctor.cases.overview',
                         'icon' => 'fas fa-folder',
                         'permission' => 'cases',
@@ -346,7 +346,7 @@ class MenuHelper
                         'icon' => 'fas fa-history',
                     ],
                     [
-                        'name' => 'Cases Overview',
+                        'name' => 'Patient Cases',
                         'route' => 'doctor.cases.overview',
                         'icon' => 'fas fa-folder',
                     ],
@@ -536,7 +536,9 @@ class MenuHelper
                 'name' => 'My Health',
                 'icon' => 'fas fa-heartbeat',
                 'dropdown' => true,
-                'href' => 'appointments.index', // Clickable parent header
+                'header_class' => 'sidebar-header-patients',
+                'header_style' => 'font-weight: 700; color: #DE6262; background: rgba(222, 98, 98, 0.05); border: 1px solid rgba(222, 98, 98, 0.15); border-left: 4px solid #DE6262; padding: 14px 16px; margin: 12px 0 4px 0; border-radius: 8px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem;',
+                'href' => 'appointments.index',
                 'items' => [
                     [
                         'name' => 'My Appointments',

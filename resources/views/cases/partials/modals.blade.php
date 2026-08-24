@@ -52,28 +52,30 @@
     </div>
 </div>
 
-<!-- Patient Summary Modal -->
+<!-- Patient Summary Modal - modern light -->
 <div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header" style="background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);">
-                <h5 class="modal-title fw-bold text-white" id="summaryModalLabel">
-                    <i class="fas fa-user-md me-2"></i>Patient Medical Summary
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <!-- Patient Info -->
-                <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light border rounded-3">
-                    <div class="d-flex align-items-center justify-content-center text-white rounded-circle flex-shrink-0" style="width: 56px; height: 56px; background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);">
-                        <i class="fas fa-user" style="font-size: 1.4rem;"></i>
-                    </div>
+        <div class="modal-content" style="border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(15,23,42,0.12)">
+            <div class="modal-header" style="background:#ffffff;border-bottom:1px solid #f1f5f9;padding:1rem 1.25rem">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;border-radius:10px;background:rgba(222,98,98,0.08);color:#DE6262;border:1px solid rgba(222,98,98,0.15)"><i class="fas fa-brain"></i></span>
                     <div>
-                        <h4 class="mb-1 text-dark" id="patientName"></h4>
-                        <div class="d-flex flex-wrap gap-2">
-                            <span class="badge text-bg-primary">Age: <span id="patientAge"></span></span>
-                            <span class="badge text-bg-info">Gender: <span id="patientGender"></span></span>
-                            <span class="badge text-bg-success">Visits: <span id="patientVisits"></span></span>
+                        <h5 class="modal-title fw-bold mb-0" id="summaryModalLabel" style="font-size:1rem;color:#0f172a;letter-spacing:-0.01em">Patient Medical Summary</h5>
+                        <small style="font-size:0.72rem;color:#94a3b8">AI generated · Review visit history</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" style="background:#fcfdff">
+                <!-- Patient Info -->
+                <div class="d-flex align-items-center gap-3 mb-4 p-3" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px">
+                    <span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;font-weight:700" id="patientInitial">?</span>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-semibold text-truncate" style="font-size:1rem;color:#0f172a" id="patientName"></div>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                            <span class="d-inline-flex align-items-center gap-1" style="font-size:0.72rem;font-weight:600;padding:0.25rem 0.55rem;border-radius:99px;background:#f1f5f9;border:1px solid #e2e8f0;color:#334155">Age <span id="patientAge"></span></span>
+                            <span class="d-inline-flex align-items-center gap-1" style="font-size:0.72rem;font-weight:600;padding:0.25rem 0.55rem;border-radius:99px;background:#eff6ff;border:1px solid #dbeafe;color:#1d4ed8">Gender <span id="patientGender"></span></span>
+                            <span class="d-inline-flex align-items-center gap-1" style="font-size:0.72rem;font-weight:600;padding:0.25rem 0.55rem;border-radius:99px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569">Visits <span id="patientVisits"></span></span>
                         </div>
                     </div>
                 </div>
@@ -81,56 +83,46 @@
                 <!-- Medical Info -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-header bg-white border-bottom fw-semibold">
-                                <i class="fas fa-thermometer-half me-2 text-info"></i>Current Symptoms
-                            </div>
-                            <div class="card-body small" id="symptomsContent"></div>
+                        <div class="h-100" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+                            <div class="px-3 py-2 d-flex align-items-center gap-2" style="background:#f8fafc;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:0.84rem;color:#0f172a"><i class="fas fa-thermometer-half" style="color:#0ea5e9"></i> Current Symptoms</div>
+                            <div class="p-3 small" id="symptomsContent" style="font-size:0.84rem;color:#475569;min-height:60px"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-header bg-white border-bottom fw-semibold">
-                                <i class="fas fa-history me-2 text-primary"></i>Medical History
-                            </div>
-                            <div class="card-body small" id="historyContent"></div>
+                        <div class="h-100" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+                            <div class="px-3 py-2 d-flex align-items-center gap-2" style="background:#f8fafc;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:0.84rem;color:#0f172a"><i class="fas fa-history" style="color:#6366f1"></i> Medical History</div>
+                            <div class="p-3 small" id="historyContent" style="font-size:0.84rem;color:#475569;min-height:60px"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-header bg-white border-bottom fw-semibold">
-                                <i class="fas fa-pills me-2 text-warning"></i>Medications
-                            </div>
-                            <div class="card-body small" id="medicationsContent"></div>
+                        <div class="h-100" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+                            <div class="px-3 py-2 d-flex align-items-center gap-2" style="background:#f8fafc;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:0.84rem;color:#0f172a"><i class="fas fa-pills" style="color:#f59e0b"></i> Medications</div>
+                            <div class="p-3 small" id="medicationsContent" style="font-size:0.84rem;color:#475569;min-height:60px"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-header bg-white border-bottom fw-semibold">
-                                <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Allergies
-                            </div>
-                            <div class="card-body small" id="allergiesContent"></div>
+                        <div class="h-100" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+                            <div class="px-3 py-2 d-flex align-items-center gap-2" style="background:#f8fafc;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:0.84rem;color:#0f172a"><i class="fas fa-exclamation-triangle" style="color:#ef4444"></i> Allergies</div>
+                            <div class="p-3 small" id="allergiesContent" style="font-size:0.84rem;color:#475569;min-height:60px"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Visit History -->
                 <div class="mb-4">
-                    <h6 class="mb-2 fw-semibold"><i class="fas fa-clipboard-list me-2 text-success"></i>Recent Visits</h6>
+                    <h6 class="mb-2 fw-semibold" style="font-size:0.875rem;color:#0f172a"><i class="fas fa-clipboard-list me-2" style="color:#10b981"></i>Recent Visits</h6>
                     <div id="visitHistory"></div>
                 </div>
 
                 <!-- AI Summary -->
                 <div>
-                    <h6 class="mb-2 fw-semibold"><i class="fas fa-brain me-2 text-primary"></i>AI Medical Summary</h6>
-                    <div class="p-3 bg-light rounded-3" id="aiSummaryContent"></div>
+                    <h6 class="mb-2 fw-semibold" style="font-size:0.875rem;color:#0f172a"><i class="fas fa-brain me-2" style="color:#DE6262"></i>AI Medical Summary</h6>
+                    <div class="p-3" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;min-height:80px" id="aiSummaryContent"></div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <a href="#" class="btn btn-primary" id="viewDetailsBtn">
-                    <i class="fas fa-external-link-alt me-1"></i>View Full Details
-                </a>
+            <div class="modal-footer" style="background:#f8fafc;border-top:1px solid #f1f5f9;padding:0.85rem 1.25rem">
+                <button type="button" class="btn" style="background:#ffffff;border:1px solid #e2e8f0;color:#475569;border-radius:8px;padding:0.5rem 1rem;font-weight:500;font-size:0.84rem" data-bs-dismiss="modal">Close</button>
+                <a href="#" class="btn" id="viewDetailsBtn" style="background:#0f172a;border:1px solid #0f172a;color:#ffffff;border-radius:8px;padding:0.5rem 1rem;font-weight:600;font-size:0.84rem"><i class="fas fa-external-link-alt me-1"></i> View Full Details</a>
             </div>
         </div>
     </div>

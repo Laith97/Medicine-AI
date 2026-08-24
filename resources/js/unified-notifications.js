@@ -39,24 +39,34 @@ class UnifiedNotificationSystem {
         console.log('🔔 Initializing Unified Notification System for user:', this.userId);
         this.initialized = true;
         
-        // Create Pusher instance
-        // Use the server's broadcasting key (from meta tag) so client and server stay in sync
-        const pusherKey = document.querySelector('meta[name="pusher-key"]')?.getAttribute('content') || import.meta.env.VITE_PUSHER_APP_KEY || '57bd15962a354114cb5e';
-        const pusherCluster = document.querySelector('meta[name="pusher-cluster"]')?.getAttribute('content') || import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2';
-        this.pusher = new Pusher(pusherKey, {
-            cluster: pusherCluster,
-            authEndpoint: "/broadcasting/auth",
-            auth: {
-                headers: {
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
-                    "Accept": "application/json",
-                    "X-Requested-With": "XMLHttpRequest"
-                }
+        // Prefer Laravel Echo's shared Pusher (single connection, correct auth) if available
+        if (window.Echo && window.Echo.connector && window.Echo.connector.pusher) {
+            this.pusher = window.Echo.connector.pusher;
+            // Echo private adds "private-" prefix automatically, so use private() helper
+            this.channel = window.Echo.private(`App.User.${this.userId}`);
+            // Echo channel exposes underlying Pusher channel via .subscription
+            // Fallback to Pusher channel for .bind compatibility
+            if (this.channel && this.channel.subscription) {
+                this.channel = this.channel.subscription;
+            } else if (window.Echo.connector.pusher.channel(`private-App.User.${this.userId}`)) {
+                this.channel = window.Echo.connector.pusher.channel(`private-App.User.${this.userId}`);
             }
-        });
-
-        // Subscribe to user's private channel
-        this.channel = this.pusher.subscribe(`private-App.User.${this.userId}`);
+        } else {
+            const pusherKey = document.querySelector('meta[name="pusher-key"]')?.getAttribute('content') || import.meta.env.VITE_PUSHER_APP_KEY || '57bd15962a354114cb5e';
+            const pusherCluster = document.querySelector('meta[name="pusher-cluster"]')?.getAttribute('content') || import.meta.env.VITE_PUSHER_APP_CLUSTER || 'ap2';
+            this.pusher = new Pusher(pusherKey, {
+                cluster: pusherCluster,
+                authEndpoint: "/broadcasting/auth",
+                auth: {
+                    headers: {
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                        "Accept": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                }
+            });
+            this.channel = this.pusher.subscribe(`private-App.User.${this.userId}`);
+        }
         
         // Setup event listeners
         this.setupChannelEvents();

@@ -219,6 +219,8 @@ function notificationDropdown() {
         },
 
         async loadNotifications() {
+            if (this._loading) return;
+            this._loading = true;
             try {
                 console.log('📱 Loading notifications...');
 
@@ -291,6 +293,8 @@ function notificationDropdown() {
                 console.log('📋 Total notifications after merge:', this.notifications.length, 'unreadCount:', this.unreadCount);
             } catch (error) {
                 console.error('❌ Failed to load notifications:', error);
+            } finally {
+                this._loading = false;
             }
         },
 

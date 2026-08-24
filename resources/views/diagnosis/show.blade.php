@@ -2,451 +2,198 @@
 
 @section('title', 'Diagnosis Details')
 
+@push('styles')
+<style>
+.page-hero{background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:1.75rem 0}
+.page-hero h2{font-size:1.45rem;font-weight:700;color:#0f172a;letter-spacing:-0.02em;margin:0}
+.page-hero p{font-size:0.875rem;color:#64748b;margin:0.25rem 0 0}
+.card-modern{background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.card-modern-header{padding:0.85rem 1.25rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between}
+.card-modern-header h5{font-size:0.95rem;font-weight:600;color:#0f172a;margin:0;display:flex;align-items:center;gap:0.5rem}
+.card-modern-body{padding:1.25rem}
+.badge-soft{font-size:0.72rem;font-weight:600;padding:0.3rem 0.6rem;border-radius:99px;border:1px solid #e2e8f0;background:#f1f5f9;color:#475569}
+</style>
+@endpush
+
 @section('content')
-<div class="container-fluid px-2 px-md-4">
+<div class="container-fluid" style="background:#f8fafc">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2 style="font-size:1.5rem;font-weight:700;color:#0f172a;letter-spacing:-0.02em;margin:0"><i class="fas fa-clipboard-check me-2" style="color:#DE6262"></i>Diagnosis Details</h2>
+                <p style="font-size:0.875rem;color:#64748b;margin:0.25rem 0 0">Created on {{ $diagnosis->created_at->format('F j, Y \a\t g:i A') }} · Type {{ ucfirst($diagnosis->type ?? 'Text') }}</p>
+            </div>
+            @php
+                $prevDiag = url()->previous();
+                $diagBackUrl = $prevDiag !== url()->current() ? $prevDiag : route('doctor.cases.overview');
+            @endphp
+            <a href="{{ $diagBackUrl }}" class="btn" style="background:#ffffff;border:1px solid #e2e8f0;color:#334155;border-radius:8px;padding:0.55rem 1rem;font-weight:500;font-size:0.84rem"><i class="fas fa-arrow-left me-2"></i>Back</a>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10 col-xl-9">
-            <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2><i class="fas fa-clipboard-check me-2"></i>Diagnosis Details</h2>
-                    <p class="text-muted">Created on {{ $diagnosis->created_at->format('F j, Y \a\t g:i A') }}</p>
-                </div>
-                @php
-                    $prevDiag = url()->previous();
-                    $isRec = str_contains($prevDiag, 'recorded-voices');
-                    $isHist = str_contains($prevDiag, 'history') || str_contains($prevDiag, 'ambient-listening');
-                    $diagBackUrl = $prevDiag !== url()->current() && (str_contains($prevDiag, '/ai/') || str_contains($prevDiag, '/doctor/')) ? $prevDiag : route('doctor.cases.overview');
-                    $diagBackLabel = $isRec ? 'Back to Recorded Voices' : ($isHist ? 'Back to History' : 'Back to Cases');
-                @endphp
-                <a href="{{ $diagBackUrl }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>{{ $diagBackLabel }}
-                </a>
-            </div>
-
-            @if (session('success'))
-                <div class="alert alert-success alert-dismissible fade show">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-
             <!-- Patient Information -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Patient Information</h5>
+            <div class="card-modern mb-4">
+                <div class="card-modern-header">
+                    <h5><i class="fas fa-user" style="color:#6366f1"></i> Patient Information</h5>
+                    <span class="badge-soft">ID {{ $diagnosis->patient->id }}</span>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="avatar-lg bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
-                                    <i class="fas fa-user fa-2x text-primary"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-0">{{ $diagnosis->patient->name }}</h5>
-                                    <p class="text-muted mb-0">{{ $diagnosis->patient->email }}</p>
-                                    @if($diagnosis->patient->phone)
-                                        <p class="text-muted mb-0">{{ $diagnosis->patient->phone }}</p>
-                                    @endif
-                                </div>
-                            </div>
+                <div class="card-modern-body">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:48px;height:48px;background:#f8fafc;border:1px solid #e2e8f0;color:#64748b"><i class="fas fa-user"></i></span>
+                        <div>
+                            <div style="font-weight:600;color:#0f172a">{{ $diagnosis->patient->name }}</div>
+                            <div style="font-size:0.84rem;color:#64748b">{{ $diagnosis->patient->email }} @if($diagnosis->patient->phone) · {{ $diagnosis->patient->phone }} @endif</div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="patient-details">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <strong>Age:</strong> {{ $diagnosis->patient->age ?? 'N/A' }}
-                                    </div>
-                                    <div class="col-6">
-                                        <strong>Gender:</strong> {{ ucfirst($diagnosis->patient->gender ?? 'N/A') }}
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="ms-auto d-flex gap-2">
+                            <span class="badge-soft">Age {{ $diagnosis->patient->age ?? 'N/A' }}</span>
+                            <span class="badge-soft">{{ ucfirst($diagnosis->patient->gender ?? 'N/A') }}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Diagnosis Information -->
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-stethoscope me-2"></i>Diagnosis</h5>
-                        <span class="badge bg-light text-dark">
-                            <i class="fas fa-{{ $diagnosis->type === 'ai' ? 'robot' : 'user-md' }} me-1"></i>
-                            {{ ucfirst($diagnosis->type) }} Diagnosis
-                        </span>
-                    </div>
+            <!-- Diagnosis -->
+            <div class="card-modern mb-4">
+                <div class="card-modern-header">
+                    <h5><i class="fas fa-stethoscope" style="color:#0ea5e9"></i> Diagnosis</h5>
+                    <span class="badge-soft" style="background:{{ ($diagnosis->type ?? 'text') === 'ai' ? 'rgba(124,58,237,0.08)' : 'rgba(16,185,129,0.08)' }};color:{{ ($diagnosis->type ?? 'text') === 'ai' ? '#7c3aed' : '#059669' }};border-color:{{ ($diagnosis->type ?? 'text') === 'ai' ? 'rgba(124,58,237,0.15)' : 'rgba(16,185,129,0.15)' }}"><i class="fas fa-{{ ($diagnosis->type ?? 'text') === 'ai' ? 'robot' : 'user-md' }} me-1"></i> {{ ucfirst($diagnosis->type ?? 'Text') }}</span>
                 </div>
-                <div class="card-body">
-                    <div class="diagnosis-content mb-4">
-                        <h6>Diagnosis Text:</h6>
-                        <div class="bg-light p-3 rounded">
-                            {!! nl2br(e($diagnosis->diagnosis_text)) !!}
-                        </div>
-                    </div>
+                <div class="card-modern-body">
+                    <h6 style="font-size:0.84rem;font-weight:600;color:#334155;margin:0 0 0.5rem">Diagnosis Text</h6>
+                    <div style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px;padding:1rem;font-size:0.9rem;color:#334155;line-height:1.6">{!! nl2br(e($diagnosis->diagnosis_text ?? 'No diagnosis text')) !!}</div>
 
-                    @if($diagnosis->voice_transcripts && count($diagnosis->voice_transcripts) > 0)
-                        <div class="voice-transcripts mb-4">
-                            <h6><i class="fas fa-microphone me-2"></i>Voice Notes:</h6>
+                    <div class="mt-4">
+                        <h6 style="font-size:0.84rem;font-weight:600;color:#334155"><i class="fas fa-microphone me-2" style="color:#f59e0b"></i>Voice Notes ({{ count($diagnosis->voice_transcripts ?? []) }})</h6>
+                        @if($diagnosis->voice_transcripts && count($diagnosis->voice_transcripts) > 0)
                             @foreach($diagnosis->voice_transcripts as $index => $transcript)
                                 @if($transcript && $transcript !== $diagnosis->diagnosis_text)
-                                    <div class="voice-transcript-item mb-3">
+                                    <div class="p-3 mb-2" style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <h6 class="mb-0">Voice Note {{ $index + 1 }}</h6>
+                                            <span style="font-size:0.78rem;font-weight:600;color:#92400e">Voice Note {{ $index + 1 }}</span>
                                             @if(isset($diagnosis->voice_files[$index]) && (!empty(trim($diagnosis->voice_files[$index])) || $diagnosis->voice_transcripts[$index]))
-                                                <button class="btn btn-sm btn-outline-info" onclick="playVoiceFile({{ $index }})">
-                                                    <i class="fas fa-play me-1"></i>Play Voice Note {{ $index + 1 }}
-                                                </button>
+                                                <button class="btn btn-sm" style="background:#ffffff;border:1px solid #e2e8f0;color:#334155;border-radius:8px;font-size:0.72rem" onclick="playVoiceFile({{ $index }})"><i class="fas fa-play me-1"></i>Play</button>
                                             @else
-                                                <span class="text-muted small"><i class="fas fa-exclamation-triangle me-1"></i>Audio file not available</span>
+                                                <span style="font-size:0.72rem;color:#94a3b8">Audio not available</span>
                                             @endif
                                         </div>
-                                        <div class="bg-info bg-opacity-10 p-3 rounded">
-                                            {!! nl2br(e($transcript)) !!}
-                                        </div>
+                                        <div style="font-size:0.875rem;color:#475569">{!! nl2br(e($transcript)) !!}</div>
                                     </div>
                                 @endif
                             @endforeach
-                        </div>
-                    @endif
+                        @else
+                            <div class="text-center py-3" style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:8px;font-size:0.84rem;color:#94a3b8">No voice notes — Type: {{ ucfirst($diagnosis->type ?? 'Text') }}</div>
+                        @endif
+                    </div>
 
-                    @if($diagnosis->ai_response)
-                        <div class="ai-response">
-                            <h6><i class="fas fa-robot me-2"></i>AI Analysis:</h6>
-                            <div class="bg-warning bg-opacity-10 p-3 rounded">
-                                {!! nl2br(e($diagnosis->ai_response)) !!}
-                            </div>
-                        </div>
-                    @endif
-
-                    @if($diagnosis->aiAssistantResults && $diagnosis->aiAssistantResults->count() > 0)
-                        <hr>
-                        <div class="ai-assistant-results">
-                            <h6><i class="fas fa-robot me-2"></i>AI Assistant Analysis</h6>
-                            @foreach($diagnosis->aiAssistantResults as $index => $result)
-                                <div class="ai-assistant-result mb-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0 text-info">
-                                            <i class="fas fa-robot me-1"></i>
-                                            AI Analysis {{ $index + 1 }}
-                                        </h6>
-                                        <small class="text-muted">{{ $result->created_at->format('M d, Y H:i A') }}</small>
-                                    </div>
-                                    <div class="bg-info bg-opacity-10 p-3 rounded">
-                                        {!! nl2br($result->ai_analysis) !!}
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
+                    <div class="mt-4">
+                        <h6 style="font-size:0.84rem;font-weight:600;color:#334155"><i class="fas fa-robot me-2" style="color:#7c3aed"></i>AI Analysis</h6>
+                        @if($diagnosis->ai_response)
+                            <div style="background:#f5f3ff;border:1px solid #ede9fe;border-radius:8px;padding:1rem;font-size:0.875rem;color:#475569">{!! nl2br(e($diagnosis->ai_response)) !!}</div>
+                        @else
+                            <div class="text-center py-3" style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:8px;font-size:0.84rem;color:#94a3b8">No AI analysis yet — will appear after AI processing</div>
+                        @endif
+                    </div>
                 </div>
             </div>
 
             <!-- Patient Data -->
-            @if($diagnosis->patient_data)
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0"><i class="fas fa-notes-medical me-2"></i>Additional Patient Data</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            @foreach($diagnosis->patient_data as $key => $value)
-                                @if($value)
-                            <div class="col-md-6 mb-3">
-                                <h6 class="text-capitalize">{{ str_replace('_', ' ', $key) }}</h6>
-                                <div class="bg-light p-2 rounded">
-                                    @if(is_array($value))
-                                        @php
-                                            // Check if this is the symptoms field and contains IDs
-                                            $isSymptomsField = ($key === 'symptoms');
-                                            $symptomNames = [];
-                                        @endphp
-                                        @foreach($value as $subKey => $subValue)
-                                            @php
-                                                // If this is the symptoms field and the value is a numeric ID, look up the symptom name
-                                                if ($isSymptomsField && is_numeric($subValue)) {
-                                                    $symptom = \App\Models\Symptom::find($subValue);
-                                                    if ($symptom) {
-                                                        $subValue = $symptom->name;
-                                                    } else {
-                                                        // Debug: Show that symptom was not found
-                                                        $subValue = "[ID:{$subValue} - Not Found]";
-                                                    }
-                                                }
-                                            @endphp
-                                            <div class="mb-1">
-                                                <strong>{{ is_string($subKey) ? str_replace('_', ' ', ucfirst($subKey)) : 'Item ' . ($subKey + 1) }}:</strong>
-                                                @if(is_array($subValue))
-                                                    <div class="ms-3">
-                                                        @foreach($subValue as $nestedKey => $nestedValue)
-                                                            @php
-                                                                // Also check for symptom IDs in nested arrays
-                                                                if ($isSymptomsField && is_numeric($nestedValue)) {
-                                                                    $symptom = \App\Models\Symptom::find($nestedValue);
-                                                                    if ($symptom) {
-                                                                        $nestedValue = $symptom->name;
-                                                                    } else {
-                                                                        // Debug: Show that symptom was not found
-                                                                        $nestedValue = "[ID:{$nestedValue} - Not Found]";
-                                                                    }
-                                                                }
-                                                            @endphp
-                                                            <div>
-                                                                <strong>{{ is_string($nestedKey) ? str_replace('_', ' ', ucfirst($nestedKey)) : 'Item ' . ($nestedKey + 1) }}:</strong>
-                                                                {{ is_array($nestedValue) ? json_encode($nestedValue) : $nestedValue }}
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                @else
-                                                    {{ $subValue }}
-                                                @endif
-                                            </div>
-                                        @endforeach
-                                    @elseif($key === 'symptoms' && is_string($value))
-                                        @php
-                                            // Handle symptoms that might be stored as a JSON string
-                                            $symptomsArray = json_decode($value, true);
-                                            if (is_array($symptomsArray)) {
-                                                // Process each symptom ID to get the text value
-                                                $processedSymptoms = [];
-                                                foreach ($symptomsArray as $symptomId) {
-                                                    if (is_numeric($symptomId)) {
-                                                        $symptom = \App\Models\Symptom::find($symptomId);
-                                                        if ($symptom) {
-                                                            $processedSymptoms[] = $symptom->name;
-                                                        } else {
-                                                            // Debug: Show that symptom was not found
-                                                            $processedSymptoms[] = "[ID:{$symptomId} - Not Found]";
-                                                        }
-                                                    } else {
-                                                        // This is already a text symptom
-                                                        $processedSymptoms[] = $symptomId;
-                                                    }
-                                                }
-                                                $value = implode(', ', $processedSymptoms);
-                                            }
-                                        @endphp
-                                        {{ $value }}
-                                    @else
-                                        @php
-                                            // Check if this is the symptoms field and the value is a numeric ID
-                                            if ($key === 'symptoms' && is_numeric($value)) {
-                                                $symptom = \App\Models\Symptom::find($value);
-                                                if ($symptom) {
-                                                    $value = $symptom->name;
-                                                }
-                                            }
-                                        @endphp
-                                        {{ $value }}
-                                    @endif
+            <div class="card-modern mb-4">
+                <div class="card-modern-header">
+                    <h5><i class="fas fa-notes-medical" style="color:#0ea5e9"></i> Additional Patient Data</h5>
+                    <span class="badge-soft">{{ count($diagnosis->patient_data ?? []) }} fields</span>
+                </div>
+                <div class="card-modern-body">
+                    @php
+                        $expectedKeys = ['symptoms','past_medical_history','past_medications','allergies','clinical_notes','vitals','heart_rate','blood_pressure','temperature'];
+                    @endphp
+                    <div class="row g-3">
+                        @foreach($expectedKeys as $key)
+                            <div class="col-md-6">
+                                <div class="p-3 h-100" style="background:#ffffff;border:1px solid #f1f5f9;border-radius:8px">
+                                    <h6 style="font-size:0.78rem;font-weight:600;color:#0f172a;text-transform:capitalize;margin:0 0 0.5rem">{{ str_replace('_',' ', $key) }}</h6>
+                                    <div style="font-size:0.84rem;color:#475569;min-height:24px">
+                                        @if(isset($diagnosis->patient_data[$key]) && $diagnosis->patient_data[$key])
+                                            @if(is_array($diagnosis->patient_data[$key]))
+                                                {{ implode(', ', array_map(fn($v) => is_array($v) ? json_encode($v) : $v, $diagnosis->patient_data[$key])) }}
+                                            @else
+                                                {{ $diagnosis->patient_data[$key] }}
+                                            @endif
+                                        @else
+                                            <span style="color:#94a3b8;font-style:italic">N/A</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
-                                @endif
-                            @endforeach
-                        </div>
+                        @endforeach
                     </div>
                 </div>
-            @endif
+            </div>
 
-            <!-- Patient Status & Activity -->
-            <div class="card mb-4">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Patient Activity</h5>
+            <!-- Activity -->
+            <div class="card-modern mb-4">
+                <div class="card-modern-header">
+                    <h5><i class="fas fa-chart-line" style="color:#10b981"></i> Patient Activity</h5>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 text-center">
-                            <div class="activity-stat">
-                                <i class="fas fa-eye fa-2x {{ $diagnosis->patient_viewed_at ? 'text-success' : 'text-muted' }} mb-2"></i>
-                                <h6>Viewed</h6>
-                                @if($diagnosis->patient_viewed_at)
-                                    <small class="text-success">{{ $diagnosis->patient_viewed_at->format('M j, g:i A') }}</small>
-                                @else
-                                    <small class="text-muted">Not viewed yet</small>
-                                @endif
+                <div class="card-modern-body">
+                    <div class="row g-3 text-center">
+                        <div class="col-6 col-md-3">
+                            <div class="p-3" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px">
+                                <i class="fas fa-eye fa-lg mb-2" style="color:{{ $diagnosis->patient_viewed_at ? '#10b981' : '#94a3b8' }}"></i>
+                                <div style="font-size:0.78rem;font-weight:600;color:#0f172a">Viewed</div>
+                                <small style="font-size:0.72rem;color:{{ $diagnosis->patient_viewed_at ? '#10b981' : '#94a3b8' }}">{{ $diagnosis->patient_viewed_at ? $diagnosis->patient_viewed_at->format('M j, g:i A') : 'Not viewed yet' }}</small>
                             </div>
                         </div>
-                        <div class="col-md-3 text-center">
-                            <div class="activity-stat">
-                                <i class="fas fa-comments fa-2x {{ $diagnosis->follow_up_count > 0 ? 'text-info' : 'text-muted' }} mb-2"></i>
-                                <h6>Follow-ups</h6>
-                                <small class="text-muted">{{ $diagnosis->follow_up_count }}/5 questions asked</small>
+                        <div class="col-6 col-md-3">
+                            <div class="p-3" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px">
+                                <i class="fas fa-comments fa-lg mb-2" style="color:{{ $diagnosis->follow_up_count > 0 ? '#0ea5e9' : '#94a3b8' }}"></i>
+                                <div style="font-size:0.78rem;font-weight:600;color:#0f172a">Follow-ups</div>
+                                <small style="font-size:0.72rem;color:#64748b">{{ $diagnosis->follow_up_count }}/5 asked</small>
                             </div>
                         </div>
-                        <div class="col-md-3 text-center">
-                            <div class="activity-stat">
-                                <i class="fas fa-star fa-2x {{ $diagnosis->patient_reviewed ? 'text-warning' : 'text-muted' }} mb-2"></i>
-                                <h6>Review</h6>
-                                @if($diagnosis->patient_reviewed)
-                                    <small class="text-success">Reviewed</small>
-                                @else
-                                    <small class="text-muted">Not reviewed</small>
-                                @endif
+                        <div class="col-6 col-md-3">
+                            <div class="p-3" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px">
+                                <i class="fas fa-star fa-lg mb-2" style="color:{{ $diagnosis->patient_reviewed ? '#f59e0b' : '#94a3b8' }}"></i>
+                                <div style="font-size:0.78rem;font-weight:600;color:#0f172a">Review</div>
+                                <small style="font-size:0.72rem;color:{{ $diagnosis->patient_reviewed ? '#10b981' : '#94a3b8' }}">{{ $diagnosis->patient_reviewed ? 'Reviewed' : 'Not reviewed' }}</small>
                             </div>
                         </div>
-                        <div class="col-md-3 text-center">
-                            <div class="activity-stat">
-                                <i class="fas fa-bell fa-2x {{ $diagnosis->patient_notified ? 'text-success' : 'text-muted' }} mb-2"></i>
-                                <h6>Notified</h6>
-                                @if($diagnosis->patient_notified)
-                                    <small class="text-success">Patient notified</small>
-                                @else
-                                    <small class="text-muted">Not notified</small>
-                                @endif
+                        <div class="col-6 col-md-3">
+                            <div class="p-3" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px">
+                                <i class="fas fa-bell fa-lg mb-2" style="color:{{ $diagnosis->patient_notified ? '#10b981' : '#94a3b8' }}"></i>
+                                <div style="font-size:0.78rem;font-weight:600;color:#0f172a">Notified</div>
+                                <small style="font-size:0.72rem;color:{{ $diagnosis->patient_notified ? '#10b981' : '#94a3b8' }}">{{ $diagnosis->patient_notified ? 'Patient notified' : 'Not notified' }}</small>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Follow-up Questions -->
-            @if($diagnosis->followUps->count() > 0)
-                <div class="card mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>Patient Follow-up Questions ({{ $diagnosis->followUps->count() }})</h5>
-                    </div>
-                    <div class="card-body">
-                        @foreach($diagnosis->followUps as $followUp)
-                            <div class="follow-up-item mb-4 p-3 border rounded">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="mb-0"><i class="fas fa-user me-2"></i>Patient Question</h6>
-                                    <small class="text-muted">{{ $followUp->created_at->format('M j, Y \a\t g:i A') }}</small>
-                                </div>
-                                <div class="question mb-3 p-2 bg-light rounded">
-                                    {{ $followUp->question }}
-                                </div>
-
-                                <h6 class="mb-2"><i class="fas fa-robot me-2 text-info"></i>AI Response</h6>
-                                <div class="answer p-2 bg-info bg-opacity-10 rounded">
-                                    {!! nl2br(e($followUp->ai_response)) !!}
-                                </div>
-
-                                @if($followUp->usage_data)
-                                    <div class="mt-2">
-                                        <small class="text-muted">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            Tokens used: {{ $followUp->usage_data['tokens_used'] ?? 'N/A' }}
-                                        </small>
-                                    </div>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
-
             <!-- Actions -->
-            <div class="card">
-                <div class="card-body text-center">
-                    <div class="btn-group" role="group">
-                        @php
-                            $prevDiag2 = url()->previous();
-                            $isRec2 = str_contains($prevDiag2, 'recorded-voices');
-                            $isHist2 = str_contains($prevDiag2, 'history') || str_contains($prevDiag2, 'ambient-listening');
-                            $diagBackUrl2 = $prevDiag2 !== url()->current() && (str_contains($prevDiag2, '/ai/') || str_contains($prevDiag2, '/doctor/')) ? $prevDiag2 : route('doctor.cases.overview');
-                            $diagBackLabel2 = $isRec2 ? 'Back to Recorded Voices' : ($isHist2 ? 'Back to History' : 'Back to Cases');
-                        @endphp
-                        <a href="{{ $diagBackUrl2 }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>{{ $diagBackLabel2 }}
-                        </a>
-                        @if(!$diagnosis->patient_notified && $diagnosis->patient->email)
-                            <button class="btn btn-info" onclick="resendNotification()">
-                                <i class="fas fa-envelope me-2"></i>Resend Notification
-                            </button>
-                        @endif
-                        <button class="btn btn-primary" onclick="copyDiagnosisLink()">
-                            <i class="fas fa-link me-2"></i>Copy Patient Link
-                        </button>
-                    </div>
+            <div class="card-modern">
+                <div class="card-modern-body d-flex flex-wrap gap-2 justify-content-center">
+                    @php
+                        $prevDiag2 = url()->previous();
+                        $diagBackUrl2 = $prevDiag2 !== url()->current() ? $prevDiag2 : route('doctor.cases.overview');
+                        $diagBackLabel2 = 'Back';
+                    @endphp
+                    <a href="{{ $diagBackUrl2 }}" class="btn" style="background:#ffffff;border:1px solid #e2e8f0;color:#475569;border-radius:8px;padding:0.6rem 1rem;font-weight:500;font-size:0.84rem"><i class="fas fa-arrow-left me-2"></i>{{ $diagBackLabel2 }}</a>
+                    <button class="btn" style="background:#ffffff;border:1px solid #e2e8f0;color:#475569;border-radius:8px;padding:0.6rem 1rem;font-weight:500;font-size:0.84rem" onclick="copyDiagnosisLink()"><i class="fas fa-link me-2"></i>Copy Patient Link</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-.avatar-lg {
-    width: 60px;
-    height: 60px;
-}
-
-.activity-stat {
-    padding: 1rem;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-}
-
-.follow-up-item {
-    background-color: #f8f9fa;
-}
-
-.diagnosis-content {
-    font-size: 1.05rem;
-    line-height: 1.6;
-}
-</style>
-
 <script>
 function playVoiceFile(index = 0) {
-    // Create audio element
-    const audio = new Audio();
-    const voiceUrl = `/diagnosis/{{ $diagnosis->id }}/voice?file=${index}`;
-
-    // Set audio source
-    audio.src = voiceUrl;
-
-    // Add loading state to the specific button
-    const playButton = document.querySelector(`button[onclick="playVoiceFile(${index})"]`);
-    if (playButton) {
-        const originalContent = playButton.innerHTML;
-        playButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-        playButton.disabled = true;
-
-        // Reset button after audio ends or on error
-        const resetButton = () => {
-            playButton.innerHTML = originalContent;
-            playButton.disabled = false;
-        };
-
-        audio.addEventListener('ended', resetButton);
-        audio.addEventListener('error', () => {
-            resetButton();
-            alert('Error playing voice file. Please try again.');
-        });
-
-        audio.addEventListener('loadeddata', () => {
-            resetButton();
-        });
-    }
-
-    // Play the audio
-    audio.play().catch(error => {
-        console.error('Error playing audio:', error);
-        if (playButton) {
-            playButton.innerHTML = `<i class="fas fa-play me-1"></i>Play Voice Note ${index + 1}`;
-            playButton.disabled = false;
-        }
-        alert('Could not play voice file. Please check if the file exists.');
-    });
+    const audio = new Audio(`/diagnosis/{{ $diagnosis->id }}/voice?file=${index}`);
+    const btn = document.querySelector(`button[onclick="playVoiceFile(${index})"]`);
+    if(btn){ const orig=btn.innerHTML; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Loading...'; btn.disabled=true; const reset=()=>{btn.innerHTML=orig;btn.disabled=false}; audio.addEventListener('ended',reset); audio.addEventListener('error',()=>{reset();alert('Error playing voice file')}); audio.play().catch(()=>{reset();alert('Could not play voice file')}); }
 }
-
-function resendNotification() {
-    if (confirm('Are you sure you want to resend the notification to the patient?')) {
-        // This would need to be implemented
-        alert('Notification resend feature would be implemented here');
-    }
-}
-
-function copyDiagnosisLink() {
-    const link = '{{ route("diagnosis.patient.view", $diagnosis) }}';
-    navigator.clipboard.writeText(link).then(function() {
-        alert('Patient link copied to clipboard!');
-    }, function(err) {
-        console.error('Could not copy text: ', err);
-        alert('Failed to copy link. Please copy manually: ' + link);
-    });
-}
+function copyDiagnosisLink(){ const link='{{ route("diagnosis.patient.view", $diagnosis) }}'; navigator.clipboard.writeText(link).then(()=>alert('Patient link copied!'),()=>alert('Failed: '+link)); }
 </script>
 @endsection

@@ -153,7 +153,10 @@ window.laravelNotificationCatcher = {
     },
 
     setupPresenceChannels(userId) {
-
+        const userRole = document.querySelector('meta[name="user-role"]')?.getAttribute('content');
+        if (!['doctor', 'admin', 'hospital_admin'].includes(userRole)) {
+            return;
+        }
         // Presence channels might be used for doctor-specific notifications
         const presenceChannelNames = [
             `doctors`,
