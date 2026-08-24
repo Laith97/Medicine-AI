@@ -86,8 +86,9 @@ nav[role="navigation"] p, nav[role="navigation"] span{font-size:0.84rem;color:#6
                 <div class="col-lg-4 col-md-6">
                     <div class="doctor-card">
                         <div class="doctor-card-top">
-                            @if($doctor->profile_image)
-                                <img src="{{ asset('storage/' . $doctor->profile_image) }}" alt="{{ $doctor->user->name }}" class="avatar" style="object-fit:cover">
+                            @if($doctor->profile_image && \Illuminate\Support\Facades\Storage::disk('public')->exists($doctor->profile_image))
+                                <img src="{{ asset('storage/' . $doctor->profile_image) }}" alt="" class="avatar" style="object-fit:cover" onerror="this.style.display='none';document.getElementById('fallback-{{ $doctor->id }}').style.display='flex'">
+                                <span id="fallback-{{ $doctor->id }}" class="avatar" style="display:none"><i class="fas fa-user-md" style="color:#94a3b8"></i></span>
                             @else
                                 <span class="avatar"><i class="fas fa-user-md" style="color:#94a3b8"></i></span>
                             @endif
