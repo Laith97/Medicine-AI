@@ -149,14 +149,14 @@ Route::get('/register', function () {
     return view('auth.register-choice');
 })->name('register');
 
-// Doctor registration route - redirect to the actual doctor registration
-Route::get('/register-doctor', function (\Illuminate\Http\Request $request) {
-    // Since we removed the GET route from auth.php, we need to create it here
-    return app(\App\Http\Controllers\Auth\RegisteredUserController::class)->create($request);
+// Unified register - redirects keep compatibility, single page with toggle
+Route::get('/register-doctor', function () {
+    return redirect('/register?role=doctor');
 })->name('register.doctor');
 
-// Patient registration routes
-Route::get('/register/patient', [PatientRegistrationController::class, 'create'])->name('patient.register');
+Route::get('/register/patient', function () {
+    return redirect('/register?role=patient');
+})->name('patient.register');
 Route::post('/register/patient', [PatientRegistrationController::class, 'store'])->name('patient.register.store');
 
 // Public doctor routes

@@ -34,7 +34,7 @@
             position: relative;
             padding: 8px 12px;
             border-radius: 6px;
-            transition: all 0.3s ease;
+            transition: color 0.15s ease, background-color 0.15s ease;
             display: inline-block;
         }
 
@@ -42,7 +42,6 @@
             color: #DE6262;
             /* accent color on hover */
             background-color: #f8f9fa;
-            transform: translateY(-2px);
         }
 
         /* Add nice underline on hover */
@@ -62,6 +61,8 @@
 .top-link:hover::after {
     width: calc(100% - 24px);
 }
+.top-link:focus{outline:none}
+.top-link:focus::after{width:0}
 /* Header Dropdown Styling - Match EXACTLY the .sub-menu-container style */
 .dropdown-menu {
     /* Visuals copied from .primary-menu .sub-menu-container */
@@ -1437,8 +1438,8 @@ body .dropdown .dropdown-menu.show,
     <div id="wrapper">
 
         <!-- Top Bar Start - slim 52px -->
-        <div id="top-bar" class="py-0 border-bottom"
-            style="background: white; color: #333; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <div id="top-bar" class="py-0"
+            style="background: white; color: #333; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-bottom:1px solid #e2e8f0;">
             <div class="container">
                 <div class="row justify-content-between align-items-center">
 
@@ -1473,10 +1474,10 @@ body .dropdown .dropdown-menu.show,
                                 <span class="text-muted"><i class="bi bi-shield-check me-1 text-success"></i> AI System Online</span>
                             </div>
                             @else
-                            <a href="{{ url('/') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Home</a>
-                            <a href="{{ route('about') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">About Us</a>
-                            <a href="{{ route('contact') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">Contact</a>
-                            <a href="{{ route('doctors.index') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: all 0.3s ease; background: transparent; position: relative;">For Patients</a>
+                            <a href="{{ url('/') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: color 0.15s ease, background-color 0.15s ease; background: transparent; position: relative;">Home</a>
+                            <a href="{{ route('about') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: color 0.15s ease, background-color 0.15s ease; background: transparent; position: relative;">About Us</a>
+                            <a href="{{ route('contact') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: color 0.15s ease, background-color 0.15s ease; background: transparent; position: relative;">Contact</a>
+                            <a href="{{ route('doctors.index') }}" class="top-link" style="color: #333; text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 6px; transition: color 0.15s ease, background-color 0.15s ease; background: transparent; position: relative;">For Patients</a>
                             @endauth
                         </div>
                     </div>
