@@ -729,14 +729,15 @@
             </div>
         </div>
 
-        <!-- Right Column: Chart Fields -->
+        <!-- Right Column: Chart Fields - Premium -->
         <div class="col-lg-6 mb-4">
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-header bg-success text-white">
-                    <h5 class="card-title mb-0">
+            <div class="card h-100 shadow-sm border-0" style="border:1px solid #eef2f7!important;border-radius:12px;overflow:hidden">
+                <div class="card-header" style="background:#1e293b;color:#fff;padding:1rem 1.3rem;border-bottom:1px solid #0f172a">
+                    <h5 class="card-title mb-0" style="color:#fff!important;font-weight:800">
                         <i class="fas fa-clipboard-list me-2"></i>
                         Clinical Chart
                     </h5>
+                    <small style="color:rgba(255,255,255,0.75)">Auto-filled from AI transcript · editable</small>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
@@ -1162,13 +1163,11 @@
             }
         });
 
-        // Listen for server transcript ready event
+        // Listen for server transcript ready event - also auto-fill Clinical Chart
         window.addEventListener('serverTranscriptReady', function(event) {
             console.log('Server transcript ready - enabling buttons');
-            // Enable AI Analysis and Clinical Doc buttons when server processing completes
             const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
             const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
-
             if (generateAnalysisBtn) {
                 generateAnalysisBtn.disabled = false;
                 generateAnalysisBtn.style.opacity = '1';
@@ -1180,6 +1179,19 @@
                 generateClinicalDocBtn.style.opacity = '1';
                 generateClinicalDocBtn.style.cursor = 'pointer';
                 console.log('Clinical doc button enabled via server transcript');
+            }
+            // Auto-populate Clinical Chart from server extracted data (if available)
+            const extracted = event.detail?.extractedData || event.detail?.server_extracted_data;
+            if (extracted && typeof extracted === 'object') {
+                const map = {symptoms:'symptoms', medical_history:'medicalHistory', physical_findings:'physicalFindings', medications:'medications', vital_signs:'vitalSigns', diagnosis:'diagnosis', care_plan:'carePlan'};
+                Object.entries(map).forEach(([key, id])=>{
+                    const el=document.getElementById(id);
+                    if(el && extracted[key] && !el.value.trim()){
+                        el.value = extracted[key];
+                        el.dispatchEvent(new Event('input', {bubbles:true}));
+                    }
+                });
+                console.log('Clinical Chart auto-filled from server extracted data');
             }
         });
 
