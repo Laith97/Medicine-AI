@@ -53,11 +53,12 @@
 </div>
 <div class="container-fluid" style="background-color: var(--bg-secondary, #f8f9fa);">
     <div class="container pb-4">
-        <div class="card border-0 shadow-sm cases-panel">
+        <div class="card border-0 shadow-sm cases-panel" style="overflow:hidden">
             @if($transcriptions->count() > 0)
-                <div class="doctor-table-container">
-                    <div class="table-responsive">
-                        <table class="doctor-table mb-0">
+                <div class="doctor-table-container" style="overflow:hidden">
+                    <div style="overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;">
+                        <style>.doctor-table-container div::-webkit-scrollbar{display:none}</style>
+                        <table class="doctor-table mb-0" style="table-layout:fixed;width:100%">
                             <thead>
                                 <tr>
                                     <th>Patient</th>
