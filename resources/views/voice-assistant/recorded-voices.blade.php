@@ -58,15 +58,15 @@
                 <div class="doctor-table-container" style="overflow:hidden">
                     <div style="overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;">
                         <style>.doctor-table-container div::-webkit-scrollbar{display:none}</style>
-                        <table class="doctor-table mb-0" style="table-layout:fixed;width:100%">
-                            <thead>
+                        <table class="doctor-table table-hover mb-0" style="width:100%">
+                            <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #f1f5f9 100%);">
                                 <tr>
-                                    <th>Patient</th>
-                                    <th>Transcription</th>
-                                    <th>Status</th>
-                                    <th class="text-center">Duration</th>
-                                    <th>Recorded At</th>
-                                    <th class="text-end">Actions</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;white-space:nowrap"><i class="fas fa-user me-1 opacity-60"></i> Patient</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;max-width:260px">Transcription</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0">Status</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:center;width:90px">Duration</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;white-space:nowrap"><i class="far fa-calendar me-1 opacity-60"></i> Recorded At</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:right;width:140px">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>

@@ -12,8 +12,8 @@
 .search-bar input:focus{outline:none;box-shadow:none}
 .search-bar button{background:#DE6262;border:1px solid #DE6262;color:#ffffff;border-radius:8px;padding:0.6rem 1.1rem;font-weight:600;font-size:0.875rem;white-space:nowrap}
 .search-bar button:hover{background:#c55050}
-.filter-pills{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem}
-.filter-pills select{background:#ffffff;border:1px solid #e2e8f0;border-radius:99px;padding:0.4rem 0.85rem;font-size:0.82rem;color:#334155;font-weight:500}
+.filter-pills{display:flex!important;gap:0.5rem;flex-wrap:wrap;margin-top:1rem}
+.filter-pills select{background:#ffffff!important;border:1px solid #e2e8f0!important;border-radius:99px!important;padding:0.4rem 0.85rem!important;font-size:0.82rem!important;color:#334155!important;font-weight:500!important;-webkit-appearance:none;appearance:none}
 .doctor-card{background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;transition:border-color .15s, box-shadow .15s;height:100%;display:flex;flex-direction:column}
 .doctor-card:hover{border-color:#cbd5e1;box-shadow:0 8px 24px rgba(15,23,42,0.06)}
 .doctor-card-top{height:72px;background:linear-gradient(135deg,#fef2f2 0%,#f8fafc 100%);border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:center;position:relative}
