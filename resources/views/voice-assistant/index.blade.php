@@ -2,51 +2,29 @@
 
 @section('content')
 <style>
-.app-main {
-    background-color: #f8f9fa;
-}
-.dashboard-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
-    border-radius: 12px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
-}
-.dashboard-header h2 {
-    color: #ffffff;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-.dashboard-header p {
-    color: rgba(255, 255, 255, 0.85);
-    margin-bottom: 0;
-}
-.dashboard-header .btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    font-weight: 500;
-    padding: 0.5rem 1.25rem;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-}
-.dashboard-header .btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    color: white;
-}
+.app-main { background:#f8fafc }
+.dashboard-header{ background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-radius:16px; padding:1.6rem 1.8rem; margin-bottom:1.25rem; border:1px solid rgba(255,255,255,0.06); box-shadow:0 8px 24px rgba(15,23,42,0.12) }
+.dashboard-header h2{ color:#fff; font-weight:800; letter-spacing:-0.02em; margin-bottom:0.2rem; font-size:1.35rem }
+.dashboard-header p{ color:rgba(255,255,255,0.72); margin:0; font-size:0.86rem }
+.dashboard-header .btn{ background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18); color:#fff; font-weight:700; padding:0.55rem 1rem; border-radius:10px; backdrop-filter:blur(6px) }
+.dashboard-header .btn:hover{ background:rgba(255,255,255,0.2); color:#fff; transform:translateY(-1px) }
+.modern-card{ border:1px solid #eef2f7!important; border-radius:14px!important; box-shadow:0 4px 16px rgba(15,23,42,0.04)!important; background:#fff }
+.modern-card .card-body{ padding:1rem 1.1rem }
 </style>
-<div class="container-fluid" style="background-color: #f8f9fa;" data-session-id="{{ $sessionId }}">
-    <div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="dashboard-header">
-                <div class="d-flex justify-content-between align-items-center">
+<div class="container-fluid" style="background:#f8fafc" data-session-id="{{ $sessionId }}">
+    <div class="container-fluid px-3 px-lg-4">
+    <div class="row g-0">
+        <div class="col-12 px-0">
+            <div class="dashboard-header d-flex justify-content-between align-items-center" style="margin-left:0">
+                <div class="d-flex align-items-center gap-3">
                     <div>
-                        <h2><i class="fas fa-microphone-alt me-2"></i>Ambient Listening</h2>
-                        <p class="text-muted mb-0">AI-powered consultation recording with real-time transcription</p>
+                        <h2 class="mb-0"><i class="fa-solid fa-microphone me-2" style="font-family:'Font Awesome 6 Free'!important;font-weight:900!important"></i>Ambient Listening</h2>
+                        <p>AI-powered consultation recording · diarized transcription · auto chart</p>
                     </div>
-                    <a href="{{ route('ai.ambient-listening.recorded-voices') }}" class="btn">
-                        <i class="fas fa-clock-rotate-left me-2"></i>View History
-                    </a>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="d-none d-md-inline badge bg-white bg-opacity-10 border text-white" style="border-radius:20px;padding:6px 10px;font-weight:600"><span class="status-dot me-1" style="width:7px;height:7px;background:#22c55e;display:inline-block;border-radius:50%"></span> Live AI</span>
+                    <a href="{{ route('ai.ambient-listening.recorded-voices') }}" class="btn btn-sm"><i class="fas fa-clock-rotate-left me-2"></i>History</a>
                 </div>
             </div>
         </div>
@@ -54,92 +32,52 @@
     </div>
     <div class="container">
 
-    <!-- Patient Selection -->
-    <div class="row mb-4">
+    <!-- Patient Selection - Modern -->
+    <div class="row mb-3">
         <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <label class="form-label fw-bold mb-0">Select Patient</label>
-                        <button id="showNewPatientFormBtn" class="btn btn-outline-primary btn-sm" type="button">
-                            <i class="fas fa-user-plus me-1"></i>
-                            Add New Patient
-                        </button>
+            <div class="card modern-card">
+                <div class="card-body d-flex align-items-end gap-3 flex-nowrap">
+                    <div class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;border-radius:10px;background:#eff6ff;color:#2563eb;margin-bottom:1px"><i class="fas fa-user-injured" style="font-size:0.9rem"></i></div>
+                    <div class="flex-grow-1 min-w-0">
+                        <label for="patientSelect" class="form-label fw-bold mb-1 d-block" style="font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;line-height:1">Patient</label>
+                        <select id="patientSelect" class="form-select" style="border-radius:10px;border:1px solid #e2e8f0;font-weight:600;color:#1e293b;height:38px;padding:6px 12px;font-size:0.9rem">
+                            <option value="">Select a patient — search by name...</option>
+                            @foreach($patients as $patient)
+                                <option value="{{ $patient['id'] }}" {{ request('patient') == $patient['id'] ? 'selected' : '' }}>{{ $patient['name'] }} ({{ $patient['age'] ? $patient['age'] . 'y' : 'Age N/A' }}, {{ $patient['gender'] ? ucfirst($patient['gender']) : 'Gender N/A' }})</option>
+                            @endforeach
+                        </select>
                     </div>
-                    <select id="patientSelect" class="form-select">
-                        <option value="">Select a patient...</option>
-                        @foreach($patients as $patient)
-                            <option value="{{ $patient['id'] }}" {{ request('patient') == $patient['id'] ? 'selected' : '' }}>{{ $patient['name'] }} ({{ $patient['age'] ? $patient['age'] . 'y' : 'Age N/A' }}, {{ $patient['gender'] ? ucfirst($patient['gender']) : 'Gender N/A' }})</option>
-                        @endforeach
-                    </select>
+                    <button id="showNewPatientFormBtn" class="btn btn-light border flex-shrink-0" type="button" style="border-radius:10px;font-weight:700;color:#1e293b;height:38px;padding:0 14px;white-space:nowrap;font-size:0.88rem">
+                        <i class="fas fa-user-plus me-1 text-primary"></i> New Patient
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- New Patient Form Modal -->
+    <!-- New Patient Form - Modern -->
     <div id="newPatientForm" class="row mb-4" style="display: none;">
         <div class="col-12">
-            <div class="card border-primary">
-                <div class="card-header bg-primary text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="fas fa-user-plus me-2"></i>
-                            Create New Patient
-                        </h5>
-                        <button id="hideNewPatientFormBtn" class="btn btn-outline-light btn-sm">
-                            <i class="fas fa-times"></i>
-                        </button>
+            <div class="card modern-card" style="overflow:hidden">
+                <div class="card-header border-0 d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);color:#fff;padding:1rem 1.2rem">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="d-flex align-items-center justify-content-center" style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.14)"><i class="fas fa-user-plus" style="font-size:0.85rem"></i></span>
+                        <h5 class="mb-0" style="font-weight:800;font-size:0.95rem;color:#fff">Create New Patient</h5>
                     </div>
+                    <button id="hideNewPatientFormBtn" class="btn btn-sm text-white" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.2);border-radius:10px"><i class="fas fa-times"></i></button>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-3" style="background:#fff">
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Full Name *</label>
-                            <input type="text" id="newPatientName" class="form-control" placeholder="Enter patient's full name">
-                            <div id="newPatientNameError" class="text-danger small d-none"></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Email Address *</label>
-                            <input type="email" id="newPatientEmail" class="form-control" placeholder="patient@example.com">
-                            <div id="newPatientEmailError" class="text-danger small d-none"></div>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Age *</label>
-                            <input type="number" id="newPatientAge" class="form-control" min="1" max="150" placeholder="Age">
-                            <div id="newPatientAgeError" class="text-danger small d-none"></div>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Gender *</label>
-                            <select id="newPatientGender" class="form-select">
-                                <option value="">Select gender</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
-                            <div id="newPatientGenderError" class="text-danger small d-none"></div>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Phone Number</label>
-                            <input type="tel" id="newPatientPhone" class="form-control" placeholder="Phone number">
-                            <div id="newPatientPhoneError" class="text-danger small d-none"></div>
-                        </div>
+                        <div class="col-md-6"><label class="form-label fw-semibold" style="font-size:0.82rem;color:#334155">Full Name *</label><input type="text" id="newPatientName" class="form-control" placeholder="Enter full name" style="border-radius:10px;border:1px solid #e2e8f0"><div id="newPatientNameError" class="text-danger small d-none"></div></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold" style="font-size:0.82rem;color:#334155">Email Address *</label><input type="email" id="newPatientEmail" class="form-control" placeholder="patient@example.com" style="border-radius:10px;border:1px solid #e2e8f0"><div id="newPatientEmailError" class="text-danger small d-none"></div></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:0.82rem;color:#334155">Age *</label><input type="number" id="newPatientAge" class="form-control" min="1" max="150" placeholder="Age" style="border-radius:10px;border:1px solid #e2e8f0"><div id="newPatientAgeError" class="text-danger small d-none"></div></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:0.82rem;color:#334155">Gender *</label><select id="newPatientGender" class="form-select" style="border-radius:10px;border:1px solid #e2e8f0"><option value="">Select</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select><div id="newPatientGenderError" class="text-danger small d-none"></div></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:0.82rem;color:#334155">Phone Number</label><input type="tel" id="newPatientPhone" class="form-control" placeholder="Phone number" style="border-radius:10px;border:1px solid #e2e8f0"><div id="newPatientPhoneError" class="text-danger small d-none"></div></div>
                     </div>
-                    <div class="mt-3">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Note:</strong> A default password "patient123" will be assigned. Please inform the patient to change it after first login.
-                        </div>
-                    </div>
+                    <div class="mt-3 p-2 px-3 rounded-3 d-flex gap-2 align-items-center" style="background:#eff6ff;border:1px solid #dbeafe;font-size:0.78rem;color:#1e40af"><i class="fas fa-info-circle"></i><span><strong>Note:</strong> Default password <code>patient123</code> assigned. Ask patient to change on first login.</span></div>
                     <div class="d-flex gap-2 mt-3">
-                        <button type="button" id="createNewPatientBtn" class="btn btn-success">
-                            <i class="fas fa-user-plus me-2"></i>
-                            Create Patient
-                        </button>
-                        <button type="button" id="cancelNewPatientBtn" class="btn btn-secondary">
-                            <i class="fas fa-times me-2"></i>
-                            Cancel
-                        </button>
+                        <button type="button" id="createNewPatientBtn" class="btn text-white" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);border:none;border-radius:10px;font-weight:700"><i class="fas fa-user-plus me-2"></i>Create Patient</button>
+                        <button type="button" id="cancelNewPatientBtn" class="btn btn-light border" style="border-radius:10px;font-weight:600"><i class="fas fa-times me-2"></i>Cancel</button>
                     </div>
                 </div>
             </div>
@@ -148,77 +86,42 @@
     <!-- Alert Container -->
     <div id="alertContainer" class="mb-3"></div>
 
-    <!-- Control Panel - Compact Global Settings -->
+    <!-- Toolbar - Modern -->
     <div class="row mb-3">
         <div class="col-12">
-            <div class="card shadow-sm border-0 bg-light">
-                <div class="card-body p-3">
-                    <!-- Language Selector and Global Controls -->
-                    <div class="d-flex justify-content-between align-items-center">
-                        <!-- Language Selector -->
-                        <div class="d-flex align-items-center">
-                            <label class="form-label me-2 mb-0 small fw-bold">Language:</label>
-                            <select id="languageSelector" class="form-select form-select-sm" style="width: auto; min-width: 120px;">
-                                <option value="auto" selected>✨ Auto Detect</option>
-                                <option value="ar">🇸🇦 العربية</option>
-                                <option value="en">🇺🇸 English</option>
-                                <option value="fr">🇫🇷 Français</option>
-                                <option value="es">🇪🇸 Español</option>
-                                <option value="de">🇩🇪 Deutsch</option>
-                            </select>
-                        </div>
-
-                        <!-- Global Action Buttons -->
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('ai.ambient-listening.training') }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-graduation-cap me-1"></i>Guide
-                            </a>
-                            <a href="{{ route('ai.ambient-listening.recorded-voices') }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-history me-1"></i>History
-                            </a>
-                            <a href="{{ route('ai.ambient-listening.performance') }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-chart-line me-1"></i>Stats
-                            </a>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#ambientListeningHelpModal">
-                                <i class="fas fa-question-circle me-1"></i>Help
-                            </button>
-                        </div>
+            <div class="card modern-card">
+                <div class="card-body p-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small fw-bold" style="font-size:0.72rem;letter-spacing:0.04em;text-transform:uppercase">Language</span>
+                        <select id="languageSelector" class="form-select form-select-sm" style="width:auto;min-width:140px;border-radius:10px;border:1px solid #e2e8f0;font-weight:600;font-size:0.82rem">
+                            <option value="auto" selected>✨ Auto Detect</option>
+                            <option value="ar">🇸🇦 العربية</option>
+                            <option value="en">🇺🇸 English</option>
+                            <option value="fr">🇫🇷 Français</option>
+                            <option value="es">🇪🇸 Español</option>
+                            <option value="de">🇩🇪 Deutsch</option>
+                        </select>
+                        <span class="d-none d-md-inline text-muted" style="font-size:0.76rem">· Auto detects Arabic/English</span>
                     </div>
-
-                    <!-- Direct Write Option -->
-                    <div class="mt-3 pt-3 border-top">
-                        <button id="writeDirectlyBtn" class="btn btn-success btn-sm w-100" type="button" disabled>
-                            <i class="fas fa-edit me-1"></i> Write Diagnosis Directly
-                        </button>
-                        <div class="form-text text-center mt-1">
-                            Skip recording and write your diagnosis directly for quick consultations
-                        </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <a href="{{ route('ai.ambient-listening.training') }}" class="btn btn-light border btn-sm" style="border-radius:10px;font-weight:600"><i class="fas fa-graduation-cap me-1 text-primary"></i>Guide</a>
+                        <a href="{{ route('ai.ambient-listening.recorded-voices') }}" class="btn btn-light border btn-sm" style="border-radius:10px;font-weight:600"><i class="fas fa-history me-1 text-muted"></i>History</a>
+                        <a href="{{ route('ai.ambient-listening.performance') }}" class="btn btn-light border btn-sm" style="border-radius:10px;font-weight:600"><i class="fas fa-chart-line me-1 text-success"></i>Stats</a>
+                        <button type="button" class="btn btn-light border btn-sm" data-bs-toggle="modal" data-bs-target="#ambientListeningHelpModal" style="border-radius:10px;font-weight:600"><i class="fas fa-question-circle me-1"></i>Help</button>
+                        <div class="vr mx-1 d-none d-md-block"></div>
+                        <button id="writeDirectlyBtn" class="btn btn-sm text-white" type="button" disabled style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);border:none;border-radius:10px;font-weight:700"><i class="fas fa-edit me-1"></i> Write Directly</button>
+                        <button id="advancedControlsToggleBtn" class="btn btn-light border btn-sm" type="button" style="border-radius:10px"><i class="fas fa-sliders-h"></i></button>
                     </div>
-
-                    <!-- Advanced Controls Toggle -->
-                    <div class="mt-3">
-                        <button id="advancedControlsToggleBtn" class="btn btn-outline-primary btn-sm w-100" type="button">
-                            <i class="fas fa-cog me-1"></i> Advanced Controls
-                        </button>
-                        <div id="voiceAssistantAdvancedControls" class="card card-body bg-white p-3 mt-3 border" style="display: none;">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label">Audio Quality</label>
-                                    <select class="form-select" id="audioQuality">
-                                        <option value="high">High Quality (16kHz)</option>
-                                        <option value="medium">Medium Quality (8kHz)</option>
-                                        <option value="low">Low Quality (4kHz)</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Sensitivity</label>
-                                    <select class="form-select" id="sensitivity">
-                                        <option value="high">High (Sensitive)</option>
-                                        <option value="medium" selected>Medium</option>
-                                        <option value="low">Low (Less Sensitive)</option>
-                                    </select>
-                                </div>
-                            </div>
+                </div>
+                <div id="voiceAssistantAdvancedControls" class="border-top bg-white p-3" style="display:none;border-radius:0 0 14px 14px">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Audio Quality</label>
+                            <select class="form-select" id="audioQuality" style="border-radius:10px"><option value="high">High (16kHz)</option><option value="medium">Medium (8kHz)</option><option value="low">Low (4kHz)</option></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Sensitivity</label>
+                            <select class="form-select" id="sensitivity" style="border-radius:10px"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
                         </div>
                     </div>
                 </div>
@@ -648,141 +551,78 @@
         <div class="tab-pane fade show active" id="transcription-pane" role="tabpanel" aria-labelledby="transcription-tab">
             <!-- Main Content Grid -->
             <div class="row">
-        <!-- Left Column: Transcription -->
+        <!-- Left Column: Transcription - Modern -->
         <div class="col-lg-6 mb-4">
-            <div class="card h-100 shadow-sm border-0" id="transcriptCard">
-                <div class="card-header bg-primary text-white">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-microphone-alt me-2"></i>
+            <div class="card h-100 modern-card" id="transcriptCard" style="overflow:hidden">
+                <div class="card-header border-0" style="background:#1e293b;color:#fff;padding:1rem 1.1rem">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color:#fff!important;font-weight:800;font-size:0.95rem">
+                            <span style="width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.12);line-height:1;text-align:center;padding-top:6px;display:inline-block"><i class="fa-solid fa-microphone-lines" style="color:#fff;font-size:0.8rem;font-family:'Font Awesome 6 Free'!important;font-weight:900!important;display:inline-block!important"></i></span>
                             Real-time Transcript
                         </h5>
-                        <div id="transcriptionStatus" class="d-flex align-items-center gap-2">
-                            <!-- Status indicators will be inserted here -->
-                        </div>
+                        <div id="transcriptionStatus" class="d-flex align-items-center gap-2"></div>
                     </div>
-
-                    <!-- Recording Controls - Now in Header -->
-                    <div class="d-flex align-items-center gap-3 mb-2">
-                        <!-- Recording Status -->
-                        <div class="d-flex align-items-center me-3">
-                            <div class="status-indicator me-2">
-                                <span class="status-dot" id="statusDot"></span>
-                            </div>
-                            <span class="text-white fw-bold" id="recordingStatusText">Ready to Listen</span>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 px-2 py-1 rounded-pill" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.14)">
+                            <span class="status-dot" id="statusDot" style="width:8px;height:8px"></span>
+                            <span class="fw-bold" id="recordingStatusText" style="font-size:0.78rem;letter-spacing:0.02em">Ready to Listen</span>
                         </div>
-
-                        <!-- Audio Recorder -->
-                        <div id="react-audio-recorder-container" style="max-width: 200px;"></div>
-
-                        <!-- Recording Buttons -->
-                        <div class="d-flex gap-2">
-                            <button id="startRecordingBtn" class="btn btn-success btn-sm d-none" type="button" disabled>
-                                <i class="fas fa-microphone me-1"></i>Start
-                            </button>
-                            <button id="stopRecordingBtn" class="btn btn-danger btn-sm d-none" disabled>
-                                <i class="fas fa-stop me-1"></i>Stop
-                            </button>
+                        <span id="processingStatus" class="align-items-center gap-1 px-2 py-1 rounded-pill bg-warning text-dark" style="display:none!important;font-size:0.72rem;font-weight:700"><span class="spinner-border spinner-border-sm" style="width:12px;height:12px;border-width:1.5px"></span> Processing...</span>
+                        <div id="react-audio-recorder-container" class="ms-1"></div>
+                        <button id="startRecordingBtn" class="btn btn-success btn-sm d-none" type="button" disabled><i class="fas fa-microphone me-1"></i>Start</button>
+                        <button id="stopRecordingBtn" class="btn btn-danger btn-sm d-none" disabled><i class="fas fa-stop me-1"></i>Stop</button>
+                        <div class="ms-auto d-flex gap-1">
+                            <button id="generateAnalysisBtn" class="btn btn-sm text-dark" disabled style="background:#facc15;border:none;border-radius:10px;font-weight:700"><i class="fas fa-brain me-1"></i>AI Analysis</button>
+                            <button id="resetSessionBtn" class="btn btn-light border btn-sm" style="border-radius:10px;font-weight:600"><i class="fas fa-rotate me-1"></i>Reset</button>
                         </div>
-
-                        <!-- Processing Status -->
-                        <div id="processingStatus" style="display: none;" class="ms-3">
-                            <div class="spinner-border spinner-border-sm text-light me-2" role="status"></div>
-                            <span class="text-light fw-bold">Processing...</span>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons Row -->
-                    <div class="d-flex gap-2 flex-wrap">
-                        <button id="generateAnalysisBtn" class="btn btn-warning btn-sm" disabled style="background-color: #ffc107; border-color: #ffc107;">
-                            <i class="fas fa-brain me-1"></i>AI Analysis
-                        </button>
-                        <button id="resetSessionBtn" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-redo me-1"></i>Reset
-                        </button>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <div class="transcription-container" style="background-color: #f8f9fa;">
-                        <div id="transcriptionContainer">
-                            <div id="react-transcript-container"></div>
+                <div class="card-body p-0 d-flex flex-column" style="min-height:420px">
+                    <div class="transcription-container flex-grow-1" style="background:#f8fafc;">
+                        <div id="transcriptionContainer" class="h-100">
+                            <div id="react-transcript-container" style="min-height:380px"></div>
                             <textarea id="transcriptionArea" class="form-control" style="height: 100%; border: none; background: transparent; resize: none; display: none;" placeholder="Start ambient listening to see transcription here..."></textarea>
                         </div>
                     </div>
-
-
-                    <!-- Transcript Controls -->
-                    <div class="p-3 bg-light d-flex justify-content-between">
-                        <button id="copyTranscriptBtn" class="btn btn-outline-secondary btn-sm">
-                            <i class="fas fa-copy me-1"></i> Copy
-                        </button>
-                        <div class="btn-group">
-                            <button id="clearTranscriptBtn" class="btn btn-outline-danger btn-sm">
-                                <i class="fas fa-trash me-1"></i> Clear
-                            </button>
-                            <button id="exportTranscriptBtn" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-download me-1"></i> Export
-                            </button>
+                    <div class="p-2 px-3 bg-white border-top d-flex justify-content-between align-items-center">
+                        <button id="copyTranscriptBtn" class="btn btn-light border btn-sm" style="border-radius:10px;font-weight:600"><i class="fas fa-copy me-1"></i> Copy</button>
+                        <div class="d-flex gap-1">
+                            <button id="clearTranscriptBtn" class="btn btn-light border btn-sm" style="border-radius:10px"><i class="fas fa-trash me-1 text-danger"></i> Clear</button>
+                            <button id="exportTranscriptBtn" class="btn btn-light border btn-sm" style="border-radius:10px"><i class="fas fa-download me-1 text-primary"></i> Export</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column: Chart Fields - Premium -->
+        <!-- Right Column: Clinical Chart - Modern -->
         <div class="col-lg-6 mb-4">
-            <div class="card h-100 shadow-sm border-0" style="border:1px solid #eef2f7!important;border-radius:12px;overflow:hidden">
-                <div class="card-header" style="background:#1e293b;color:#fff;padding:1rem 1.3rem;border-bottom:1px solid #0f172a">
-                    <h5 class="card-title mb-0" style="color:#fff!important;font-weight:800">
-                        <i class="fas fa-clipboard-list me-2"></i>
-                        Clinical Chart
-                    </h5>
-                    <small style="color:rgba(255,255,255,0.75)">Auto-filled from AI transcript · editable</small>
+            <div class="card h-100 modern-card" style="overflow:hidden">
+                <div class="card-header border-0 d-flex justify-content-between align-items-center" style="background:#1e293b;color:#fff;padding:1rem 1.1rem">
+                    <div>
+                        <h5 class="card-title mb-0 d-flex align-items-center gap-2" style="color:#fff!important;font-weight:800;font-size:0.95rem">
+                            <span class="d-flex align-items-center justify-content-center" style="width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.12)"><i class="fas fa-clipboard-list" style="font-size:0.8rem"></i></span>
+                            Clinical Chart
+                        </h5>
+                        <small style="color:rgba(255,255,255,0.68);font-size:0.74rem">Auto-filled from AI · editable before completion</small>
+                    </div>
+                    <span class="badge bg-white bg-opacity-10 border text-white" style="border-radius:20px;font-size:0.68rem"><i class="fas fa-wand-magic-sparkles me-1"></i>AI</span>
                 </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Symptoms</label>
-                            <textarea id="symptoms" class="form-control" rows="2" placeholder="Symptoms will be extracted automatically..."></textarea>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Medical History</label>
-                            <textarea id="medicalHistory" class="form-control" rows="2" placeholder="Medical history will be extracted automatically..."></textarea>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Physical Findings</label>
-                            <textarea id="physicalFindings" class="form-control" rows="2" placeholder="Physical findings will be extracted automatically..."></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Medications</label>
-                            <textarea id="medications" class="form-control" rows="2" placeholder="Medications will be extracted automatically..."></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Vital Signs</label>
-                            <textarea id="vitalSigns" class="form-control" rows="2" placeholder="Vital signs will be extracted automatically..."></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Diagnosis</label>
-                            <textarea id="diagnosis" class="form-control" rows="2" placeholder="Diagnosis suggestions will appear here..."></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Care Plan</label>
-                            <textarea id="carePlan" class="form-control" rows="2" placeholder="Care plan will be generated automatically..."></textarea>
-                        </div>
-
-                        <!-- Confidence Score Indicator -->
-                        <div class="col-12">
-                            <div class="card bg-light border">
-                                <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-bold">Transcription Accuracy:</span>
-                                        <div class="d-flex align-items-center">
-                                            <div class="progress flex-grow-1 me-3" style="height: 10px;">
-                                                <div class="progress-bar bg-success" role="progressbar" style="width: 75%" id="accuracyBar"></div>
-                                            </div>
-                                            <span class="badge bg-success" id="accuracyScore">75%</span>
-                                        </div>
-                                    </div>
+                <div class="card-body p-3" style="background:#fff">
+                    <div class="row g-2">
+                        <div class="col-12"><label class="form-label fw-semibold mb-1" style="font-size:0.78rem;color:#475569">Symptoms</label><textarea id="symptoms" class="form-control" rows="2" placeholder="Auto-extracted..." style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea></div>
+                        <div class="col-12"><label class="form-label fw-semibold mb-1" style="font-size:0.78rem;color:#475569">Medical History</label><textarea id="medicalHistory" class="form-control" rows="2" placeholder="Auto-extracted..." style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea></div>
+                        <div class="col-12"><label class="form-label fw-semibold mb-1" style="font-size:0.78rem;color:#475569">Physical Findings</label><textarea id="physicalFindings" class="form-control" rows="2" placeholder="Auto-extracted..." style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold mb-1" style="font-size:0.78rem;color:#475569">Medications</label><textarea id="medications" class="form-control" rows="2" placeholder="Auto-extracted..." style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold mb-1" style="font-size:0.78rem;color:#475569">Vital Signs</label><textarea id="vitalSigns" class="form-control" rows="2" placeholder="Auto-extracted..." style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold mb-1" style="font-size:0.78rem;color:#475569">Diagnosis</label><textarea id="diagnosis" class="form-control" rows="2" placeholder="Suggestions..." style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold mb-1" style="font-size:0.78rem;color:#475569">Care Plan</label><textarea id="carePlan" class="form-control" rows="2" placeholder="Generated..." style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea></div>
+                        <div class="col-12 mt-2">
+                            <div id="accuracyContainer" class="d-flex align-items-center justify-content-between p-2 px-3 rounded-3" style="background:#f8fafc;border:1px solid #eef2f7; display:none">
+                                <span class="small fw-bold" style="color:#475569;font-size:0.76rem" title="Confidence from STT (AssemblyAI/GPT-4o). Hidden until audio processed."><i class="fas fa-signal me-1 text-success"></i> Transcription Accuracy <span class="text-muted fw-normal" style="font-size:0.68rem">· AI confidence</span></span>
+                                <div class="d-flex align-items-center gap-2" style="min-width:160px">
+                                    <div class="progress flex-grow-1" style="height:6px;border-radius:10px;background:#e2e8f0"><div class="progress-bar" role="progressbar" style="width:0%;background:#10b981;border-radius:10px" id="accuracyBar"></div></div>
+                                    <span class="badge" id="accuracyScore" style="background:#64748b;color:#fff;border-radius:20px;font-size:0.7rem">--</span>
                                 </div>
                             </div>
                         </div>
@@ -798,168 +638,131 @@
 
     </div>
 
-    <!-- Diagnosis Entry Form -->
-    <div id="diagnosisEntryForm" class="row mb-4" style="display: none;">
+    <!-- Diagnosis Entry Form - Modern -->
+    <div id="diagnosisEntryForm" class="row mt-4 mb-4" style="display: none;">
         <div class="col-12">
-            <div class="card border-success">
-                <div class="card-header bg-success text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-user-md me-2"></i>
-                        Write Your Professional Diagnosis
-                    </h5>
-                    <small>Complete your diagnosis to finish the consultation</small>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="diagnosisText" class="form-label">
-                            <strong>Your Professional Diagnosis:</strong>
-                        </label>
-                        <textarea
-                            id="diagnosisText"
-                            class="form-control"
-                            rows="6"
-                            placeholder="Write your professional diagnosis based on your clinical judgment..."
-                            required
-                        ></textarea>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>
-                            This diagnosis will be saved to the patient's record. You can link it to an appointment or save it independently.
+            <div class="card modern-card" style="overflow:hidden">
+                <div class="card-header border-0 d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;padding:1rem 1.2rem">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.18)"><i class="fas fa-user-md" style="font-size:0.85rem"></i></span>
+                        <div>
+                            <h5 class="card-title mb-0" style="color:#fff!important;font-weight:800;font-size:0.95rem">Write Your Professional Diagnosis</h5>
+                            <small style="color:rgba(255,255,255,0.86);font-size:0.76rem">Your judgment → saved to patient record</small>
                         </div>
                     </div>
-
-                    <div class="d-flex justify-content-end">
-                        <div class="d-flex gap-2">
-                            <button id="cancelDiagnosisBtn" class="btn btn-secondary">
-                                <i class="fas fa-times me-1"></i>Cancel
-                            </button>
-                            <button id="completeConsultationBtn" class="btn btn-success" disabled>
-                                <i class="fas fa-check me-1"></i>Complete Session
-                            </button>
-                        </div>
+                    <span class="badge bg-white bg-opacity-20 border text-white d-none d-md-inline" style="border-radius:20px;font-size:0.68rem"><i class="fas fa-lock me-1"></i> Doctor only</span>
+                </div>
+                <div class="card-body p-3" style="background:#fff">
+                    <label for="diagnosisText" class="form-label fw-semibold mb-2" style="font-size:0.84rem;color:#1e293b">Your Professional Diagnosis</label>
+                    <textarea id="diagnosisText" class="form-control" rows="5" placeholder="Write your professional diagnosis based on clinical judgment, transcript & chart..." required style="border-radius:12px;border:1px solid #e2e8f0;font-size:0.9rem;line-height:1.6"></textarea>
+                    <div class="d-flex align-items-center gap-2 mt-2" style="font-size:0.76rem;color:#64748b"><i class="fas fa-info-circle text-primary"></i><span>Saved to patient record. Linked to appointment if available, otherwise independent.</span></div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button id="cancelDiagnosisBtn" class="btn btn-light border" style="border-radius:10px;font-weight:600"><i class="fas fa-times me-1"></i>Cancel</button>
+                        <button id="completeConsultationBtn" class="btn text-white" disabled style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border:none;border-radius:10px;font-weight:700;opacity:0.6"><i class="fas fa-check me-1"></i>Complete Session</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Complete Consultation Modal -->
+    <!-- Complete Consultation Modal - Modern -->
     <div class="modal fade" id="completeConsultationModal" tabindex="-1" aria-labelledby="completeConsultationModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="completeConsultationModalLabel">
-                        <i class="fas fa-check me-2"></i>Complete Session
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Diagnosis Preview -->
-                    <div class="mb-4">
-                        <h6 class="fw-bold text-primary">
-                            <i class="fas fa-file-medical me-2"></i>Diagnosis Preview
-                        </h6>
-                        <div id="diagnosisPreview" class="border rounded p-3 bg-light" style="max-height: 150px; overflow-y: auto;">
-                            <!-- Diagnosis text will be inserted here -->
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden">
+                <div class="modal-header border-0" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color:#fff; padding:1.25rem 1.5rem;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center justify-content-center" style="width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,0.15);">
+                            <i class="fas fa-check-circle" style="font-size:1.1rem"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0" id="completeConsultationModalLabel" style="font-weight:800;letter-spacing:-0.02em;color:#fff!important">Complete Session</h5>
+                            <small style="opacity:0.85;font-size:0.78rem">Review diagnosis &amp; complete consultation</small>
                         </div>
                     </div>
-
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Complete this ambient listening session:</strong>
-                        <p class="mb-0 mt-2">Link this diagnosis to a scheduled appointment and mark it as completed, or save it independently if no appointment is available.</p>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" style="background:#f8fafc">
+                    <!-- Step indicator -->
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <span class="badge" style="background:#1e293b;color:#fff;border-radius:20px;padding:6px 12px;font-weight:700;font-size:0.72rem"><i class="fas fa-file-medical me-1"></i> 1 Diagnosis</span>
+                        <span class="text-muted" style="font-size:0.7rem">—</span>
+                        <span class="badge bg-white text-muted border" style="border-radius:20px;padding:6px 12px;font-weight:600;font-size:0.72rem">2 Patient Data</span>
+                        <span class="text-muted" style="font-size:0.7rem">—</span>
+                        <span class="badge bg-white text-muted border" style="border-radius:20px;padding:6px 12px;font-weight:600;font-size:0.72rem">3 Confirm</span>
                     </div>
 
-                    <!-- Patient Info Display -->
-                    <div class="mb-4">
-                        <div class="card bg-light">
-                            <div class="card-body py-2">
-                                <small class="text-muted">Patient:</small>
-                                <span id="modalPatientName" class="fw-bold"></span>
-                                <small class="text-muted ms-2">(Selected from main form)</small>
+                    <!-- Patient chip -->
+                    <div class="d-flex align-items-center gap-2 mb-3 p-2 px-3 bg-white border rounded-3 shadow-sm">
+                        <div class="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle" style="width:32px;height:32px"><i class="fas fa-user text-primary" style="font-size:0.8rem"></i></div>
+                        <div class="flex-grow-1">
+                            <small class="text-muted" style="font-size:0.7rem;letter-spacing:0.04em;text-transform:uppercase">Patient</small>
+                            <div id="modalPatientName" class="fw-bold" style="font-size:0.92rem;color:#1e293b"></div>
+                        </div>
+                        <small class="text-muted" style="font-size:0.72rem">Selected from form</small>
+                    </div>
+
+                    <!-- Diagnosis Preview -->
+                    <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;overflow:hidden">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 class="mb-0" style="font-weight:800;color:#1e293b;font-size:0.86rem"><i class="fas fa-clipboard-check me-2 text-primary"></i>Diagnosis Preview</h6>
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success" style="font-size:0.68rem"><i class="fas fa-shield-check me-1"></i> To be saved</span>
+                            </div>
+                            <div id="diagnosisPreview" class="rounded-3 p-3" style="background:#fff;border:1px solid #e2e8f0;border-left:4px solid #10b981;max-height:140px;overflow-y:auto;white-space:pre-wrap;line-height:1.6;font-size:0.88rem;color:#334155;min-height:56px">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Appointment Selection -->
-                    <div class="mb-4">
-                        <div id="appointmentInfo" class="alert alert-info" style="display: none;">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <span id="appointmentInfoText"></span>
-                        </div>
+                    <div class="d-flex gap-2 align-items-start p-3 mb-3 rounded-3" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.18)">
+                        <i class="fas fa-info-circle text-primary mt-1"></i>
+                        <div style="font-size:0.82rem;line-height:1.5;color:#334155"><strong>What happens next?</strong> This will save the diagnosis to the patient record and, if an appointment exists, mark it completed. No appointment → saved independently.</div>
                     </div>
 
-
-                    <!-- Doctor Notes (shown when complete appointment is selected) -->
-                    <div id="doctorNotesSection" class="mb-3" style="display: none;">
-                        <label for="appointmentDoctorNotes" class="form-label fw-bold">
-                            Doctor Notes for Appointment:
-                        </label>
-                        <textarea
-                            id="appointmentDoctorNotes"
-                            class="form-control"
-                            rows="3"
-                            placeholder="Add notes about treatment plan, follow-up instructions, etc..."
-                        ></textarea>
-                        <div class="form-text">
-                            These notes will be added to the appointment record.
-                        </div>
+                    <!-- Hidden legacy hooks (kept for JS compatibility) -->
+                    <div id="appointmentInfo" class="alert alert-info border-0 mb-3" style="display:none;background:rgba(59,130,246,0.08);border-radius:10px"><i class="fas fa-info-circle me-2 text-primary"></i><span id="appointmentInfoText"></span></div>
+                    <div id="appointmentPreview" class="card border-0 shadow-sm mb-3" style="display:none;border-radius:12px"><div class="card-body p-3"><h6 class="mb-2" style="font-weight:700;font-size:0.84rem"><i class="fas fa-calendar-alt me-2 text-primary"></i>Appointment Details</h6><div id="appointmentDetails" style="font-size:0.84rem"></div></div></div>
+                    <div id="doctorNotesSection" class="mb-3" style="display:none">
+                        <label for="appointmentDoctorNotes" class="form-label fw-bold" style="font-size:0.84rem;color:#1e293b"><i class="fas fa-notes-medical me-2 text-primary"></i>Doctor Notes</label>
+                        <textarea id="appointmentDoctorNotes" class="form-control" rows="3" placeholder="Treatment plan, follow-up instructions..." style="border-radius:10px;border:1px solid #e2e8f0"></textarea>
+                        <div class="form-text" style="font-size:0.74rem">Added to appointment record.</div>
                     </div>
 
                     <!-- Additional Patient Data Section -->
-                    <div class="mb-4">
-                        <h6 class="fw-bold text-primary mb-3">
-                            <i class="fas fa-notes-medical me-2"></i>Additional Patient Data
-                            <span class="badge bg-warning text-dark ms-2">Important for AI Prescriptions</span>
-                        </h6>
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Required for AI medication suggestions:</strong> Please fill allergies and current medications to enable safe AI prescription recommendations.
+                    <div class="card border-0 shadow-sm" style="border-radius:12px;overflow:hidden">
+                        <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between" style="padding:0.9rem 1rem">
+                            <h6 class="mb-0" style="font-weight:800;color:#1e293b;font-size:0.86rem"><i class="fas fa-notes-medical me-2 text-primary"></i>Additional Patient Data</h6>
+                            <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:20px;font-size:0.68rem"><i class="fas fa-star me-1"></i> For AI Prescriptions</span>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="modal_allergies" class="form-label fw-semibold">
-                                    Patient Allergies <span class="text-danger">*</span>
-                                </label>
-                                <textarea class="form-control" id="modal_allergies" rows="2"
-                                          placeholder="e.g., Penicillin, Sulfa drugs, or type 'None'"></textarea>
-                                <div class="form-text">Separate multiple allergies with commas</div>
+                        <div class="card-body p-3">
+                            <div class="rounded-3 p-2 px-3 mb-3 d-flex gap-2 align-items-center" style="background:#fffbeb;border:1px solid #fde68a;font-size:0.78rem;color:#92400e"><i class="fas fa-exclamation-triangle"></i><span><strong>Required:</strong> allergies &amp; current medications to enable safe AI suggestions.</span></div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="modal_allergies" class="form-label fw-semibold" style="font-size:0.82rem;color:#334155">Patient Allergies <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" id="modal_allergies" rows="2" placeholder="e.g., Penicillin, Sulfa drugs, or None" style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea>
+                                    <div class="form-text" style="font-size:0.72rem">Comma-separated</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="modal_medications" class="form-label fw-semibold" style="font-size:0.82rem;color:#334155">Current Medications <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" id="modal_medications" rows="2" placeholder="e.g., Metformin 500mg twice daily" style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea>
+                                    <div class="form-text" style="font-size:0.72rem">Dosage &amp; frequency if known</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="modal_symptoms" class="form-label fw-semibold" style="font-size:0.82rem;color:#334155">Symptoms</label>
+                                    <textarea class="form-control" id="modal_symptoms" rows="2" placeholder="List patient symptoms..." style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="modal_medical_history" class="form-label fw-semibold" style="font-size:0.82rem;color:#334155">Medical History</label>
+                                    <textarea class="form-control" id="modal_medical_history" rows="2" placeholder="Relevant medical history..." style="border-radius:10px;border:1px solid #e2e8f0;font-size:0.86rem"></textarea>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="modal_medications" class="form-label fw-semibold">
-                                    Current Medications <span class="text-danger">*</span>
-                                </label>
-                                <textarea class="form-control" id="modal_medications" rows="2"
-                                          placeholder="e.g., Metformin 500mg twice daily"></textarea>
-                                <div class="form-text">Include dosage and frequency if known</div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="modal_symptoms" class="form-label fw-semibold">Symptoms</label>
-                                <textarea class="form-control" id="modal_symptoms" rows="2"
-                                          placeholder="List patient symptoms..."></textarea>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="modal_medical_history" class="form-label fw-semibold">Medical History</label>
-                                <textarea class="form-control" id="modal_medical_history" rows="2"
-                                          placeholder="Relevant medical history..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Appointment Preview -->
-                    <div id="appointmentPreview" class="card bg-light" style="display: none;">
-                        <div class="card-body">
-                            <h6 class="card-title">
-                                <i class="fas fa-calendar-alt me-2"></i>Appointment Details
-                            </h6>
-                            <div id="appointmentDetails"></div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <div class="modal-footer border-0 p-3 px-4" style="background:#fff">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal" style="border-radius:10px;font-weight:600">
                         <i class="fas fa-times me-1"></i>Cancel
                     </button>
-                    <button type="button" id="modalCompleteConsultationBtn" class="btn btn-success">
+                    <button type="button" id="modalCompleteConsultationBtn" class="btn" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);border:none;border-radius:10px;font-weight:700;color:#fff!important;box-shadow:0 4px 12px rgba(16,185,129,0.3)">
                         <i class="fas fa-check me-1"></i>Complete Session
                     </button>
                 </div>
@@ -967,68 +770,80 @@
         </div>
     </div>
 
-    <!-- Ambient Listening Help Modal -->
+    <!-- Ambient Listening Help Modal - Modern -->
     <div class="modal fade" id="ambientListeningHelpModal" tabindex="-1" aria-labelledby="ambientListeningHelpModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title" id="ambientListeningHelpModalLabel">
-                        <i class="fas fa-headset me-2"></i>Ambient Listening Help
-                    </h5>
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden">
+                <div class="modal-header border-0" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);color:#fff;padding:1.2rem 1.5rem">
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,0.14);text-align:center;padding-top:10px"><i class="fas fa-headset" style="color:#fff;font-size:1.1rem"></i></div>
+                        <div>
+                            <h5 class="modal-title mb-0" id="ambientListeningHelpModalLabel" style="font-weight:800;color:#fff!important">Ambient Listening Help</h5>
+                            <small style="opacity:0.8;font-size:0.76rem">How to record, troubleshoot & shortcuts</small>
+                        </div>
+                    </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="row">
+                <div class="modal-body p-4" style="background:#f8fafc">
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <h6><i class="fas fa-microphone-alt text-primary me-2"></i>How to Use</h6>
-                            <ul class="mb-3">
-                                <li>Select a patient from the dropdown</li>
-                                <li>Click the <strong>Start Listening</strong> button to begin ambient recording</li>
-                                <li>Speak naturally during the consultation</li>
-                                <li>View real-time transcription in the left panel</li>
-                                <li>Stop recording when consultation is complete</li>
-                            </ul>
-
-                            <h6><i class="fas fa-shield-alt text-success me-2"></i>Privacy & Security</h6>
-                            <ul class="mb-3">
-                                <li>All recordings are encrypted end-to-end</li>
-                                <li>Transcriptions are processed securely</li>
-                                <li>Data is HIPAA compliant</li>
-                                <li>Only authorized personnel can access recordings</li>
-                            </ul>
+                            <div class="card border-0 shadow-sm h-100" style="border-radius:12px">
+                                <div class="card-body p-3">
+                                    <h6 style="font-weight:800;color:#1e293b;font-size:0.84rem"><i class="fas fa-microphone text-primary me-2"></i>How to Use</h6>
+                                    <ul class="mb-3" style="font-size:0.82rem;line-height:1.6;color:#334155">
+                                        <li>Select a patient from the dropdown</li>
+                                        <li>Click <strong>Start Listening</strong> to begin</li>
+                                        <li>Speak naturally during consultation</li>
+                                        <li>View diarized transcript live</li>
+                                        <li>Click Stop when complete</li>
+                                    </ul>
+                                    <h6 style="font-weight:800;color:#1e293b;font-size:0.84rem"><i class="fas fa-shield-alt text-success me-2"></i>Privacy & Security</h6>
+                                    <ul class="mb-0" style="font-size:0.82rem;color:#334155">
+                                        <li>End-to-end encrypted</li>
+                                        <li>HIPAA compliant</li>
+                                        <li>Only authorized access</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Troubleshooting</h6>
-                            <ul class="mb-3">
-                                <li><strong>No microphone access:</strong> Check browser permissions</li>
-                                <li><strong>Poor transcription:</strong> Ensure clear audio and minimal background noise</li>
-                                <li><strong>Connection issues:</strong> Verify internet connection</li>
-                                <li><strong>Wrong language:</strong> Adjust language settings before starting</li>
-                            </ul>
-
-                            <h6><i class="fas fa-keyboard text-info me-2"></i>Keyboard Shortcuts</h6>
-                            <ul class="mb-3">
-                                <li><kbd>Ctrl + Enter</kbd> - Start/Stop recording</li>
-                                <li><kbd>Alt + T</kbd> - Focus on transcript</li>
-                                <li><kbd>Enter</kbd> - Submit diagnosis</li>
-                            </ul>
+                            <div class="card border-0 shadow-sm h-100" style="border-radius:12px">
+                                <div class="card-body p-3">
+                                    <h6 style="font-weight:800;color:#1e293b;font-size:0.84rem"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Troubleshooting</h6>
+                                    <ul class="mb-3" style="font-size:0.82rem;color:#334155">
+                                        <li><strong>No mic:</strong> Check browser permissions</li>
+                                        <li><strong>Poor transcript:</strong> Reduce noise, clear audio</li>
+                                        <li><strong>Connection:</strong> Verify internet</li>
+                                        <li><strong>Language:</strong> Adjust selector before start</li>
+                                    </ul>
+                                    <h6 style="font-weight:800;color:#1e293b;font-size:0.84rem"><i class="fas fa-keyboard text-info me-2"></i>Shortcuts</h6>
+                                    <ul class="mb-0" style="font-size:0.82rem;color:#334155">
+                                        <li><kbd>Ctrl + Enter</kbd> Start/Stop</li>
+                                        <li><kbd>Alt + T</kbd> Focus transcript</li>
+                                        <li><kbd>Enter</kbd> Submit diagnosis</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="alert alert-light border">
-                        <h6><i class="fas fa-lightbulb text-warning me-2"></i>Pro Tips</h6>
-                        <ul class="mb-0">
-                            <li>Position microphone close to both doctor and patient for best results</li>
-                            <li>Ensure quiet environment to improve transcription accuracy</li>
-                            <li>Use medical terminology for better AI analysis</li>
-                            <li>Review transcript before generating AI analysis</li>
-                        </ul>
+                    <div class="card border-0 mt-3" style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px">
+                        <div class="card-body p-3 d-flex gap-3">
+                            <div style="width:32px;height:32px;border-radius:8px;background:#f59e0b;color:#fff;text-align:center;padding-top:6px;flex-shrink:0"><i class="fas fa-lightbulb" style="font-size:0.85rem"></i></div>
+                            <div>
+                                <h6 style="font-weight:800;color:#92400e;font-size:0.84rem;margin-bottom:0.3rem">Pro Tips</h6>
+                                <ul class="mb-0" style="font-size:0.82rem;color:#78350f;line-height:1.5">
+                                    <li>Microphone close to both speakers</li>
+                                    <li>Quiet environment = better accuracy</li>
+                                    <li>Use medical terms for better AI</li>
+                                    <li>Review transcript before AI Analysis</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Close
-                    </button>
+                <div class="modal-footer border-0 p-3" style="background:#fff">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal" style="border-radius:10px;font-weight:600"><i class="fas fa-times me-1"></i>Close</button>
+                    <a href="{{ route('ai.ambient-listening.training') }}" class="btn text-white" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border:none;border-radius:10px;font-weight:700"><i class="fas fa-graduation-cap me-1"></i>Open Guide</a>
                 </div>
             </div>
         </div>
@@ -1098,20 +913,19 @@
             }
         }
 
-        // Function to update accuracy score display
-        function updateAccuracyScore(accuracy = 75) {
+        // Function to update accuracy score display - only shows when real confidence available
+        function updateAccuracyScore(accuracy) {
             const accuracyBar = document.getElementById('accuracyBar');
             const accuracyScore = document.getElementById('accuracyScore');
-
-            if (!accuracyBar || !accuracyScore) return;
-
-            // Calculate percentage based on confidence if available
+            const container = document.getElementById('accuracyContainer');
+            if (!accuracyBar || !accuracyScore || !container) return;
+            if (accuracy === undefined || accuracy === null) return; // keep hidden until real value
+            container.style.display = 'flex';
             const score = Math.round(accuracy);
             accuracyBar.style.width = score + '%';
             accuracyScore.textContent = score + '%';
-            accuracyScore.className = 'badge ' +
-                (score > 80 ? 'bg-success' :
-                 score > 60 ? 'bg-warning text-dark' : 'bg-danger');
+            accuracyScore.style.background = score > 80 ? '#10b981' : score > 60 ? '#f59e0b' : '#ef4444';
+            accuracyScore.style.color = score > 60 && score <= 80 ? '#1e293b' : '#fff';
         }
 
         // Helper function to get status text
@@ -1149,8 +963,8 @@
                 }
             }
 
-            // Update accuracy score if confidence is provided
-            if (data.payload && data.payload.confidence !== undefined) {
+            // Update accuracy score if confidence is provided (real value only, else keep hidden)
+            if (data.payload && data.payload.confidence !== undefined && data.payload.confidence !== null) {
                 updateAccuracyScore(data.payload.confidence * 100);
             }
         });
@@ -1166,6 +980,14 @@
         // Listen for server transcript ready event - also auto-fill Clinical Chart
         window.addEventListener('serverTranscriptReady', function(event) {
             console.log('Server transcript ready - enabling buttons');
+            // Persist transcript to DB immediately (survives page reloads)
+            try{
+                const t = event.detail?.transcription || '';
+                if(t && window.sessionId){
+                    const fd = new URLSearchParams({sessionId: window.sessionId, text: t, _token: '{{ csrf_token() }}'});
+                    fetch('{{ route("ai.ambient-listening.handle-transcription") }}', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRF-TOKEN':'{{ csrf_token() }}'}, body: fd}).then(r=>r.json()).then(j=>console.log('Transcript persisted:', j.success)).catch(e=>console.warn('Persist transcript failed', e));
+                }
+            }catch(e){}
             const generateAnalysisBtn = document.getElementById('generateAnalysisBtn');
             const generateClinicalDocBtn = document.getElementById('generateClinicalDocBtn');
             if (generateAnalysisBtn) {
@@ -1180,18 +1002,54 @@
                 generateClinicalDocBtn.style.cursor = 'pointer';
                 console.log('Clinical doc button enabled via server transcript');
             }
-            // Auto-populate Clinical Chart from server extracted data (if available)
+            // Auto-populate Clinical Chart from server extracted data (if available) - precise, fills even if empty string is valid (e.g., "None")
             const extracted = event.detail?.extractedData || event.detail?.server_extracted_data;
             if (extracted && typeof extracted === 'object') {
                 const map = {symptoms:'symptoms', medical_history:'medicalHistory', physical_findings:'physicalFindings', medications:'medications', vital_signs:'vitalSigns', diagnosis:'diagnosis', care_plan:'carePlan'};
+                let filled = 0;
                 Object.entries(map).forEach(([key, id])=>{
                     const el=document.getElementById(id);
-                    if(el && extracted[key] && !el.value.trim()){
-                        el.value = extracted[key];
-                        el.dispatchEvent(new Event('input', {bubbles:true}));
+                    const val = extracted[key];
+                    if(el && val !== undefined && val !== null && String(val).trim() !== ''){
+                        if(!el.value.trim()){
+                            el.value = String(val).trim();
+                            el.dispatchEvent(new Event('input', {bubbles:true}));
+                            filled++;
+                        }
                     }
                 });
-                console.log('Clinical Chart auto-filled from server extracted data');
+                if(filled>0) console.log('Clinical Chart auto-filled from server extracted data', filled, 'fields');
+            }
+            // Attach Auto-fill button handler (once)
+            const autoFillBtn=document.getElementById('autoFillChartBtn');
+            if(autoFillBtn && !autoFillBtn.dataset.bound){
+                autoFillBtn.dataset.bound='1';
+                autoFillBtn.addEventListener('click', async function(){
+                    const transcript = event.detail?.transcription || document.getElementById('react-transcript-container')?.innerText || '';
+                    if(!transcript || transcript.trim().length<20){ alert('No transcript available to extract chart from.'); return; }
+                    const orig = autoFillBtn.innerHTML;
+                    autoFillBtn.disabled=true; autoFillBtn.innerHTML='<i class="fas fa-spinner fa-spin me-1"></i>Filling...';
+                    try{
+                        const res = await fetch('{{ route("ai.ambient-listening.generate-ai-analysis") }}', {
+                            method:'POST',
+                            headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRF-TOKEN':'{{ csrf_token() }}'},
+                            body: new URLSearchParams({transcription: transcript, sessionId: window.sessionId || document.querySelector('[data-session-id]')?.getAttribute('data-session-id') || '', selectedPatient: document.getElementById('patientSelect')?.value || '', _token:'{{ csrf_token() }}'})
+                        });
+                        const data = await res.json();
+                        if(data.success && data.aiAnalysis){
+                            const symEl=document.getElementById('symptoms');
+                            if(symEl && !symEl.value.trim()){
+                                const firstPart = data.aiAnalysis.split('\n').filter(l=>l.trim()).slice(0,4).join('\n');
+                                symEl.value = firstPart.substring(0,300);
+                                symEl.dispatchEvent(new Event('input',{bubbles:true}));
+                            }
+                            alert('Clinical Chart auto-filled from AI analysis. Please review and edit as needed.');
+                        } else {
+                            alert('Could not auto-fill chart: ' + (data.message || 'Unknown error'));
+                        }
+                    }catch(e){ alert('Error auto-filling chart: '+e.message); }
+                    finally{ autoFillBtn.disabled=false; autoFillBtn.innerHTML=orig; }
+                });
             }
         });
 
@@ -1237,6 +1095,39 @@
             })
             .then(data => {
                 if (data.success) {
+                    // Fill Clinical Chart from AI analysis (fallback only - empty fields) - safe, no overwrite
+                    try{
+                        const txt = data.aiAnalysis || '';
+                        const fillIfEmpty = (id, val) => {
+                            const el=document.getElementById(id);
+                            if(el && !el.value.trim() && val && String(val).trim()){
+                                el.value = String(val).trim().substring(0,500);
+                                el.dispatchEvent(new Event('input',{bubbles:true}));
+                            }
+                        };
+                        const extractSection = (re) => { const m=txt.match(re); return m ? m[1].trim() : ''; };
+                        // Heuristic parsing of AI markdown
+                        fillIfEmpty('symptoms', extractSection(/\*\*Symptoms\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|\n🔍|\n💊|\n🧪|\n⚠️|\n🔵|$)/i));
+                        fillIfEmpty('medicalHistory', extractSection(/\*\*Medical History\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|\n🔍|\n💊|\n🧪|\n⚠️|\n🔵|$)/i) || extractSection(/\*\*Relevant History\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|$)/i));
+                        fillIfEmpty('physicalFindings', extractSection(/\*\*Physical Findings\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|$)/i));
+                        fillIfEmpty('medications', extractSection(/\*\*Current Medications\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|$)/i) || extractSection(/\*\*Medications\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|$)/i));
+                        fillIfEmpty('vitalSigns', extractSection(/\*\*Vital Signs\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|$)/i));
+                        const diagMatch = txt.match(/1\.\s*\*?\*?([^*\n]+)\*?\*?\s*\(Probability/i);
+                        if(diagMatch) fillIfEmpty('diagnosis', diagMatch[1].trim());
+                        const planMatch = txt.match(/💊\s*INITIAL\s*MANAGEMENT\s*PLAN:([\s\S]*?)(?=⚠️|---|🔵|$)/i);
+                        if(planMatch) fillIfEmpty('carePlan', planMatch[1].trim());
+                        // Fallback: if still empty symptoms, use first lines
+                        const symEl=document.getElementById('symptoms');
+                        if(symEl && !symEl.value.trim()){
+                            const firstPart = txt.split('\n').filter(l=>l.trim()).slice(0,4).join('\n');
+                            if(firstPart) fillIfEmpty('symptoms', firstPart);
+                        }
+                    }catch(e){ console.warn('Chart fill from AI analysis failed', e); }
+                    // Persist AI result for Voice Assistant Diagnosis (so AI Clinical Data Sources shows Available)
+                    try{
+                        const fd = new URLSearchParams({sessionId: sessionId || '', transcription: transcript, selectedPatient: patientSelect.value, aiAnalysis: data.aiAnalysis, _token: '{{ csrf_token() }}'});
+                        fetch('{{ route("ai.ambient-listening.create-ai-result") }}', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRF-TOKEN':'{{ csrf_token() }}'}, body: fd}).then(r=>r.json()).then(j=> console.log('AI result persisted', j)).catch(e=> console.warn('Persist AI result failed', e));
+                    }catch(e){}
                     // Format the AI analysis for professional display
                     const formattedAnalysis = formatAIAnalysis(data.aiAnalysis);
                     
@@ -1288,9 +1179,8 @@
             }
         });
 
-        // Initialize status indicators
+        // Initialize status indicators - accuracy hidden until real confidence
         updateRecordingStatus('idle');
-        updateAccuracyScore(75);
 
         // Format AI Analysis for professional display
         window.formatAIAnalysis = function(text) {
@@ -1778,11 +1668,15 @@
                 console.log('Create patient response:', data);
                 if (data.success) {
                     alert('Patient created successfully!');
-                    // Add to dropdown
+                    // Add to dropdown and select it - trigger change to enable Write Directly button
                     const select = document.getElementById('patientSelect');
                     const patientLabel = `${data.patient.name} (${data.patient.age || '?'}y, ${data.patient.gender || 'Unknown'})`;
                     const option = new Option(patientLabel, data.patient.id, true, true);
                     select.add(option);
+                    select.dispatchEvent(new Event('change', {bubbles:true}));
+                    // Directly enable Write Directly button as fallback
+                    const writeBtn = document.getElementById('writeDirectlyBtn');
+                    if(writeBtn) writeBtn.disabled = false;
                     // Hide form
                     document.getElementById('newPatientForm').style.display = 'none';
                     // Clear form

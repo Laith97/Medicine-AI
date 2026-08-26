@@ -312,7 +312,8 @@ const AmbientAudioRecorder = ({ visitId, authToken, language = 'en' }) => {
                                     detail: {
                                         transcription: response.data.improved_transcription,
                                         extractedData: response.data.server_extracted_data,
-                                        speakers: response.data.speakers
+                                        speakers: response.data.speakers,
+                                        corrected_segments: response.data.corrected_segments || null
                                     }
                                 }));
                             } else {

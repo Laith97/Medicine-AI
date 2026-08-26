@@ -2313,6 +2313,9 @@ INSTRUCTIONS:
                     'appointment_end' => now()->addMinutes(30),
                     'status' => 'completed',
                     'type' => 'in_person',
+                    'reason' => \Illuminate\Support\Str::limit($patientData['symptoms'] ?? $request->diagnosisText ?? 'Voice consultation', 500),
+                    'symptoms' => $patientData['symptoms'] ?? null,
+                    'patient_notes' => $patientData['medical_history'] ?? null,
                     'notes' => 'Voice assistant consultation - walk-in',
                     'diagnosis_id' => $diagnosis->id,
                     'doctor_notes' => $request->doctorNotes,
@@ -2862,6 +2865,52 @@ INSTRUCTIONS:
                 // Format transcription with speaker labels for frontend display (only if not already formatted)
                 $formattedTranscription = $improvedTranscription;
 
+                // Precise Clinician vs Patient correction via GPT-4o (single loading, no second request)
+                $correctedSegments = null;
+                if (!empty($formattedTranscription) && strlen($formattedTranscription) > 20) {
+                    try {
+                        $patientForCorrection = $transcriptionRecord->patient;
+                        $patientFirst = $patientForCorrection ? explode(' ', trim($patientForCorrection->name))[0] : '';
+                        $correctionPrompt = "You are a clinical diarization expert. Re-segment the transcript into correct Clinician vs Patient turns.\n"
+                            . "Rules: Two speakers only: Clinician (nurse/doctor) and Patient. "
+                            . ($patientFirst ? "Patient first name is \"{$patientFirst}\" - Clinician CALLS this name. " : "")
+                            . "Clinician asks vitals/history, explains tests, reassures. Patient reports tired/thirsty/headaches/dizziness/scared, asks 'Is something seriously wrong?', 'What kind of tests?'. "
+                            . "SPLIT long blocks with multiple Q/A into separate turns. Merge mid-sentence splits like \"Okay. Is this\" + \"going to hurt?\" => Patient. "
+                            . "Return ONLY JSON: {\"segments\":[{\"speaker\":\"Clinician\",\"text\":\"...\"},{\"speaker\":\"Patient\",\"text\":\"...\"}]}. Keep original wording.\n\nBAD Transcript (ignore [Speaker X] labels):\n{$formattedTranscription}\n\nJSON:";
+                        $corrResponse = OpenAI::chat()->create([
+                            'model' => 'gpt-4o',
+                            'messages' => [
+                                ['role' => 'system', 'content' => 'You are a precise clinical diarization assistant. Return only valid JSON.'],
+                                ['role' => 'user', 'content' => $correctionPrompt],
+                            ],
+                            'temperature' => 0.1,
+                            'max_tokens' => 2000,
+                            'response_format' => ['type' => 'json_object'],
+                        ]);
+                        $corrContent = $corrResponse['choices'][0]['message']['content'] ?? '';
+                        $corrParsed = json_decode($corrContent, true);
+                        if (isset($corrParsed['segments']) && is_array($corrParsed['segments'])) {
+                            $correctedSegments = $corrParsed['segments'];
+                        } elseif (preg_match('/\[.*\]/s', $corrContent, $m)) {
+                            $correctedSegments = json_decode($m[0], true);
+                        }
+                        if ($correctedSegments) {
+                            // Normalize
+                            $tmp = [];
+                            foreach ($correctedSegments as $seg) {
+                                if (!isset($seg['speaker']) || !isset($seg['text'])) continue;
+                                $sp = ucfirst(strtolower(trim($seg['speaker'])));
+                                if (!in_array($sp, ['Clinician','Patient'])) continue;
+                                $tmp[] = ['speaker' => $sp, 'text' => trim($seg['text'])];
+                            }
+                            $correctedSegments = $tmp;
+                        }
+                    } catch (\Exception $corrE) {
+                        \Log::warning('Precise diarization correction failed, using fallback', ['error' => $corrE->getMessage()]);
+                        $correctedSegments = null;
+                    }
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => $successMessage,
@@ -2869,6 +2918,7 @@ INSTRUCTIONS:
                     'server_extracted_data' => $serverExtractedData,
                     'speakers' => $speakerData['speakers'],
                     'medical_terms' => $speakerData['medical_terms'],
+                    'corrected_segments' => $correctedSegments,
                     'processing_method' => $processingStatus['method'],
                     'processing_status' => $processingStatus,
                     'improvement_ratio' => $metrics['transcript_improvement_ratio'] ?? 1,
@@ -4361,5 +4411,100 @@ INSTRUCTIONS:
             }
 
             return implode('. ', $messages) . '.';
+        }
+
+        /**
+         * AI post-correction for speaker diarization (Clinician vs Patient)
+         * Keeps AssemblyAI for speed, uses GPT-4o to re-assign speakers based on content
+         */
+        public function correctDiarization(Request $request)
+        {
+            if (!Auth::user() || !Auth::user()->isDoctor()) {
+                abort(403, 'Doctor access required.');
+            }
+
+            $request->validate([
+                'transcript' => 'required|string|min:10|max:20000',
+                'patient_first_name' => 'nullable|string|max:100',
+                'appointment_context' => 'nullable|string|max:500',
+            ]);
+
+            $transcript = $request->input('transcript');
+            $patientFirstName = $request->input('patient_first_name', '');
+            $appointmentContext = $request->input('appointment_context', '');
+
+            try {
+                $prompt = "You are a clinical diarization expert. The transcript below has BAD diarization from AssemblyAI (2 speakers, but mid-sentence splits and merged multi-utterance blocks). Re-segment the ENTIRE conversation into correct turns.\n\n"
+                    . "Rules:\n"
+                    . "- Output ONLY valid JSON: {\"segments\":[{\"speaker\":\"Clinician\",\"text\":\"...\"},{\"speaker\":\"Patient\",\"text\":\"...\"}]}\n"
+                    . "- Each segment is ONE utterance from ONE speaker. SPLIT long blocks that contain multiple questions/answers from different speakers (e.g., a 6-sentence block with both Clinician and Patient mixed must be split into 3-4 separate turns).\n"
+                    . "- Two speakers only: Clinician (nurse/doctor) and Patient\n"
+                    . ($patientFirstName ? "- Patient first name is \"{$patientFirstName}\" - the speaker who CALLS this name is Clinician (e.g., \"okay, Maria, I'm going to order...\")\n" : "")
+                    . "- Clinician: calls patient by name, asks about vitals/history, explains tests, gives instructions, reassures\n"
+                    . "- Patient: reports symptoms (tired, thirsty, headaches, dizziness, scared), asks \"Is something seriously wrong?\", \"What kind of tests?\"\n"
+                    . "- Merge mid-sentence splits: \"Okay. Is this\" (Speaker 1) + \"going to hurt?\" (Speaker 2) => one Patient turn \"Is this going to hurt?\"\n"
+                    . "- Keep original wording, do not paraphrase, just re-assign and re-split\n"
+                    . ($appointmentContext ? "Context: {$appointmentContext}\n" : "")
+                    . "\nBAD Transcript to re-segment and correct (ignore the [Speaker X] labels, they are wrong):\n{$transcript}\n\nJSON:";
+
+                $response = OpenAI::chat()->create([
+                    'model' => 'gpt-4o',
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are a precise clinical diarization assistant. Return only valid JSON.'],
+                        ['role' => 'user', 'content' => $prompt],
+                    ],
+                    'temperature' => 0.1,
+                    'max_tokens' => 2000,
+                    'response_format' => ['type' => 'json_object'],
+                ]);
+
+                $content = $response['choices'][0]['message']['content'] ?? '';
+                // Try to parse - handle both {"segments": [...]} and direct [...]
+                $parsed = json_decode($content, true);
+                $segments = null;
+                if (isset($parsed['segments']) && is_array($parsed['segments'])) {
+                    $segments = $parsed['segments'];
+                } elseif (isset($parsed[0]) && isset($parsed[0]['speaker'])) {
+                    $segments = $parsed;
+                } elseif (is_array($parsed) && isset($parsed['speaker'])) {
+                    $segments = [$parsed];
+                } else {
+                    // Try to extract array from content
+                    if (preg_match('/\[.*\]/s', $content, $m)) {
+                        $segments = json_decode($m[0], true);
+                    }
+                }
+
+                if (!$segments || !is_array($segments)) {
+                    throw new \Exception('Failed to parse AI diarization response');
+                }
+
+                // Normalize
+                $normalized = [];
+                foreach ($segments as $seg) {
+                    if (!isset($seg['speaker']) || !isset($seg['text'])) continue;
+                    $sp = ucfirst(strtolower(trim($seg['speaker'])));
+                    if (!in_array($sp, ['Clinician', 'Patient'])) {
+                        $sp = (stripos($seg['text'], $patientFirstName) !== false && $patientFirstName) ? 'Clinician' : 'Patient';
+                    }
+                    $normalized[] = ['speaker' => $sp, 'text' => trim($seg['text'])];
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'segments' => $normalized,
+                    'model' => 'gpt-4o',
+                    'usage' => $response['usage'] ?? null,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('AI diarization correction failed: ' . $e->getMessage(), [
+                    'user_id' => Auth::id(),
+                    'transcript_length' => strlen($transcript),
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to correct diarization: ' . $e->getMessage(),
+                ], 500);
+            }
         }
     }

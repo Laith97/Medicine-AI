@@ -17,17 +17,20 @@
 
 @section('content')
 <div class="container-fluid" style="background:#f8fafc">
-    <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div>
-                <h2 style="font-size:1.5rem;font-weight:700;color:#0f172a;letter-spacing:-0.02em;margin:0"><i class="fas fa-clipboard-check me-2" style="color:#DE6262"></i>Diagnosis Details</h2>
-                <p style="font-size:0.875rem;color:#64748b;margin:0.25rem 0 0">Created on {{ $diagnosis->created_at->format('F j, Y \a\t g:i A') }} · Type {{ ucfirst($diagnosis->type ?? 'Text') }}</p>
+    <div class="container py-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border-radius:16px;padding:1.4rem 1.6rem;box-shadow:0 8px 24px rgba(15,23,42,0.12)">
+            <div class="d-flex align-items-center gap-3">
+                <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center"><i class="fas fa-clipboard-check" style="color:#fff;font-size:1.1rem"></i></div>
+                <div>
+                    <h2 style="font-size:1.35rem;font-weight:800;color:#fff;letter-spacing:-0.02em;margin:0">Diagnosis Details</h2>
+                    <p style="font-size:0.78rem;color:rgba(255,255,255,0.78);margin:2px 0 0">Created {{ $diagnosis->created_at->format('M d, Y H:i') }} · Type {{ ucfirst($diagnosis->type ?? 'Text') }}</p>
+                </div>
             </div>
             @php
                 $prevDiag = url()->previous();
                 $diagBackUrl = $prevDiag !== url()->current() ? $prevDiag : route('doctor.cases.overview');
             @endphp
-            <a href="{{ $diagBackUrl }}" class="btn" style="background:#ffffff;border:1px solid #e2e8f0;color:#334155;border-radius:8px;padding:0.55rem 1rem;font-weight:500;font-size:0.84rem"><i class="fas fa-arrow-left me-2"></i>Back</a>
+            <a href="{{ $diagBackUrl }}" class="btn btn-sm" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:10px;padding:0.55rem 1rem;font-weight:700"><i class="fas fa-arrow-left me-2"></i>Back</a>
         </div>
     </div>
 </div>
@@ -66,64 +69,134 @@
                     <h6 style="font-size:0.84rem;font-weight:600;color:#334155;margin:0 0 0.5rem">Diagnosis Text</h6>
                     <div style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px;padding:1rem;font-size:0.9rem;color:#334155;line-height:1.6">{!! nl2br(e($diagnosis->diagnosis_text ?? 'No diagnosis text')) !!}</div>
 
-                    <div class="mt-4">
-                        <h6 style="font-size:0.84rem;font-weight:600;color:#334155"><i class="fas fa-microphone me-2" style="color:#f59e0b"></i>Voice Notes ({{ count($diagnosis->voice_transcripts ?? []) }})</h6>
-                        @if($diagnosis->voice_transcripts && count($diagnosis->voice_transcripts) > 0)
-                            @foreach($diagnosis->voice_transcripts as $index => $transcript)
-                                @if($transcript && $transcript !== $diagnosis->diagnosis_text)
-                                    <div class="p-3 mb-2" style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span style="font-size:0.78rem;font-weight:600;color:#92400e">Voice Note {{ $index + 1 }}</span>
-                                            @if(isset($diagnosis->voice_files[$index]) && (!empty(trim($diagnosis->voice_files[$index])) || $diagnosis->voice_transcripts[$index]))
-                                                <button class="btn btn-sm" style="background:#ffffff;border:1px solid #e2e8f0;color:#334155;border-radius:8px;font-size:0.72rem" onclick="playVoiceFile({{ $index }})"><i class="fas fa-play me-1"></i>Play</button>
-                                            @else
-                                                <span style="font-size:0.72rem;color:#94a3b8">Audio not available</span>
-                                            @endif
-                                        </div>
-                                        <div style="font-size:0.875rem;color:#475569">{!! nl2br(e($transcript)) !!}</div>
-                                    </div>
-                                @endif
-                            @endforeach
-                        @else
-                            <div class="text-center py-3" style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:8px;font-size:0.84rem;color:#94a3b8">No voice notes — Type: {{ ucfirst($diagnosis->type ?? 'Text') }}</div>
+                    @php
+                        $ambientVt = \App\Models\VoiceTranscription::where(function($q) use ($diagnosis){ $q->where('diagnosis_id', $diagnosis->id); if($diagnosis->patient_id) $q->orWhere('patient_id', $diagnosis->patient_id); })->where(function($q){ $q->whereNotNull('ai_analysis')->orWhereNotNull('raw_transcription'); })->latest()->first();
+                        $isVoiceType = ($diagnosis->type ?? '') === 'voice_assistant';
+                        $hasVoiceTranscript = !empty(trim((string)($diagnosis->voice_transcript ?? ''))) || ($ambientVt && !empty(trim((string)($ambientVt->raw_transcription ?? ''))));
+                        $transcriptText = trim((string)($diagnosis->voice_transcript ?? ($ambientVt->raw_transcription ?? '')));
+                        $aiText = trim((string)($diagnosis->ai_response ?? ($ambientVt->ai_analysis ?? '')));
+                        $hasLegacyVoice = $diagnosis->voice_transcripts && count($diagnosis->voice_transcripts) > 0;
+                    @endphp
+                    @if($isVoiceType || $hasVoiceTranscript || $hasLegacyVoice || !empty($aiText))
+                    <div class="mt-4 d-flex flex-wrap gap-2">
+                        @if($hasVoiceTranscript || $hasLegacyVoice)
+                            <button type="button" class="btn btn-light border btn-sm" data-bs-toggle="modal" data-bs-target="#diagConversationModal" style="border-radius:10px;font-weight:700;font-size:0.82rem"><i class="fas fa-comments me-1 text-primary"></i>View Conversation</button>
+                        @endif
+                        @if(!empty($aiText))
+                            <button type="button" class="btn btn-sm text-white" data-bs-toggle="modal" data-bs-target="#diagAnalysisModal" style="background:linear-gradient(135deg,#7c3aed 0%,#4c1d95 100%);border:none;border-radius:10px;font-weight:700;font-size:0.82rem"><i class="fas fa-brain me-1"></i>View AI Analysis</button>
                         @endif
                     </div>
-
-                    <div class="mt-4">
-                        <h6 style="font-size:0.84rem;font-weight:600;color:#334155"><i class="fas fa-robot me-2" style="color:#7c3aed"></i>AI Analysis</h6>
-                        @if($diagnosis->ai_response)
-                            <div style="background:#f5f3ff;border:1px solid #ede9fe;border-radius:8px;padding:1rem;font-size:0.875rem;color:#475569">{!! nl2br(e($diagnosis->ai_response)) !!}</div>
-                        @else
-                            <div class="text-center py-3" style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:8px;font-size:0.84rem;color:#94a3b8">No AI analysis yet — will appear after AI processing</div>
-                        @endif
-                    </div>
+                    @endif
                 </div>
             </div>
 
-            <!-- Patient Data -->
+            <!-- Conversation Modal -->
+            @if($hasVoiceTranscript || $hasLegacyVoice)
+            <div class="modal fade modal-premium" id="diagConversationModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="head-icon" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color:#2563eb; border:1px solid #bfdbfe;"><i class="fas fa-comments"></i></div>
+                                <div><h5 class="modal-title mb-0" style="font-size:0.95rem; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">Conversation Transcript</h5><div style="font-size:0.72rem; color:#94a3b8; font-weight:500;">Diarized Clinician / Patient chat</div></div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            @if($hasVoiceTranscript)
+                                <textarea id="diagConversationRaw" style="display:none">{{ $transcriptText }}</textarea>
+                                @php $diagLines = preg_split('/\n+/', trim((string)$transcriptText)); @endphp
+                                @foreach($diagLines as $line) @continue(!trim($line))
+                                    @php
+                                        $isClinician = preg_match('/^\s*\[?(Clinician|Doctor|Speaker 0|Speaker 1|دكتور|الطبيب)\]?\s*[:：]/iu', $line) && !preg_match('/^\s*\[?Speaker 2/i', $line);
+                                        $isPatient = preg_match('/^\s*\[?(Patient|Speaker 2|مريض|المريض)\]?\s*[:：]/iu', $line);
+                                        if(preg_match('/^\s*\[Speaker 1\]/i', $line) && !preg_match('/Patient/i',$line)) $isClinician=true;
+                                        $cleanLine = preg_replace('/^\s*\[?(Clinician|Doctor|Patient|Speaker \d)\]?\s*[:：]\s*/iu', '', $line);
+                                        $bg = $isClinician ? '#eff6ff' : ($isPatient ? '#ecfdf5' : '#fff');
+                                        $border = $isClinician ? '#dbeafe' : ($isPatient ? '#a7f3d0' : '#e2e8f0');
+                                        $labelBg = $isClinician ? '#2563eb' : ($isPatient ? '#059669' : '#64748b');
+                                        $label = $isClinician ? 'Clinician' : ($isPatient ? 'Patient' : 'Note');
+                                    @endphp
+                                    <div class="mb-2 p-3" style="background:{{ $bg }};border:1px solid {{ $border }};border-radius:12px">
+                                        <span style="background:{{ $labelBg }};color:#fff;border-radius:12px;padding:1px 8px;font-size:0.68rem;font-weight:800">{{ $label }}</span>
+                                        <p class="mb-0 mt-1" style="font-size:0.86rem;line-height:1.6;color:#1e293b;word-break:break-word">{{ $cleanLine }}</p>
+                                    </div>
+                                @endforeach
+                            @elseif($hasLegacyVoice)
+                                @foreach($diagnosis->voice_transcripts as $index => $transcript)
+                                    @if($transcript && $transcript !== $diagnosis->diagnosis_text)
+                                        <div class="p-3 mb-2" style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px">
+                                            <div class="d-flex justify-content-between align-items-center mb-2"><span style="font-size:0.78rem;font-weight:600;color:#92400e">Voice Note {{ $index + 1 }}</span>
+                                            @if(isset($diagnosis->voice_files[$index]) && (!empty(trim($diagnosis->voice_files[$index])) || $diagnosis->voice_transcripts[$index]))
+                                                <button class="btn btn-sm" style="background:#ffffff;border:1px solid #e2e8f0;color:#334155;border-radius:8px;font-size:0.72rem" onclick="playVoiceFile({{ $index }})"><i class="fas fa-play me-1"></i>Play</button>
+                                            @else <span style="font-size:0.72rem;color:#94a3b8">Audio not available</span> @endif</div>
+                                            <div style="font-size:0.875rem;color:#475569">{!! nl2br(e($transcript)) !!}</div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            @endif
+                        </div>
+                        <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.9rem 1.25rem;">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:8px;">Close</button>
+                            @if($hasVoiceTranscript)<button type="button" class="btn btn-primary" onclick="const t=document.getElementById('diagConversationRaw').value; navigator.clipboard.writeText(t).then(()=>{const b=this;const o=b.innerHTML;b.innerHTML='<i class=&quot;fas fa-check me-1&quot;></i>Copied!';setTimeout(()=>b.innerHTML=o,2000)}).catch(()=>alert('Copy failed'))" style="border-radius:8px; background:#2563eb; border-color:#2563eb;"><i class="fas fa-copy me-1"></i>Copy</button>@endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+            @if(!empty($aiText))
+            <div class="modal fade modal-premium" id="diagAnalysisModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="head-icon" style="background: linear-gradient(135deg, #ede9ff 0%, #ddd6fe 100%); color:#7c3aed; border:1px solid #ddd6fe;"><i class="fas fa-brain"></i></div>
+                                <div><h5 class="modal-title mb-0" style="font-size:0.95rem; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">AI Clinical Analysis</h5><div style="font-size:0.72rem; color:#94a3b8; font-weight:500;">GPT-4o • Level 1 + Level 2</div></div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            @php
+                                $fmt2 = e($aiText);
+                                $fmt2 = str_replace(['&#039;','&quot;','&amp;'], ["'",'"','&'], $fmt2);
+                                $fmt2 = preg_replace('/^🟢 (.+)$/m', '<div class="alert alert-success py-2 px-3 mb-2" style="border-radius:8px;font-size:0.82rem"><i class="fas fa-check-circle me-2"></i>$1</div>', $fmt2);
+                                $fmt2 = preg_replace('/^🔵 (.+)$/m', '<div class="alert alert-info py-2 px-3 mb-2" style="border-radius:8px;font-size:0.82rem;background:#eff6ff;border-color:#dbeafe;color:#1e40af"><i class="fas fa-info-circle me-2"></i>$1</div>', $fmt2);
+                                $fmt2 = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $fmt2);
+                                $fmt2 = nl2br($fmt2);
+                                $fmt2 = preg_replace('/(<\/(div)>)\s*<br\s*\/?>/i', '$1', $fmt2);
+                            @endphp
+                            <div style="background:#f5f3ff;border:1px solid #ede9fe;border-radius:8px;padding:1rem;font-size:0.85rem;color:#475569;line-height:1.6">{!! $fmt2 !!}</div>
+                            <textarea id="diagAnalysisRaw" style="display:none">{{ $aiText }}</textarea>
+                        </div>
+                        <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.9rem 1.25rem;">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:8px;">Close</button>
+                            <button type="button" class="btn btn-primary" onclick="const t=document.getElementById('diagAnalysisRaw').value; navigator.clipboard.writeText(t).then(()=>{const b=this;const o=b.innerHTML;b.innerHTML='<i class=&quot;fas fa-check me-1&quot;></i>Copied!';setTimeout(()=>b.innerHTML=o,2000)}).catch(()=>alert('Copy failed'))" style="border-radius:8px; background:#7c3aed; border-color:#7c3aed;"><i class="fas fa-copy me-1"></i>Copy Analysis</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @php
+                $visiblePatientData = array_filter($diagnosis->patient_data ?? [], function($v){ return is_array($v) ? count($v)>0 : trim((string)$v) !== '' && trim((string)$v) !== 'N/A'; });
+            @endphp
+            @if(count($visiblePatientData) > 0)
             <div class="card-modern mb-4">
                 <div class="card-modern-header">
                     <h5><i class="fas fa-notes-medical" style="color:#0ea5e9"></i> Additional Patient Data</h5>
-                    <span class="badge-soft">{{ count($diagnosis->patient_data ?? []) }} fields</span>
+                    <span class="badge-soft">{{ count($visiblePatientData) }} fields</span>
                 </div>
                 <div class="card-modern-body">
-                    @php
-                        $expectedKeys = ['symptoms','past_medical_history','past_medications','allergies','clinical_notes','vitals','heart_rate','blood_pressure','temperature'];
-                    @endphp
                     <div class="row g-3">
-                        @foreach($expectedKeys as $key)
+                        @foreach($visiblePatientData as $key => $val)
                             <div class="col-md-6">
                                 <div class="p-3 h-100" style="background:#ffffff;border:1px solid #f1f5f9;border-radius:8px">
                                     <h6 style="font-size:0.78rem;font-weight:600;color:#0f172a;text-transform:capitalize;margin:0 0 0.5rem">{{ str_replace('_',' ', $key) }}</h6>
                                     <div style="font-size:0.84rem;color:#475569;min-height:24px">
-                                        @if(isset($diagnosis->patient_data[$key]) && $diagnosis->patient_data[$key])
-                                            @if(is_array($diagnosis->patient_data[$key]))
-                                                {{ implode(', ', array_map(fn($v) => is_array($v) ? json_encode($v) : $v, $diagnosis->patient_data[$key])) }}
-                                            @else
-                                                {{ $diagnosis->patient_data[$key] }}
-                                            @endif
+                                        @if(is_array($val))
+                                            {{ implode(', ', array_map(fn($v) => is_array($v) ? json_encode($v) : $v, $val)) }}
                                         @else
-                                            <span style="color:#94a3b8;font-style:italic">N/A</span>
+                                            {{ $val }}
                                         @endif
                                     </div>
                                 </div>
@@ -132,6 +205,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             <!-- Activity -->
             <div class="card-modern mb-4">

@@ -4,27 +4,34 @@
 
 @section('content')
 <style>
-.app-main {
-    background-color: #f8f9fa;
-}
+.app-main{ background:#f8fafc }
+.modern-card{ border:1px solid #eef2f7!important; border-radius:14px!important; box-shadow:0 4px 16px rgba(15,23,42,0.04)!important; background:#fff }
 </style>
-<div class="container-fluid">
+<div class="container-fluid" style="background:#f8fafc">
+    <div class="container py-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border-radius:16px;padding:1.4rem 1.6rem;color:#fff;box-shadow:0 8px 24px rgba(15,23,42,0.12)">
+            <div class="d-flex align-items-center gap-3">
+                <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.14);text-align:center;padding-top:11px"><i class="fas fa-chart-line" style="color:#fff;font-size:1.1rem"></i></div>
+                <div>
+                    <h4 class="mb-0" style="font-weight:800;color:#fff;letter-spacing:-0.02em">Performance Analytics</h4>
+                    <small style="color:rgba(255,255,255,0.78)">Ambient listening success & processing metrics</small>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <select id="timeRange" class="form-select form-select-sm" style="width:auto;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.12);color:#fff;font-weight:600">
+                    <option value="7" {{ request('days', 30) == 7 ? 'selected' : '' }} style="color:#1e293b">Last 7 days</option>
+                    <option value="30" {{ request('days', 30) == 30 ? 'selected' : '' }} style="color:#1e293b">Last 30 days</option>
+                    <option value="90" {{ request('days', 30) == 90 ? 'selected' : '' }} style="color:#1e293b">Last 90 days</option>
+                </select>
+                <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-sm" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:10px;font-weight:700">Back</a>
+            </div>
+        </div>
+    </div>
+    <div class="container pb-4">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">
-                        <i class="fas fa-chart-line me-2"></i>
-                        Ambient Listening Performance Analytics
-                    </h4>
-                    <div class="card-tools">
-                        <select id="timeRange" class="form-select form-select-sm" style="width: auto;">
-                            <option value="7" {{ request('days', 30) == 7 ? 'selected' : '' }}>Last 7 days</option>
-                            <option value="30" {{ request('days', 30) == 30 ? 'selected' : '' }}>Last 30 days</option>
-                            <option value="90" {{ request('days', 30) == 90 ? 'selected' : '' }}>Last 90 days</option>
-                        </select>
-                    </div>
-                </div>
+            <div class="card modern-card" style="overflow:hidden">
+                <div class="card-body p-3" style="background:#fff">
                 <div class="card-body">
                     <!-- Success Rates Overview -->
                     <div class="row mb-4">

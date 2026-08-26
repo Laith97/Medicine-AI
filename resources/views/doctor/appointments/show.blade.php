@@ -1003,7 +1003,7 @@
 
                 <!-- Diagnosis Section — Premium -->
                 @if(auth()->check() && auth()->user()->isDoctor())
-                <div id="diagnosis-section" class="table-card" style="@if($errors->has('diagnosis_text') || $errors->has('voice_files') || $errors->any()) display: block; @else display: none; @endif border-top: 1px solid #eef2f7;">
+                <div id="diagnosis-section" class="table-card" style="@if(isset($errors) && ($errors->has('diagnosis_text') || $errors->has('voice_files') || $errors->any())) display: block; @else display: none; @endif border-top: 1px solid #eef2f7;">
                     <div class="section-head-modern">
                         <div class="head-left">
                             <div class="head-icon" style="background:#f8fafc; color:#475569; border:1px solid #e2e8f0;">
@@ -1019,7 +1019,7 @@
                         </button>
                     </div>
 
-                    @if ($errors->any())
+                    @if (isset($errors) && $errors->any())
                         <div class="ml-warning" style="background:#fef2f2; border-color:#fecaca; margin-bottom:1rem;">
                             <i class="fas fa-exclamation-triangle" style="color:#dc2626; margin-top:2px;"></i>
                             <div>
@@ -1122,6 +1122,142 @@
                             </a>
                         @endforeach
                     </div>
+                @endif
+
+                <!-- Ambient Listening Session - Transcript & AI Analysis (Professional Collapsible) -->
+                @php
+                    $ambientDiag = $appointmentDiagnoses->first(function($d){ return !empty($d->voice_transcript); });
+                    $ambientTranscript = $ambientDiag->voice_transcript ?? null;
+                    $ambientVt = $appointment->patient ? \App\Models\VoiceTranscription::where('patient_id', $appointment->patient->id)
+                        ->where(function($q) use ($ambientDiag){ $ambientDiag ? $q->where('diagnosis_id', $ambientDiag->id)->orWhereNotNull('ai_analysis') : $q->whereNotNull('ai_analysis'); })
+                        ->latest()->first() : null;
+                    if(!$ambientTranscript && $ambientVt) $ambientTranscript = $ambientVt->raw_transcription ?: null;
+                    $ambientAnalysis = $ambientVt->ai_analysis ?? null;
+                @endphp
+                @if($ambientTranscript || $ambientAnalysis)
+                <div class="table-card mt-4" id="ambientSessionCard" style="overflow:visible">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="section-head-modern mb-0">
+                            <div class="head-left">
+                                <div class="head-icon" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color:#2563eb; border:1px solid #bfdbfe;">
+                                    <i class="fas fa-microphone-lines"></i>
+                                </div>
+                                <div>
+                                    <h5 style="margin:0; font-weight:800; color:#1e293b; font-size:1rem; letter-spacing:-0.01em;">Ambient Listening Session</h5>
+                                    <p style="margin:2px 0 0; font-size:0.78rem; color:#64748b; font-weight:500;">Doctor-patient conversation • AI analysis</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            @if($ambientTranscript)
+                                <button type="button" class="btn btn-light border btn-sm" data-bs-toggle="modal" data-bs-target="#ambientConversationModal" style="border-radius:10px;font-weight:700;font-size:0.78rem"><i class="fas fa-comments me-1 text-primary"></i>View Conversation</button>
+                            @endif
+                            @if($ambientAnalysis)
+                                <button type="button" class="btn btn-sm text-white" data-bs-toggle="modal" data-bs-target="#ambientAnalysisModal" style="background:linear-gradient(135deg,#7c3aed 0%,#4c1d95 100%);border:none;border-radius:10px;font-weight:700;font-size:0.78rem"><i class="fas fa-brain me-1"></i>View AI Analysis</button>
+                            @endif
+                        </div>
+                    </div>
+                    @if($ambientTranscript || $ambientAnalysis)
+                    <div class="d-flex gap-2 mt-3 pt-3" style="border-top:1px solid #f1f5f9">
+                        @if($ambientTranscript)<span class="badge bg-light text-muted border" style="border-radius:20px;font-size:0.68rem"><i class="fas fa-file-lines me-1"></i>{{ count(array_filter(preg_split('/\n+/', trim((string)$ambientTranscript)), fn($l)=>trim($l) !== '')) }} turns</span>@endif
+                        <span class="badge bg-white border text-muted" style="border-radius:20px;font-size:0.68rem">{{ \Carbon\Carbon::parse($ambientVt->created_at ?? $ambientDiag->created_at ?? now())->format('M d, Y H:i') }}</span>
+                    </div>
+                    @endif
+                </div>
+                <!-- Conversation Modal -->
+                @if($ambientTranscript)
+                <div class="modal fade modal-premium" id="ambientConversationModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="head-icon" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color:#2563eb; border:1px solid #bfdbfe;">
+                                        <i class="fas fa-comments"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="modal-title mb-0" style="font-size:0.95rem; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">Conversation Transcript</h5>
+                                        <div style="font-size:0.72rem; color:#94a3b8; font-weight:500;">Diarized Clinician / Patient chat</div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <textarea id="ambientConversationRaw" style="display:none">{{ $ambientTranscript }}</textarea>
+                                @php $lines = preg_split('/\n+/', trim((string)$ambientTranscript)); @endphp
+                                @foreach($lines as $line) @continue(!trim($line))
+                                    @php
+                                        // Speaker 1 = Clinician/Doctor, Speaker 2 = Patient (matches [Speaker 1]: / [Speaker 2]: diarization)
+                                        $isClinician = preg_match('/^\s*\[?(Clinician|Doctor|Speaker 0|Speaker 1|دكتور|الطبيب)\]?\s*[:：]/iu', $line) && !preg_match('/^\s*\[?Speaker 2/i', $line);
+                                        $isPatient = preg_match('/^\s*\[?(Patient|Speaker 2|مريض|المريض)\]?\s*[:：]/iu', $line);
+                                        $cleanLine = preg_replace('/^\s*\[?(Clinician|Doctor|Patient|Speaker \d)\]?\s*[:：]\s*/iu', '', $line);
+                                        $bg = $isClinician ? '#eff6ff' : ($isPatient ? '#ecfdf5' : '#fff');
+                                        $border = $isClinician ? '#dbeafe' : ($isPatient ? '#a7f3d0' : '#e2e8f0');
+                                        $labelBg = $isClinician ? '#2563eb' : ($isPatient ? '#059669' : '#64748b');
+                                        $label = $isClinician ? 'Clinician' : ($isPatient ? 'Patient' : 'Note');
+                                    @endphp
+                                    <div class="mb-2 p-3" style="background:{{ $bg }};border:1px solid {{ $border }};border-radius:12px">
+                                        <span style="background:{{ $labelBg }};color:#fff;border-radius:12px;padding:1px 8px;font-size:0.68rem;font-weight:800">{{ $label }}</span>
+                                        <p class="mb-0 mt-1" style="font-size:0.86rem;line-height:1.6;color:#1e293b;word-break:break-word">{{ $cleanLine }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.9rem 1.25rem;">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:8px;">Close</button>
+                                <button type="button" class="btn btn-primary" onclick="const t=document.getElementById('ambientConversationRaw').value; navigator.clipboard.writeText(t).then(()=>{const b=this;const o=b.innerHTML;b.innerHTML='<i class=&quot;fas fa-check me-1&quot;></i>Copied!';setTimeout(()=>b.innerHTML=o,2000)}).catch(()=>alert('Copy failed - select text manually'))" style="border-radius:8px; background:#2563eb; border-color:#2563eb;"><i class="fas fa-copy me-1"></i>Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+                <!-- AI Analysis Modal - same as AI Clinical Data Sources -->
+                @if($ambientAnalysis)
+                <div class="modal fade modal-premium" id="ambientAnalysisModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="head-icon" style="background: linear-gradient(135deg, #ede9ff 0%, #ddd6fe 100%); color:#7c3aed; border:1px solid #ddd6fe;">
+                                        <i class="fas fa-brain"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="modal-title mb-0" style="font-size:0.95rem; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">AI Clinical Analysis</h5>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                @php
+                                    $fmt = e($ambientAnalysis);
+                                    $fmt = str_replace(['&#039;','&quot;','&amp;'], ["'",'"','&'], $fmt);
+                                    $fmt = preg_replace('/^🟢 (.+)$/m', '<div class="alert alert-success py-2 px-3 mb-3" style="border-radius:10px;font-size:0.82rem"><i class="fas fa-check-circle me-2"></i>$1</div>', $fmt);
+                                    $fmt = preg_replace('/^🔵 (.+)$/m', '<div class="alert alert-info py-2 px-3 mb-3" style="border-radius:10px;font-size:0.82rem;background:#eff6ff;border-color:#dbeafe;color:#1e40af"><i class="fas fa-info-circle me-2"></i>$1</div>', $fmt);
+                                    $fmt = preg_replace('/^📋 (.+)$/m', '<h6 style="font-weight:800;color:#1e40af;font-size:0.82rem;margin:1rem 0 0.4rem"><i class="fas fa-clipboard me-2"></i>$1</h6>', $fmt);
+                                    $fmt = preg_replace('/^🔍 (.+)$/m', '<h6 style="font-weight:800;color:#0e7490;font-size:0.82rem;margin:1rem 0 0.4rem"><i class="fas fa-search me-2"></i>$1</h6>', $fmt);
+                                    $fmt = preg_replace('/^🚨 (.+)$/m', '<h6 style="font-weight:800;color:#dc2626;font-size:0.82rem;margin:1rem 0 0.4rem"><i class="fas fa-exclamation-triangle me-2"></i>$1</h6>', $fmt);
+                                    $fmt = preg_replace('/^⚠️ (.+)$/m', '<h6 style="font-weight:800;color:#d97706;font-size:0.82rem;margin:1rem 0 0.4rem"><i class="fas fa-exclamation-circle me-2"></i>$1</h6>', $fmt);
+                                    $fmt = preg_replace('/^💡 (.+)$/m', '<h6 style="font-weight:800;color:#059669;font-size:0.82rem;margin:1rem 0 0.4rem"><i class="fas fa-lightbulb me-2"></i>$1</h6>', $fmt);
+                                    $fmt = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $fmt);
+                                    $fmt = preg_replace('/^• (.+)$/m', '<li>$1</li>', $fmt);
+                                    $fmt = str_replace('---', '<hr style="margin:0.9rem 0;border-color:#e2e8f0">', $fmt);
+                                    // Collapse 3+ newlines to 2, then nl2br, then clean big gaps
+                                    $fmt = preg_replace("/\n{3,}/", "\n\n", $fmt);
+                                    $fmt = nl2br($fmt);
+                                    $fmt = preg_replace('/(<\/(div|h6|ul|hr)>)\s*<br\s*\/?>/i', '$1', $fmt);
+                                    $fmt = preg_replace('/<br\s*\/?>\s*<br\s*\/?>/', '<br>', $fmt);
+                                    $fmt = preg_replace('/<br\s*\/?>\s*(<ul)/i', '$1', $fmt);
+                                    $fmt = preg_replace('/((?:<li>.*?<\/li>\s*)+)/s', '<ul style="margin:0.5rem 0 0.75rem 1.2rem;font-size:0.84rem">$1</ul>', $fmt);
+                                @endphp
+                                <div style="background:#fff;border:1px solid #eef2f7;border-radius:12px;padding:1.25rem;line-height:1.7;font-size:0.85rem;color:#334155">{!! $fmt !!}</div>
+                                <textarea id="ambientAnalysisRaw" style="display:none">{{ $ambientAnalysis }}</textarea>
+                            </div>
+                            <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.9rem 1.25rem;">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:8px;">Close</button>
+                                <button type="button" class="btn btn-primary" onclick="const t=document.getElementById('ambientAnalysisRaw').value; navigator.clipboard.writeText(t).then(()=>{const b=this;const o=b.innerHTML;b.innerHTML='<i class=&quot;fas fa-check me-1&quot;></i>Copied!';setTimeout(()=>b.innerHTML=o,2000)}).catch(()=>alert('Copy failed - select text manually'))" style="border-radius:8px; background:#7c3aed; border-color:#7c3aed;"><i class="fas fa-copy me-1"></i>Copy Analysis</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
                 @endif
 
                 <!-- AI Medical Copilot Section — Premium -->
@@ -2415,7 +2551,7 @@ let isRecording = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     // Check if there are validation errors and show the diagnosis form if needed
-    const hasErrors = @json($errors->any());
+    const hasErrors = @json(isset($errors) ? $errors->any() : false);
     if (hasErrors) {
         const diagnosisSection = document.getElementById('diagnosis-section');
         diagnosisSection.style.display = 'block';

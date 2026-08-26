@@ -1183,6 +1183,8 @@ class AppointmentController extends Controller
                 'allergies' => 'nullable|string|max:1000',
                 'medications' => 'nullable|string|max:1000',
                 'clinical_notes' => 'nullable|string|max:2000',
+                'weight' => 'nullable|string|max:20',
+                'diagnosis_text' => 'nullable|string|max:2000',
             ]);
 
             Log::info('Saving quick data', [
@@ -1203,11 +1205,12 @@ class AppointmentController extends Controller
                     'doctor_id' => Auth::id(),
                     'patient_id' => $appointment->patient_id,
                     'appointment_id' => $appointment->id,
-                    'diagnosis_text' => 'Quick data entry for AI prescription support',
+                    'diagnosis_text' => $request->diagnosis_text ?: 'Quick data entry for AI prescription support',
                     'patient_data' => [
                         'allergies' => $request->allergies ?: '',
                         'medications' => $request->medications ?: '',
                         'clinical_notes' => $request->clinical_notes ?: '',
+                        'weight' => $request->weight ?: '',
                         'quick_entry' => true,
                         'created_at' => now()->toISOString()
                     ]
@@ -1229,9 +1232,17 @@ class AppointmentController extends Controller
                 if ($request->clinical_notes) {
                     $patientData['clinical_notes'] = $request->clinical_notes;
                 }
+                if ($request->weight) {
+                    $patientData['weight'] = $request->weight;
+                }
+                if ($request->diagnosis_text) {
+                    $diagnosis->diagnosis_text = $request->diagnosis_text;
+                }
                 $patientData['quick_entry_updated'] = now()->toISOString();
                 
-                $diagnosis->update(['patient_data' => $patientData]);
+                $updateData = ['patient_data' => $patientData];
+                if ($request->diagnosis_text) $updateData['diagnosis_text'] = $request->diagnosis_text;
+                $diagnosis->update($updateData);
                 
                 Log::info('Updated existing diagnosis with quick data', [
                     'diagnosis_id' => $diagnosis->id,

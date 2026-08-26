@@ -4,36 +4,46 @@
 
 @section('content')
 <style>
-.app-main {
-    background-color: #f8f9fa;
-}
+.app-main{ background:#f8fafc }
+.modern-card{ border:1px solid #eef2f7!important; border-radius:14px!important; box-shadow:0 4px 16px rgba(15,23,42,0.04)!important; background:#fff }
 </style>
-<div class="container-fluid">
+<div class="container-fluid" style="background:#f8fafc">
+    <div class="container py-3">
+        <div class="d-flex justify-content-between align-items-center mb-3" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border-radius:16px;padding:1.4rem 1.6rem;color:#fff;box-shadow:0 8px 24px rgba(15,23,42,0.12)">
+            <div class="d-flex align-items-center gap-3">
+                <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.14);text-align:center;padding-top:11px"><i class="fas fa-graduation-cap" style="color:#fff;font-size:1.1rem"></i></div>
+                <div>
+                    <h4 class="mb-0" style="font-weight:800;color:#fff;letter-spacing:-0.02em">Ambient Listening Training Guide</h4>
+                    <small style="color:rgba(255,255,255,0.78)">Hybrid transcription + AI processing for consultations</small>
+                </div>
+            </div>
+            <a href="{{ route('ai.ambient-listening.index') }}" class="btn btn-sm" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:10px;font-weight:700"><i class="fas fa-microphone me-1"></i>Back to Session</a>
+        </div>
+    </div>
+    <div class="container pb-4">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h4 class="card-title mb-0">
-                        <i class="fas fa-graduation-cap me-2"></i>
-                        Ambient Listening Training Guide
-                    </h4>
-                    <small>Master the hybrid ambient listening for enhanced medical consultations</small>
-                </div>
-                <div class="card-body">
+            <div class="card modern-card" style="overflow:hidden">
+                <div class="card-body p-0">
+                <div class="card-body p-4" style="background:#fff">
                     <!-- Introduction -->
-                    <div class="alert alert-info">
-                        <h5><i class="fas fa-info-circle me-2"></i>Welcome to Ambient Listening Training</h5>
-                        <p class="mb-0">This guide will help you understand and effectively use our advanced ambient listening system, which combines real-time transcription with AI-powered server processing for superior medical documentation accuracy.</p>
+                    <div class="d-flex gap-3 p-3 mb-3 rounded-3" style="background:#eff6ff;border:1px solid #dbeafe">
+                        <div style="width:36px;height:36px;border-radius:10px;background:#2563eb;color:#fff;text-align:center;padding-top:8px;flex-shrink:0"><i class="fas fa-info-circle"></i></div>
+                        <div>
+                            <h5 style="font-weight:800;color:#1e3a8a;font-size:0.95rem">Welcome to Ambient Listening Training</h5>
+                            <p class="mb-0" style="font-size:0.86rem;color:#334155;line-height:1.6">Hybrid real-time + server AI processing for superior medical documentation accuracy.</p>
+                        </div>
                     </div>
 
                     <!-- Quick Start -->
                     <div class="row mb-4">
                         <div class="col-12">
-                            <div class="card border-primary">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="mb-0"><i class="fas fa-rocket me-2"></i>Quick Start Guide</h5>
+                            <div class="card modern-card" style="overflow:hidden">
+                                <div class="card-header border-0 d-flex align-items-center gap-2" style="background:#1e293b;color:#fff;padding:1rem 1.2rem">
+                                    <span style="width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.12);text-align:center;padding-top:6px"><i class="fas fa-rocket" style="font-size:0.8rem"></i></span>
+                                    <h5 class="mb-0" style="font-weight:800;color:#fff;font-size:0.95rem">Quick Start Guide</h5>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body p-3" style="background:#fff">
                                     <div class="row">
                                         <div class="col-md-6">
                                             <h6>1. Patient Selection</h6>

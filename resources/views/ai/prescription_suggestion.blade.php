@@ -730,13 +730,25 @@ window.resetPrescriptionForm = window.resetPrescriptionForm || function() {
     showNotification('Prescription form reset. Clinical data and AI suggestions cleared.', 'info');
 };
 
+@php
+$_voiceDiag = null;
+if($appointment->patient){
+    $_voiceDiag = \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first();
+    if(!$_voiceDiag) $_voiceDiag = \App\Models\VoiceTranscription::where('patient_id', $appointment->patient->id)->whereNotNull('ai_analysis')->where('ai_analysis','!=','')->latest()->first();
+}
+@endphp
+let _cachedAppointment = @json($appointment);
+let _cachedPatient = @json($appointment->patient);
+let _cachedCurrentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
+let _cachedPastDiagnoses = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->orderBy('created_at', 'desc')->skip(1)->take(10)->get() : collect());
+let _cachedVoiceDiagnosis = @json($_voiceDiag);
 // AI Data Sources Modal Functions
 function populateDataSourcesModal() {
-    const appointment = @json($appointment);
-    const patient = @json($appointment->patient);
-    const currentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
-    const pastDiagnoses = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->orderBy('created_at', 'desc')->skip(1)->take(10)->get() : collect());
-    const voiceDiagnosis = @json($appointment->patient ? \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first() : null);
+    const appointment = _cachedAppointment;
+    const patient = _cachedPatient;
+    const currentDiagnosis = _cachedCurrentDiagnosis;
+    const pastDiagnoses = _cachedPastDiagnoses;
+    const voiceDiagnosis = _cachedVoiceDiagnosis;
 
     // Get patient data from the most recent diagnosis
     const patientData = currentDiagnosis ? currentDiagnosis.patient_data : null;
@@ -825,7 +837,7 @@ function populateDataSourcesModal() {
         {
             name: 'Voice Assistant Diagnosis',
             status: voiceDiagnosis ? 'available' : 'missing',
-            example: voiceDiagnosis ? (voiceDiagnosis.patient_data && voiceDiagnosis.patient_data.diagnosis ? voiceDiagnosis.patient_data.diagnosis : 'Voice diagnosis available') : 'No voice diagnosis',
+            example: voiceDiagnosis ? (voiceDiagnosis.patient_data && voiceDiagnosis.patient_data.diagnosis ? voiceDiagnosis.patient_data.diagnosis : (voiceDiagnosis.ai_analysis ? voiceDiagnosis.ai_analysis.substring(0,60) + '...' : 'Voice diagnosis available')) : 'No voice diagnosis',
             location: 'Voice Assistant sessions (AI-assisted clinical)',
             reliability: 'AI-assisted clinical',
             icon: 'fas fa-microphone',
@@ -865,8 +877,10 @@ function populateDataSourcesModal() {
             ? '<span class="badge bg-info"><i class="fas fa-info-circle me-1"></i>Helpful</span>'
             : '<span class="badge bg-secondary"><i class="fas fa-tag me-1"></i>Context</span>';
 
+        const canEdit = source.status === 'missing' && source.reliability === 'Doctor-verified' && ['Patient Allergies','Current Medications','Doctor Notes','Patient Weight','Current Diagnosis'].includes(source.name);
+        const editBtn = canEdit ? `<button class="btn btn-sm mt-1 quick-edit-btn" data-source="${source.name}" style="background:#eff6ff;border:1px solid #dbeafe;color:#2563eb;border-radius:8px;font-size:0.72rem;font-weight:600"><i class="fas fa-pen me-1"></i>Fix → Available</button>` : '';
         tableHtml += `
-            <tr class="${source.status === 'missing' ? 'table-light' : ''}">
+            <tr class="${source.status === 'missing' ? 'table-light' : ''}" data-row="${source.name}">
                 <td>
                     <i class="${source.icon} me-2 text-primary"></i><strong>${source.name}</strong>
                     <br><small class="text-muted">${source.reason}</small>
@@ -874,7 +888,7 @@ function populateDataSourcesModal() {
                 <td>${statusBadge}</td>
                 <td class="small">${importanceBadge}</td>
                 <td class="small">${reliabilityBadge}</td>
-                <td class="small text-muted">${source.example}</td>
+                <td class="small text-muted" data-cell="${source.name}">${source.example}<br>${editBtn}</td>
             </tr>
         `;
     });
@@ -937,6 +951,69 @@ function populateDataSourcesModal() {
         document.getElementById('improvementSuggestions').innerHTML = suggestionsHtml;
     }
 }
+
+function quickEditDataSource(sourceName){
+    const map = {
+        'Patient Allergies': {field:'allergies', label:'Patient Allergies', placeholder:'e.g., Penicillin, Sulfa, None', hint:'Use \"None\" or \"No known allergies\"', rows:1},
+        'Current Medications': {field:'medications', label:'Current Medications', placeholder:'e.g., Lisinopril 10mg daily, None', hint:'Include dosage/frequency. \"None\" if none', rows:1},
+        'Doctor Notes': {field:'clinical_notes', label:'Doctor Notes / Symptoms', placeholder:'e.g., Chest pain 2 days, fever', hint:'Brief assessment - drives AI', rows:2},
+        'Patient Weight': {field:'weight', label:'Patient Weight (kg)', placeholder:'e.g., 70', hint:'For dosing. e.g., 70', rows:1},
+        'Current Diagnosis': {field:'diagnosis_text', label:'Current Diagnosis', placeholder:'e.g., Acute bronchitis', hint:'Primary diagnosis', rows:2}
+    };
+    const cfg = map[sourceName];
+    if(!cfg) return;
+    const cell = document.querySelector(`[data-cell="${sourceName}"]`);
+    if(!cell || cell.querySelector('.quick-edit-inline')) return;
+    const isTextarea = cfg.rows > 1;
+    const inputId = 'inline_'+cfg.field+'_'+Date.now();
+    cell.innerHTML = `
+        <div class="quick-edit-inline p-2" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
+            <label class="form-label fw-bold mb-1" style="font-size:0.72rem;color:#334155">${cfg.label} <span class="text-danger">*</span></label>
+            ${isTextarea ? `<textarea id="${inputId}" class="form-control" rows="${cfg.rows}" placeholder="${cfg.placeholder}" style="border-radius:8px;font-size:0.82rem;border:1px solid #e2e8f0"></textarea>` : `<input id="${inputId}" type="text" class="form-control" placeholder="${cfg.placeholder}" style="border-radius:8px;font-size:0.82rem;border:1px solid #e2e8f0">`}
+            <div class="form-text" style="font-size:0.68rem">${cfg.hint}</div>
+            <div class="text-danger small mt-1" id="${inputId}_err" style="display:none"></div>
+            <div class="d-flex gap-1 mt-2">
+                <button class="btn btn-sm text-white quick-save" style="background:#10b981;border:none;border-radius:8px;font-weight:600;font-size:0.72rem"><i class="fas fa-check me-1"></i>Save</button>
+                <button class="btn btn-sm btn-light border quick-cancel" style="border-radius:8px;font-size:0.72rem">Cancel</button>
+            </div>
+        </div>`;
+    const input = document.getElementById(inputId);
+    input.focus();
+    const errEl = document.getElementById(inputId+'_err');
+    cell.querySelector('.quick-cancel').addEventListener('click', ()=> populateDataSourcesModal());
+    cell.querySelector('.quick-save').addEventListener('click', ()=>{
+        const val = input.value.trim();
+        if(!val){ errEl.textContent='Value required. Use \"None\" if none.'; errEl.style.display='block'; input.classList.add('is-invalid'); return; }
+        errEl.style.display='none'; input.classList.remove('is-invalid');
+        const btn = cell.querySelector('.quick-save');
+        btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+        const payload = {_token: document.querySelector('meta[name=\"csrf-token\"]').content};
+        payload[cfg.field] = val;
+        fetch("{{ route('doctor.appointments.save-quick-data', $appointment->id) }}", {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':payload._token,'Accept':'application/json'}, body: JSON.stringify(payload)})
+        .then(r=>r.json().then(j=>({ok:r.ok, body:j})))
+        .then(({ok, body})=>{
+            if(!ok) throw new Error(body.message || 'Save failed');
+            // Real-time cache update - no reload needed
+            if(!_cachedCurrentDiagnosis) _cachedCurrentDiagnosis = {patient_data:{}};
+            if(!_cachedCurrentDiagnosis.patient_data) _cachedCurrentDiagnosis.patient_data = {};
+            if(cfg.field === 'allergies') _cachedCurrentDiagnosis.patient_data.allergies = val;
+            else if(cfg.field === 'medications') _cachedCurrentDiagnosis.patient_data.medications = val;
+            else if(cfg.field === 'clinical_notes'){ _cachedCurrentDiagnosis.patient_data.clinical_notes = val; _cachedAppointment.doctor_notes = val; }
+            else if(cfg.field === 'weight') _cachedCurrentDiagnosis.patient_data.weight = val;
+            else if(cfg.field === 'diagnosis_text') _cachedCurrentDiagnosis.diagnosis_text = val;
+            if(body.diagnosis) _cachedCurrentDiagnosis = body.diagnosis;
+            populateDataSourcesModal();
+            const toast = document.createElement('div');
+            toast.style.cssText='position:fixed;bottom:20px;right:20px;background:#065f46;color:#fff;padding:0.6rem 0.9rem;border-radius:10px;font-size:0.8rem;font-weight:600;box-shadow:0 8px 20px rgba(0,0,0,0.15);z-index:9999';
+            toast.innerHTML='<i class="fas fa-check-circle me-1"></i>'+sourceName+' → Available (live)';
+            document.body.appendChild(toast); setTimeout(()=> toast.remove(), 2200);
+        }).catch(e=>{ errEl.textContent=e.message; errEl.style.display='block'; btn.disabled=false; btn.innerHTML='<i class="fas fa-check me-1"></i>Save'; });
+    });
+}
+document.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.quick-edit-btn');
+    if(btn){ e.preventDefault(); quickEditDataSource(btn.dataset.source); }
+});
 
 function refreshDataSources() {
     populateDataSourcesModal();
