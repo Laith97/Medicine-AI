@@ -1972,7 +1972,60 @@
                 return;
             }
             
-            // Show modal with additional patient data fields
+            // Show modal with additional patient data fields — auto-sync from Clinical Chart (no removal, only pre-fill if empty)
+            // Sync Chart → Modal to avoid duplication / required block
+            try {
+                const getVal = (id) => (document.getElementById(id)?.value || '').trim();
+                const setIfEmpty = (modalId, val) => {
+                    const el = document.getElementById(modalId);
+                    if (el && !el.value.trim() && val && String(val).trim()) {
+                        el.value = String(val).trim();
+                        el.dispatchEvent(new Event('input', {bubbles:true}));
+                    }
+                };
+                // Direct copies
+                setIfEmpty('modal_symptoms', getVal('symptoms'));
+                setIfEmpty('modal_medical_history', getVal('medicalHistory'));
+                setIfEmpty('modal_medications', getVal('medications'));
+                // Allergies derived from Medical History / Chart
+                const allergyEl = document.getElementById('modal_allergies');
+                if (allergyEl && !allergyEl.value.trim()) {
+                    const mh = getVal('medicalHistory');
+                    const mhLow = mh.toLowerCase();
+                    let allergyVal = '';
+                    if (mhLow.includes('no known drug allergies') || mhLow.includes('no drug allergies') || mhLow.includes('nkda') || mhLow.includes('no known allergies') || mhLow.includes('no allergies')) {
+                        allergyVal = 'None';
+                    } else {
+                        const m = mh.match(/allerg(?:y|ies)\s*[:\-]\s*([^\n;]+)/i);
+                        if (m && m[1]) allergyVal = m[1].trim();
+                        else if (mhLow.includes('allergy')) allergyVal = mh.trim().split('\n')[0].substring(0,120);
+                    }
+                    // Fallback: if chart says medications None and history contains no allergies, set None
+                    if (!allergyVal && (mhLow.includes('no ') || getVal('medications').toLowerCase() === 'none')) {
+                        // Don't auto set to None if truly unknown — but for Khalid case we have explicit no allergies
+                        if (mhLow.includes('no known') || mhLow.includes('no drug')) allergyVal = 'None';
+                    }
+                    if (allergyVal) {
+                        allergyEl.value = allergyVal;
+                        allergyEl.dispatchEvent(new Event('input', {bubbles:true}));
+                    }
+                }
+                // Medications fallback from chart if still empty
+                const medEl = document.getElementById('modal_medications');
+                if (medEl && !medEl.value.trim()) {
+                    const chartMeds = getVal('medications');
+                    if (chartMeds) {
+                        medEl.value = chartMeds;
+                    } else {
+                        const mh = getVal('medicalHistory').toLowerCase();
+                        if (mh.includes('no regular') || mh.includes('no medications') || mh.includes('none')) {
+                            medEl.value = 'None';
+                            medEl.dispatchEvent(new Event('input', {bubbles:true}));
+                        }
+                    }
+                }
+            } catch(e) { console.warn('Chart->Modal sync failed', e); }
+
             const modal = new bootstrap.Modal(document.getElementById('completeConsultationModal'));
             document.getElementById('diagnosisPreview').textContent = diagnosis;
             const searchInput2 = document.getElementById('patientSearchInput');
