@@ -346,15 +346,36 @@
     </div>
 </div>
 
-<!-- Professional Inline for AI Response — compact, no popup destroying page -->
-<div id="aiResponseInline" style="display:none;">
-  <div id="aiResponseClinicalData" class="mb-3"></div>
-  <div id="aiResponseSuggestions" class="mb-3"></div>
-  <div id="aiResponseRisks" style="display:none;" class="mb-3 p-3" style="background:#fff;border:1px solid #fee2e2;border-radius:14px;">
-    <div class="d-flex align-items-center gap-2 mb-2"><span class="d-flex align-items-center justify-content-center" style="width:26px;height:26px;border-radius:9px;background:#fee2e2;border:1px solid #fecaca;"><i class="fas fa-shield-alt" style="font-size:0.7rem;color:#dc2626;"></i></span><span style="font-weight:800;font-size:0.84rem;color:#991b1b;">Safety Warnings</span></div>
-    <div id="aiResponseRisksContent"></div>
+<!-- Professional Popup for AI Response — premium, compact, scrollable -->
+<div class="modal fade modal-premium" id="aiResponseModal" tabindex="-1" aria-labelledby="aiResponseModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content" style="border:none;border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(15,23,42,0.18);">
+      <div class="modal-header" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border:none; padding:1.1rem 1.35rem; color:#fff;">
+        <div class="d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center justify-content-center" style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.18);"><i class="fas fa-wand-magic-sparkles" style="font-size:1rem;color:#fff;"></i></div>
+          <div>
+            <h5 class="modal-title mb-0" id="aiResponseModalLabel" style="font-size:1rem; font-weight:800; color:#fff; letter-spacing:-0.02em;">AI Clinical Support</h5>
+            <div style="font-size:0.72rem; color:rgba(255,255,255,0.72); font-weight:500; margin-top:1px;">Evidence-based • Review required • CDS • 3 suggestions</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity:0.85;"></button>
+      </div>
+      <div class="modal-body" style="background:#f8fafc; padding:1rem 1.25rem;">
+        <div id="aiResponseClinicalData"></div>
+        <div id="aiResponseSuggestions" class="mt-3"></div>
+        <div id="aiResponseRisks" class="mt-3" style="display:none;">
+          <div class="d-flex align-items-center gap-2 mb-2"><span class="d-flex align-items-center justify-content-center" style="width:26px;height:26px;border-radius:9px;background:#fee2e2;border:1px solid #fecaca;"><i class="fas fa-shield-alt" style="font-size:0.7rem;color:#dc2626;"></i></span><span style="font-weight:800;font-size:0.84rem;color:#991b1b;">Safety Warnings</span><span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:20px;font-size:0.65rem;">Review</span></div>
+          <div id="aiResponseRisksContent"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="background:#fff;border-top:1px solid #f1f5f9;padding:0.8rem 1.25rem;gap:0.5rem;">
+        <span class="me-auto d-flex align-items-center gap-1" style="font-size:0.7rem;color:#64748b;"><i class="fas fa-lock" style="color:#94a3b8;"></i> HIPAA • Local analysis • Requires approval</span>
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal" style="border-radius:10px;font-weight:600;font-size:0.84rem;">Close</button>
+      </div>
+    </div>
   </div>
 </div>
+<div id="aiResponseInline" style="display:none;"></div>
 <!-- Hidden inline containers kept for backward compat (populated but not shown) -->
 <div id="clinical-data-summary" style="display:none;"><div id="clinical-data-content"></div></div>
 <div id="ai-suggestions" style="display:none;"></div>
@@ -966,18 +987,24 @@ $('#aiSuggestBtn').click(function(e) {
                     if ($('#aiResponseSuggestions').length) {
                         $('#aiResponseSuggestions').html(suggestionsHtml);
                     }
-                    // Show inline professional (compact, no popup)
-                    $('#aiResponseInline').slideDown(200);
-                    $('html, body').animate({scrollTop: $('#aiResponseInline').offset().top - 80}, 300);
+                    // Show professional popup (premium, centered, scrollable)
+                    const _aiModalEl = document.getElementById('aiResponseModal');
+                    if (_aiModalEl) {
+                        const _aiModal = bootstrap.Modal.getOrCreateInstance(_aiModalEl);
+                        _aiModal.show();
+                    }
                     $('#ai_suggestions').val(JSON.stringify(response.suggestions));
                 }
             } else {
                 const emptyHtml = '<div class="modern-suggestion-card"><div class="p-3 d-flex gap-3 align-items-start"><span class="suggestion-med-icon" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;"><i class="fas fa-heart-pulse"></i></span><div><div class="suggestion-med-name">Preventive Care</div><div class="suggestion-med-reason">No specific medications indicated — focus on preventive measures for age/health status.</div></div></div></div>';
                 $('#ai-suggestions').html(emptyHtml); // keep hidden
                 if ($('#aiResponseSuggestions').length) $('#aiResponseSuggestions').html(emptyHtml);
-                    // Show inline professional (compact, no popup)
-                    $('#aiResponseInline').slideDown(200);
-                    $('html, body').animate({scrollTop: $('#aiResponseInline').offset().top - 80}, 300);
+                    // Show professional popup (premium, centered, scrollable)
+                    const _aiModalEl = document.getElementById('aiResponseModal');
+                    if (_aiModalEl) {
+                        const _aiModal = bootstrap.Modal.getOrCreateInstance(_aiModalEl);
+                        _aiModal.show();
+                    }
                 $('#ai_suggestions').val('');
             }
 
