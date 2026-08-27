@@ -950,7 +950,25 @@ class AppointmentController extends Controller
                 $serverAllergies = [trim($val)];
             }
         }
-        // Fallback to client only if server empty and continue_limited (for Quick Entry dummy)
+        // Voice fallback — use VT/AiAssistant when Diagnosis empty (Khalid 82kg: no known drug allergies)
+        if (empty($serverAllergies)) {
+            $vtAllergy = \App\Models\VoiceTranscription::where('patient_id', $appointment->patient_id)->latest()->first();
+            if ($vtAllergy) {
+                $mh = $vtAllergy->structured_chart['medical_history'] ?? $vtAllergy->extracted_data['medical_history'] ?? '';
+                if (!empty($mh) && preg_match('/no known|none|nkda|no allergies/i', $mh)) $serverAllergies = ['None'];
+                elseif (!empty($mh) && trim($mh) !== '') $serverAllergies = [trim($mh)];
+                else {
+                    $aiText = $vtAllergy->ai_analysis ?? '';
+                    if (!empty($aiText) && preg_match('/no drug allergies|no known drug allergies|none|nkda|no known allergies/i', $aiText)) $serverAllergies = ['None'];
+                }
+            }
+            if (empty($serverAllergies) && $voiceModel) {
+                $vAll = $voiceModel->patient_data['allergies'] ?? $voiceModel->patient_data['medical_history'] ?? '';
+                if (!empty($vAll) && preg_match('/no known|none|nkda|no allergies/i', $vAll)) $serverAllergies = ['None'];
+                elseif (!empty($vAll) && trim($vAll) !== '') $serverAllergies = [trim($vAll)];
+            }
+        }
+        // Fallback to client only if server+voice empty and continue_limited (for Quick Entry dummy)
         if (empty($serverAllergies) && $continueLimited) {
             $clientAllergies = json_decode($request->allergies, true) ?? [];
             if (!is_array($clientAllergies)) $clientAllergies = is_string($clientAllergies) && trim($clientAllergies) !== '' ? [trim($clientAllergies)] : [];
@@ -973,6 +991,24 @@ class AppointmentController extends Controller
         if (empty($serverMeds) && $appointment->patient_id) {
             $activeMeds = \App\Models\Prescription::getActiveForPatient($appointment->patient_id)->pluck('medication_name')->toArray();
             if (!empty($activeMeds)) $serverMeds = $activeMeds;
+        }
+        // Voice fallback for meds (None mentioned)
+        if (empty($serverMeds)) {
+            $vtMeds = \App\Models\VoiceTranscription::where('patient_id', $appointment->patient_id)->latest()->first();
+            if ($vtMeds) {
+                $mv = $vtMeds->structured_chart['medications'] ?? $vtMeds->extracted_data['medications'] ?? '';
+                if (!empty($mv) && preg_match('/none|no.*medications|no.*meds|no current|no regular/i', $mv)) $serverMeds = ['None'];
+                elseif (!empty($mv) && trim($mv) !== '') $serverMeds = [trim($mv)];
+                else {
+                    $aiText = $vtMeds->ai_analysis ?? '';
+                    if (!empty($aiText) && preg_match('/Current Medications:\s*None|no regular medications/i', $aiText)) $serverMeds = ['None'];
+                }
+            }
+            if (empty($serverMeds) && $voiceModel) {
+                $vMed = $voiceModel->patient_data['medications'] ?? $voiceModel->patient_data['past_medications'] ?? '';
+                if (!empty($vMed) && preg_match('/none|no.*medications|no.*meds/i', $vMed)) $serverMeds = ['None'];
+                elseif (!empty($vMed) && trim($vMed) !== '') $serverMeds = [trim($vMed)];
+            }
         }
         if (empty($serverMeds) && $continueLimited) {
             $clientMeds = json_decode($request->past_meds, true) ?? [];
