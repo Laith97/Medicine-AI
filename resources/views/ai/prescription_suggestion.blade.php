@@ -753,33 +753,63 @@ function populateDataSourcesModal() {
     // Get patient data from the most recent diagnosis
     const patientData = currentDiagnosis ? currentDiagnosis.patient_data : null;
 
+    // Precise fallback helpers: use voice layer when Diagnosis not yet saved (weight 82kg case)
+    const voiceAllergiesRaw = voiceDiagnosis?.patient_data?.allergies || voiceDiagnosis?.extracted_data?.allergies || voiceDiagnosis?.structured_chart?.medical_history || currentDiagnosis?.patient_data?.medical_history || '';
+    const voiceMedsRaw = voiceDiagnosis?.patient_data?.medications || voiceDiagnosis?.patient_data?.past_medications || voiceDiagnosis?.extracted_data?.medications || voiceDiagnosis?.structured_chart?.medications || currentDiagnosis?.patient_data?.medications || '';
+    const voiceDoctorNotesRaw = appointment.doctor_notes || currentDiagnosis?.diagnosis_text || voiceDiagnosis?.patient_data?.diagnosis || voiceDiagnosis?.ai_analysis || '';
+    const hasAllergiesDirect = patientData && patientData.allergies && (Array.isArray(patientData.allergies) ? patientData.allergies.length > 0 : (typeof patientData.allergies === 'string' && patientData.allergies.trim().length > 0));
+    const hasAllergiesFallback = !hasAllergiesDirect && voiceAllergiesRaw && String(voiceAllergiesRaw).trim().length > 0 && /no known|none|nkda|no allergies|allergy/i.test(String(voiceAllergiesRaw));
+    const hasMedsDirect = patientData && (patientData.medications || patientData.past_medications) && (Array.isArray(patientData.medications || patientData.past_medications) ? (patientData.medications || patientData.past_medications).length > 0 : (typeof (patientData.medications || patientData.past_medications) === 'string' && (patientData.medications || patientData.past_medications).trim().length > 0));
+    const hasMedsFallback = !hasMedsDirect && voiceMedsRaw && String(voiceMedsRaw).trim().length > 0;
+    const hasDoctorNotesFallback = !!voiceDoctorNotesRaw && String(voiceDoctorNotesRaw).trim().length > 0;
+    // Weight fallback: parse from vital_signs strings (82kg from "BP 122/78...Wt 82kg")
+    const voiceWeightRaw = (() => {
+        const candidates = [
+            patientData?.weight,
+            voiceDiagnosis?.patient_data?.weight,
+            voiceDiagnosis?.structured_chart?.vital_signs,
+            voiceDiagnosis?.patient_data?.vital_signs,
+            voiceDiagnosis?.extracted_data?.vital_signs,
+            currentDiagnosis?.patient_data?.vital_signs,
+            voiceDiagnosis?.ai_analysis
+        ];
+        for (const c of candidates) {
+            if (!c) continue;
+            const m = String(c).match(/(\d+(?:\.\d+)?)\s*kg/i);
+            if (m) return m[1];
+        }
+        return null;
+    })();
+    const hasWeightDirect = !!(patientData && patientData.weight);
+    const hasWeightFallback = !hasWeightDirect && !!voiceWeightRaw;
+
     const dataSources = [
         {
             name: 'Patient Allergies',
-            status: patientData && patientData.allergies && (Array.isArray(patientData.allergies) ? patientData.allergies.length > 0 : (typeof patientData.allergies === 'string' && patientData.allergies.trim().length > 0)) ? 'available' : 'missing',
-            example: patientData && patientData.allergies ? (Array.isArray(patientData.allergies) ? patientData.allergies.join(', ') : patientData.allergies.toString()) : 'No allergies recorded',
-            location: 'Diagnosis creation form (Doctor-verified)',
-            reliability: 'Doctor-verified',
+            status: hasAllergiesDirect || hasAllergiesFallback ? 'available' : 'missing',
+            example: hasAllergiesDirect ? (Array.isArray(patientData.allergies) ? patientData.allergies.join(', ') : patientData.allergies.toString()) : (hasAllergiesFallback ? (String(voiceAllergiesRaw).substring(0,60) + (String(voiceAllergiesRaw).length>60?'...':'')) + ' <span class="badge bg-info ms-1" style="font-size:0.65rem">AI-assisted</span>' : 'No allergies recorded'),
+            location: hasAllergiesDirect ? 'Diagnosis creation form (Doctor-verified)' : (hasAllergiesFallback ? 'Voice Assistant (AI-assisted, verify on Complete)' : 'Diagnosis creation form (Doctor-verified)'),
+            reliability: hasAllergiesDirect ? 'Doctor-verified' : (hasAllergiesFallback ? 'AI-assisted clinical' : 'Doctor-verified'),
             icon: 'fas fa-allergies',
             importance: 'critical',
             reason: 'Prevents prescribing medications patient is allergic to (life-threatening). "None" or "No known allergies" are acceptable entries.'
         },
         {
             name: 'Current Medications',
-            status: patientData && (patientData.medications || patientData.past_medications) && (Array.isArray(patientData.medications || patientData.past_medications) ? (patientData.medications || patientData.past_medications).length > 0 : (typeof (patientData.medications || patientData.past_medications) === 'string' && (patientData.medications || patientData.past_medications).trim().length > 0)) ? 'available' : 'missing',
-            example: patientData && (patientData.medications || patientData.past_medications) ? (Array.isArray(patientData.medications || patientData.past_medications) ? (patientData.medications || patientData.past_medications).join(', ') : (patientData.medications || patientData.past_medications).toString()) : 'No medications recorded',
-            location: 'Diagnosis creation form (Doctor-verified)',
-            reliability: 'Doctor-verified',
+            status: hasMedsDirect || hasMedsFallback ? 'available' : 'missing',
+            example: hasMedsDirect ? (Array.isArray(patientData.medications || patientData.past_medications) ? (patientData.medications || patientData.past_medications).join(', ') : (patientData.medications || patientData.past_medications).toString()) : (hasMedsFallback ? (String(voiceMedsRaw).substring(0,60) + (String(voiceMedsRaw).length>60?'...':'')) + ' <span class="badge bg-info ms-1" style="font-size:0.65rem">AI-assisted</span>' : 'No medications recorded'),
+            location: hasMedsDirect ? 'Diagnosis creation form (Doctor-verified)' : (hasMedsFallback ? 'Voice Assistant (AI-assisted, verify on Complete)' : 'Diagnosis creation form (Doctor-verified)'),
+            reliability: hasMedsDirect ? 'Doctor-verified' : (hasMedsFallback ? 'AI-assisted clinical' : 'Doctor-verified'),
             icon: 'fas fa-pills',
             importance: 'critical',
             reason: 'Required to check drug-drug interactions (dangerous without this). "None" or "No current medications" are acceptable entries.'
         },
         {
             name: 'Doctor Notes',
-            status: appointment.doctor_notes ? 'available' : 'missing',
-            example: appointment.doctor_notes ? (appointment.doctor_notes.length > 30 ? appointment.doctor_notes.substring(0, 30) + '...' : appointment.doctor_notes) : 'No doctor notes',
-            location: 'Appointment completion modal (Doctor-verified)',
-            reliability: 'Doctor-verified',
+            status: appointment.doctor_notes || hasDoctorNotesFallback ? 'available' : 'missing',
+            example: appointment.doctor_notes ? (appointment.doctor_notes.length > 30 ? appointment.doctor_notes.substring(0, 30) + '...' : appointment.doctor_notes) : (hasDoctorNotesFallback ? (String(voiceDoctorNotesRaw).substring(0,60) + (String(voiceDoctorNotesRaw).length>60?'...':'')) + ' <span class="badge bg-info ms-1" style="font-size:0.65rem">AI-assisted</span>' : 'No doctor notes'),
+            location: appointment.doctor_notes ? 'Appointment completion modal (Doctor-verified)' : (hasDoctorNotesFallback ? 'Voice Assistant/Diagnosis (AI-assisted, verify)' : 'Appointment completion modal (Doctor-verified)'),
+            reliability: appointment.doctor_notes ? 'Doctor-verified' : (hasDoctorNotesFallback ? 'AI-assisted clinical' : 'Doctor-verified'),
             icon: 'fas fa-user-md',
             importance: 'critical',
             reason: 'Provides clinical assessment - required if no diagnosis exists'
@@ -806,10 +836,10 @@ function populateDataSourcesModal() {
         },
         {
             name: 'Patient Weight',
-            status: patientData && patientData.weight ? 'available' : 'missing',
-            example: patientData && patientData.weight ? patientData.weight + ' kg' : 'Weight not recorded',
-            location: 'Diagnosis creation form',
-            reliability: 'Doctor-verified',
+            status: hasWeightDirect || hasWeightFallback ? 'available' : 'missing',
+            example: hasWeightDirect ? patientData.weight + ' kg' : (hasWeightFallback ? voiceWeightRaw + ' kg <span class="badge bg-info ms-1" style="font-size:0.65rem">AI-assisted</span>' : 'Weight not recorded'),
+            location: hasWeightDirect ? 'Diagnosis creation form (Doctor-verified)' : (hasWeightFallback ? 'Voice Assistant vital signs (AI-assisted, verify)' : 'Diagnosis creation form'),
+            reliability: hasWeightDirect ? 'Doctor-verified' : (hasWeightFallback ? 'AI-assisted clinical' : 'Doctor-verified'),
             icon: 'fas fa-weight',
             importance: 'important',
             reason: 'Critical for pediatric weight-based dosing calculations'

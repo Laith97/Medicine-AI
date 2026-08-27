@@ -31,9 +31,8 @@ class DrugInteractionService
             $prescription->load('patient');
         }
 
-        // Get patient's active prescriptions with eager loading (excluding current if updating)
-        $activePrescriptions = Prescription::with('patient')
-            ->getActiveForPatient($patient->id)
+        // Get patient's active prescriptions (excluding current if updating)
+        $activePrescriptions = Prescription::getActiveForPatient($patient->id)
             ->filter(function ($p) use ($prescription) {
                 return $p->id !== $prescription->id;
             });

@@ -2207,8 +2207,59 @@ INSTRUCTIONS:
             
             // Merge with priority to modal data (user-entered allergies/medications)
             $patientData = array_merge($basePatientData, array_filter($modalPatientData, function($value) {
-                return !empty(trim($value));
+                return is_string($value) ? !empty(trim($value)) : !empty($value);
             }));
+
+            // Precise fallback: derive weight / allergies / medications from VT Chart if still missing (weight 82kg case)
+            try {
+                if (empty($patientData['weight'])) {
+                    $vital = $patientData['vital_signs'] ?? $patientData['vitalSigns'] ?? $basePatientData['vital_signs'] ?? $request->extractedData['vital_signs'] ?? '';
+                    // Also try latest VT for this patient/session
+                    if (empty($vital)) {
+                        $vtFallback = \App\Models\VoiceTranscription::where('patient_id', $patient->id)->where('doctor_id', Auth::id())->latest()->first();
+                        if ($vtFallback && !empty($vtFallback->structured_chart['vital_signs'])) $vital = $vtFallback->structured_chart['vital_signs'];
+                        elseif ($vtFallback && !empty($vtFallback->extracted_data['vital_signs'])) $vital = $vtFallback->extracted_data['vital_signs'];
+                    }
+                    if (!empty($vital) && preg_match('/(\d+(?:\.\d+)?)\s*kg/i', $vital, $m)) {
+                        $patientData['weight'] = $m[1];
+                    } elseif (!empty($vital) && preg_match('/weight\s*(\d+)/i', $vital, $m)) {
+                        $patientData['weight'] = $m[1];
+                    }
+                }
+                // Allergies fallback from medical_history if still empty
+                if (empty($patientData['allergies']) && !empty($patientData['medical_history'])) {
+                    $mhLow = strtolower($patientData['medical_history']);
+                    if (str_contains($mhLow, 'no known drug allergies') || str_contains($mhLow, 'no drug allergies') || str_contains($mhLow, 'nkda') || str_contains($mhLow, 'no known allergies')) {
+                        $patientData['allergies'] = 'None';
+                    }
+                }
+                // Also fallback to VT medical_history if allergies still empty
+                if (empty($patientData['allergies'])) {
+                    $vtAllergy = \App\Models\VoiceTranscription::where('patient_id', $patient->id)->where('doctor_id', Auth::id())->latest()->first();
+                    if ($vtAllergy) {
+                        $mh = $vtAllergy->structured_chart['medical_history'] ?? $vtAllergy->extracted_data['medical_history'] ?? '';
+                        if (!empty($mh) && (stripos($mh, 'no known') !== false || stripos(strtolower($mh), 'nkda') !== false)) {
+                            $patientData['allergies'] = 'None';
+                        }
+                    }
+                }
+                // Medications fallback: if "None" in chart but not in patientData
+                if (empty($patientData['medications']) && empty($patientData['past_medications'])) {
+                    $meds = $patientData['medications'] ?? $basePatientData['medications'] ?? '';
+                    if (empty($meds)) {
+                        $vtMed = \App\Models\VoiceTranscription::where('patient_id', $patient->id)->where('doctor_id', Auth::id())->latest()->first();
+                        if ($vtMed) {
+                            $mv = $vtMed->structured_chart['medications'] ?? $vtMed->extracted_data['medications'] ?? '';
+                            if (!empty($mv)) $patientData['medications'] = $mv;
+                        }
+                    }
+                    if (empty($patientData['medications']) && !empty($patientData['medical_history']) && stripos($patientData['medical_history'], 'no regular') !== false) {
+                        $patientData['medications'] = 'None';
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::warning('CompleteConsultation weight/allergy fallback failed', ['error'=>$e->getMessage()]);
+            }
 
             // Create the diagnosis record
             $diagnosis = Diagnosis::create([
