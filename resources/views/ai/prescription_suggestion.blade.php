@@ -976,8 +976,9 @@ $('#aiSuggestBtn').click(function(e) {
                                 ${interactionsHtml}
                             </div>
                             <div class="suggestion-footer">
-                                <button type="button" class="btn-accept-modern accept-suggestion" data-index="${i}"><i class="fas fa-check me-1"></i>Use</button>
+                                <button type="button" class="btn-accept-modern accept-suggestion" data-index="${i}"><i class="fas fa-arrow-down me-1"></i>Use in Form ↓</button>
                                 <button type="button" class="btn-reject-modern reject-suggestion" data-index="${i}"><i class="fas fa-xmark me-1"></i>Dismiss</button>
+                                <span class="ms-auto d-none d-md-inline-flex align-items-center gap-1" style="font-size:0.68rem;color:#64748b;"><i class="fas fa-pen-to-square" style="color:#94a3b8;"></i> Fills form below</span>
                             </div>
                         </div>`;
                     });
@@ -987,8 +988,12 @@ $('#aiSuggestBtn').click(function(e) {
                     }
                     // Show professional popup (premium, centered, scrollable)
                     // Custom popup show — stable, no loop, pauses when tab hidden
-                    $('#aiResponseInline').slideDown(200);
-                    $('html, body').animate({scrollTop: $('#aiResponseInline').offset().top - 80}, 300);
+                    // Precise scroll — wait for slideDown to finish, then scroll to AI card header (not hidden offset)
+                    $('#aiResponseInline').slideDown(200, function(){
+                        const target = $('#aiResponseClinicalData').length ? $('#aiResponseClinicalData') : $(this);
+                        const top = target.offset() ? target.offset().top - 16 : $(this).offset().top - 80;
+                        $('html, body').animate({scrollTop: top}, 300);
+                    });
                     $('#ai_suggestions').val(JSON.stringify(response.suggestions));
                 }
             } else {
@@ -997,8 +1002,12 @@ $('#aiSuggestBtn').click(function(e) {
                 if ($('#aiResponseSuggestions').length) $('#aiResponseSuggestions').html(emptyHtml);
                     // Show professional popup (premium, centered, scrollable)
                     // Custom popup show — stable, no loop, pauses when tab hidden
-                    $('#aiResponseInline').slideDown(200);
-                    $('html, body').animate({scrollTop: $('#aiResponseInline').offset().top - 80}, 300);
+                    // Precise scroll — wait for slideDown to finish, then scroll to AI card header (not hidden offset)
+                    $('#aiResponseInline').slideDown(200, function(){
+                        const target = $('#aiResponseClinicalData').length ? $('#aiResponseClinicalData') : $(this);
+                        const top = target.offset() ? target.offset().top - 16 : $(this).offset().top - 80;
+                        $('html, body').animate({scrollTop: top}, 300);
+                    });
                 $('#ai_suggestions').val('');
             }
 
@@ -1074,11 +1083,12 @@ $('#aiSuggestBtn').click(function(e) {
     }
 });
 
-// Handle accept suggestion button
+// Handle accept suggestion button — fills Add New Prescription form show.blade.php:828 and scrolls there
 $(document).on('click', '.accept-suggestion', function() {
     var index = $(this).data('index');
     var suggestions = JSON.parse($('#ai_suggestions').val());
     var suggestion = suggestions[index];
+    console.log('Use in Form clicked:', suggestion);
 
     // Fill the form with the accepted suggestion
     $('#medication_name').val(suggestion.med);
@@ -1108,12 +1118,25 @@ $(document).on('click', '.accept-suggestion', function() {
         }
     }
 
-    // Mark this suggestion as accepted
+    // Mark this suggestion as accepted — modern card
+    $(this).closest('.modern-suggestion-card').addClass('accepted').removeClass('rejected');
+    $(this).closest('.modern-suggestion-card').find('.reject-suggestion').prop('disabled', true);
+    $(this).prop('disabled', true).html('<i class="fas fa-check me-1"></i>Filled ✓');
+    // Also handle legacy .suggestion-item for compat
     $(this).closest('.suggestion-item').addClass('accepted').removeClass('rejected');
-    $(this).closest('.suggestion-item').find('.reject-suggestion').prop('disabled', true);
-    $(this).prop('disabled', true).html('<i class="fas fa-check me-1"></i>Applied to Form');
 
-    showNotification('AI suggestion applied to prescription form. Please review and modify as needed for patient safety.', 'success');
+    // Scroll to and highlight the Add New Prescription form show.blade.php:828
+    const formEl = document.getElementById('prescriptionForm');
+    if (formEl) {
+        formEl.scrollIntoView({behavior:'smooth', block:'center'});
+        // Highlight effect
+        $(formEl).css('box-shadow','0 0 0 3px rgba(59,130,246,0.3)').css('border-radius','16px').css('transition','box-shadow 0.3s ease');
+        setTimeout(()=> $(formEl).css('box-shadow',''), 2000);
+        // Focus first field
+        $('#medication_name').focus().select();
+    }
+    // Also update new inline if visible - keep hidden
+    showNotification('✓ Filled Add New Prescription form below — review dosage/frequency then click Add Prescription to save to Existing Prescriptions.', 'success');
 });
 
 // Handle reject suggestion button
