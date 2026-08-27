@@ -437,17 +437,33 @@ function showClinicalDataSummary(clinicalData) {
         const v = String(value).substring(0,180) + (String(value).length>180?'...':'');
         items += `<div class="cds-item" style="${accent?'border-left:3px solid '+accent+';':''}"><div class="cds-item-label"><i class="${icon}"></i> ${label}</div><div class="cds-item-value">${$('<div>').text(v).html()}</div></div>`;
     };
-    if (sym && !dup) addItem('fas fa-clipboard-list', 'Symptoms / Chief Complaint', sym, '#3b82f6');
-    else if (sym && dup) addItem('fas fa-stethoscope', 'Symptoms / Diagnosis', sym, '#0ea5e9');
+    // Data-driven: if sym is actually diagnosis_text, prefer real voice symptoms
+    const isSymActuallyDiag = sym && /Acute bacterial sinusitis|Plan:|Counsel on compliance/i.test(sym);
+    let realSym = sym;
+    if (isSymActuallyDiag && clinicalData.voice_diagnosis) {
+        const vs = String(clinicalData.voice_diagnosis).match(/Symptoms:\s*([^\n]+)/i);
+        if (vs && vs[1]) realSym = vs[1].trim().replace(/\*\*/g,'').replace(/\s+/g,' ');
+    }
+    if (sym && !dup) addItem('fas fa-clipboard-list', 'Symptoms', realSym || sym, '#3b82f6');
+    else if (sym && dup) addItem('fas fa-stethoscope', 'Clinical Presentation', realSym || sym, '#0ea5e9');
     if (clinicalData.doctor_notes && !dup) addItem('fas fa-user-doctor', 'Doctor Notes', String(clinicalData.doctor_notes).substring(0,180), '#8b5cf6');
     if (diag && !dup) addItem('fas fa-file-medical', 'Current Diagnosis', diag, '#10b981');
     if (clinicalData.past_diagnoses && clinicalData.past_diagnoses.length > 0) addItem('fas fa-clock-rotate-left', 'Past History', clinicalData.past_diagnoses.join('; ').substring(0,180), '#64748b');
     if (clinicalData.voice_diagnosis) {
         let v = String(clinicalData.voice_diagnosis);
-        const m = v.match(/Symptoms:\s*([^\n]+)/i);
-        if (m) v = m[1].trim() + (v.includes('Medical History') ? ' • ' + (v.match(/Medical History:\s*([^\n]+)/i)?.[1]||'').trim().substring(0,60) : '');
-        else v = v.replace(/🟢.*?LEVEL 1:.*?CHIEF COMPLAINT:/is, '').trim().substring(0,160);
-        addItem('fas fa-microphone', 'Voice Assistant', v, '#f59e0b');
+        // Clean ** markdown and extract structured fields, not truncated diagnosis_text
+        v = v.replace(/\*\*/g, '').replace(/🟢|📋|🔍|🚨|💡|🔵|---/g, '').trim();
+        const mSym = v.match(/Symptoms:\s*([^\n]+)/i);
+        const mHist = v.match(/Medical History:\s*([^\n]+)/i);
+        if (mSym) {
+            let sym = mSym[1].trim().replace(/\s+/g,' ');
+            let hist = mHist ? mHist[1].trim().replace(/\s+/g,' ').substring(0,80) : '';
+            v = sym + (hist ? ' • ' + hist : '');
+        } else {
+            v = v.replace(/LEVEL 1:.*?CHIEF COMPLAINT:/is, '').trim().substring(0,180);
+        }
+        v = v.replace(/\*\*/g, '').trim();
+        addItem('fas fa-waveform-lines', 'Ambient Listening', v, '#6366f1');
     }
     const header = `<div class="cds-header"><div class="cds-header-icon"><i class="fas fa-clipboard-check"></i></div><div><div class="cds-title">Clinical Data Used</div><div style="font-size:0.7rem;color:#64748b;font-weight:500;">Verified • ${Object.keys(clinicalData).filter(k=>clinicalData[k]).length} sources analyzed</div></div><span class="ms-auto badge bg-success" style="border-radius:20px;font-size:0.65rem;"><i class="fas fa-check me-1"></i>Verified</span></div>`;
     const grid = `<div class="cds-grid">${items || '<div class="cds-item"><div class="cds-item-value text-muted">No specific clinical data — preventive guidance only</div></div>'}</div>`;
@@ -1234,7 +1250,7 @@ function populateDataSourcesModal() {
             name: 'Patient Allergies',
             status: hasAllergiesDirect || hasAllergiesFallback ? 'available' : 'missing',
             example: hasAllergiesDirect ? (Array.isArray(patientData.allergies) ? patientData.allergies.join(', ') : patientData.allergies.toString()) : (hasAllergiesFallback ? (String(voiceAllergiesRaw).substring(0,60) + (String(voiceAllergiesRaw).length>60?'...':'')) + ' <span class="badge bg-info ms-1" style="font-size:0.65rem">AI-assisted</span>' : 'No allergies recorded'),
-            location: hasAllergiesDirect ? 'Diagnosis creation form (Doctor-verified)' : (hasAllergiesFallback ? 'Voice Assistant (AI-assisted, verify on Complete)' : 'Diagnosis creation form (Doctor-verified)'),
+            location: hasAllergiesDirect ? 'Diagnosis creation form (Doctor-verified)' : (hasAllergiesFallback ? 'Ambient Listening (AI-assisted, verify on Complete)' : 'Diagnosis creation form (Doctor-verified)'),
             reliability: hasAllergiesDirect ? 'Doctor-verified' : (hasAllergiesFallback ? 'AI-assisted clinical' : 'Doctor-verified'),
             icon: 'fas fa-allergies',
             importance: 'critical',
@@ -1244,7 +1260,7 @@ function populateDataSourcesModal() {
             name: 'Current Medications',
             status: hasMedsDirect || hasMedsFallback ? 'available' : 'missing',
             example: hasMedsDirect ? (Array.isArray(patientData.medications || patientData.past_medications) ? (patientData.medications || patientData.past_medications).join(', ') : (patientData.medications || patientData.past_medications).toString()) : (hasMedsFallback ? (String(voiceMedsRaw).substring(0,60) + (String(voiceMedsRaw).length>60?'...':'')) + ' <span class="badge bg-info ms-1" style="font-size:0.65rem">AI-assisted</span>' : 'No medications recorded'),
-            location: hasMedsDirect ? 'Diagnosis creation form (Doctor-verified)' : (hasMedsFallback ? 'Voice Assistant (AI-assisted, verify on Complete)' : 'Diagnosis creation form (Doctor-verified)'),
+            location: hasMedsDirect ? 'Diagnosis creation form (Doctor-verified)' : (hasMedsFallback ? 'Ambient Listening (AI-assisted, verify on Complete)' : 'Diagnosis creation form (Doctor-verified)'),
             reliability: hasMedsDirect ? 'Doctor-verified' : (hasMedsFallback ? 'AI-assisted clinical' : 'Doctor-verified'),
             icon: 'fas fa-pills',
             importance: 'critical',
@@ -1254,7 +1270,7 @@ function populateDataSourcesModal() {
             name: 'Doctor Notes',
             status: appointment.doctor_notes || hasDoctorNotesFallback ? 'available' : 'missing',
             example: appointment.doctor_notes ? (appointment.doctor_notes.length > 30 ? appointment.doctor_notes.substring(0, 30) + '...' : appointment.doctor_notes) : (hasDoctorNotesFallback ? (String(voiceDoctorNotesRaw).substring(0,60) + (String(voiceDoctorNotesRaw).length>60?'...':'')) + ' <span class="badge bg-info ms-1" style="font-size:0.65rem">AI-assisted</span>' : 'No doctor notes'),
-            location: appointment.doctor_notes ? 'Appointment completion modal (Doctor-verified)' : (hasDoctorNotesFallback ? 'Voice Assistant/Diagnosis (AI-assisted, verify)' : 'Appointment completion modal (Doctor-verified)'),
+            location: appointment.doctor_notes ? 'Appointment completion modal (Doctor-verified)' : (hasDoctorNotesFallback ? 'Ambient Listening/Diagnosis (AI-assisted, verify)' : 'Appointment completion modal (Doctor-verified)'),
             reliability: appointment.doctor_notes ? 'Doctor-verified' : (hasDoctorNotesFallback ? 'AI-assisted clinical' : 'Doctor-verified'),
             icon: 'fas fa-user-md',
             importance: 'critical',
@@ -1284,7 +1300,7 @@ function populateDataSourcesModal() {
             name: 'Patient Weight',
             status: hasWeightDirect || hasWeightFallback ? 'available' : 'missing',
             example: hasWeightDirect ? patientData.weight + ' kg' : (hasWeightFallback ? voiceWeightRaw + ' kg <span class="badge bg-info ms-1" style="font-size:0.65rem">AI-assisted</span>' : 'Weight not recorded'),
-            location: hasWeightDirect ? 'Diagnosis creation form (Doctor-verified)' : (hasWeightFallback ? 'Voice Assistant vital signs (AI-assisted, verify)' : 'Diagnosis creation form'),
+            location: hasWeightDirect ? 'Diagnosis creation form (Doctor-verified)' : (hasWeightFallback ? 'Ambient Listening vital signs (AI-assisted, verify)' : 'Diagnosis creation form'),
             reliability: hasWeightDirect ? 'Doctor-verified' : (hasWeightFallback ? 'AI-assisted clinical' : 'Doctor-verified'),
             icon: 'fas fa-weight',
             importance: 'important',
@@ -1311,10 +1327,10 @@ function populateDataSourcesModal() {
             reason: 'Relevant for pregnancy/breastfeeding considerations and some medications'
         },
         {
-            name: 'Voice Assistant Diagnosis',
+            name: 'Ambient Listening Diagnosis',
             status: voiceDiagnosis ? 'available' : 'missing',
             example: voiceDiagnosis ? (voiceDiagnosis.patient_data && voiceDiagnosis.patient_data.diagnosis ? voiceDiagnosis.patient_data.diagnosis : (voiceDiagnosis.ai_analysis ? voiceDiagnosis.ai_analysis.substring(0,60) + '...' : 'Voice diagnosis available')) : 'No voice diagnosis',
-            location: 'Voice Assistant sessions (AI-assisted clinical)',
+            location: 'Ambient Listening sessions (AI-assisted clinical)',
             reliability: 'AI-assisted clinical',
             icon: 'fas fa-microphone',
             importance: 'helpful',
@@ -1417,7 +1433,7 @@ function populateDataSourcesModal() {
         suggestionsHtml += '<li>Create diagnosis records in the <strong>Diagnoses</strong> section for complete medical history</li>';
     }
     if (missingSources.includes('voice assistant diagnosis')) {
-        suggestionsHtml += '<li>Use <strong>Voice Assistant</strong> for detailed clinical assessments</li>';
+        suggestionsHtml += '<li>Use <strong>Ambient Listening</strong> for detailed clinical assessments</li>';
     }
     if (missingSources.includes('reason for visit')) {
         suggestionsHtml += '<li>Specify reason for visit during <strong>appointment booking</strong> (doctor or patient)</li>';
