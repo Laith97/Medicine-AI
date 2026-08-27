@@ -1827,12 +1827,20 @@
                 console.log('Create patient response:', data);
                 if (data.success) {
                     alert('Patient created successfully!');
-                    // Add to dropdown and select it - trigger change to enable Write Directly button
-                    const select = document.getElementById('patientSelect');
-                    const patientLabel = `${data.patient.name} (${data.patient.age || '?'}y, ${data.patient.gender || 'Unknown'})`;
-                    const option = new Option(patientLabel, data.patient.id, true, true);
-                    select.add(option);
-                    select.dispatchEvent(new Event('change', {bubbles:true}));
+                    // Update searchable hidden + input - compatible with new searchable dropdown
+                    const hiddenSelect = document.getElementById('patientSelect');
+                    const searchInput = document.getElementById('patientSearchInput');
+                    hiddenSelect.value = data.patient.id;
+                    if(searchInput){
+                        searchInput.value = data.patient.name;
+                        const hint = document.getElementById('patientSearchHint');
+                        const selectedHint = document.getElementById('patientSelectedHint');
+                        const clearBtn = document.getElementById('clearPatientSearch');
+                        if(hint) hint.style.display='none';
+                        if(selectedHint) selectedHint.style.display='inline';
+                        if(clearBtn) clearBtn.style.display='block';
+                    }
+                    hiddenSelect.dispatchEvent(new Event('change', {bubbles:true}));
                     // Directly enable Write Directly button as fallback
                     const writeBtn = document.getElementById('writeDirectlyBtn');
                     if(writeBtn) writeBtn.disabled = false;
@@ -1892,7 +1900,8 @@
             // Show modal with additional patient data fields
             const modal = new bootstrap.Modal(document.getElementById('completeConsultationModal'));
             document.getElementById('diagnosisPreview').textContent = diagnosis;
-            document.getElementById('modalPatientName').textContent = patientSelect.options[patientSelect.selectedIndex].text;
+            const searchInput2 = document.getElementById('patientSearchInput');
+            document.getElementById('modalPatientName').textContent = (searchInput2 && searchInput2.value) ? searchInput2.value : (patientSelect.value ? 'Patient ID '+patientSelect.value : 'Unknown');
             modal.show();
         });
     }
