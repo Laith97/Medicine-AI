@@ -191,6 +191,7 @@ $('#aiSuggestBtn').click(function(e) {
 
     // Include voice assistant diagnosis if available
     var voiceDiagnosis = @json($appointment->patient ? \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first() : null);
+    var voiceTranscription = typeof _cachedVoiceTranscription !== 'undefined' ? _cachedVoiceTranscription : @json($appointment->patient ? \App\Models\VoiceTranscription::where('patient_id', $appointment->patient->id)->latest()->first() : null);
 
     // Debug logging to see what data we actually have
     console.log('🔍 DEBUG: Checking AI prescription data availability');
@@ -243,37 +244,43 @@ $('#aiSuggestBtn').click(function(e) {
     }
     console.log('Has Medications:', hasMedications, 'Value:', pastMeds);
 
-    // Precise fallback to voice layer when Diagnosis empty (your Khalid case: no known allergies -> None)
-    if (!hasAllergies && voiceDiagnosis) {
-        const vAll = voiceDiagnosis.patient_data?.allergies || voiceDiagnosis.patient_data?.medical_history || voiceDiagnosis.ai_analysis || '';
+    // Precise fallback to voice layer when Diagnosis empty (your Khalid case: no known allergies -> None) — includes VT fallback (AiAssistantResult empty)
+    const _vtAll = voiceTranscription?.structured_chart?.medical_history || voiceTranscription?.extracted_data?.medical_history || voiceTranscription?.structured_chart?.medications || '';
+    const _vtMed = voiceTranscription?.structured_chart?.medications || voiceTranscription?.extracted_data?.medications || voiceTranscription?.structured_chart?.medical_history || '';
+    if (!hasAllergies && (voiceDiagnosis || voiceTranscription)) {
+        const vAll = voiceDiagnosis?.patient_data?.allergies || voiceDiagnosis?.patient_data?.medical_history || voiceDiagnosis?.ai_analysis || _vtAll || voiceDiagnosis?.structured_chart?.medical_history || '';
         if (vAll && String(vAll).trim().length > 0 && /no known|none|nkda|no allergies|allergy/i.test(String(vAll))) {
             hasAllergies = true;
             allergies = [String(vAll).substring(0,80)];
             console.log('🔍 Voice fallback allergies:', vAll);
-        } else if (voiceDiagnosis.structured_chart?.medical_history && /no known|none|nkda/i.test(voiceDiagnosis.structured_chart.medical_history)) {
+        } else if ((voiceDiagnosis?.structured_chart?.medical_history && /no known|none|nkda/i.test(voiceDiagnosis.structured_chart.medical_history)) || (_vtAll && /no known|none|nkda/i.test(String(_vtAll)))) {
             hasAllergies = true; allergies = ['None'];
+            console.log('🔍 VT fallback allergies: None');
         }
     }
-    if (!hasMedications && voiceDiagnosis) {
-        const vMed = voiceDiagnosis.patient_data?.medications || voiceDiagnosis.patient_data?.past_medications || voiceDiagnosis.structured_chart?.medications || voiceDiagnosis.ai_analysis || '';
+    if (!hasMedications && (voiceDiagnosis || voiceTranscription)) {
+        const vMed = voiceDiagnosis?.patient_data?.medications || voiceDiagnosis?.patient_data?.past_medications || voiceDiagnosis?.structured_chart?.medications || voiceDiagnosis?.ai_analysis || _vtMed || '';
         if (vMed && String(vMed).trim().length > 0 && /none|no.*medications|no.*meds|no current/i.test(String(vMed).toLowerCase())) {
             hasMedications = true;
             pastMeds = [String(vMed).substring(0,80)];
             console.log('🔍 Voice fallback meds:', vMed);
-        } else if (voiceDiagnosis.structured_chart?.medications && String(voiceDiagnosis.structured_chart.medications).trim().length > 0) {
-            hasMedications = true; pastMeds = [voiceDiagnosis.structured_chart.medications];
+        } else if ((voiceDiagnosis?.structured_chart?.medications && String(voiceDiagnosis.structured_chart.medications).trim().length > 0) || (_vtMed && String(_vtMed).trim().length > 0)) {
+            const medVal = voiceDiagnosis?.structured_chart?.medications || _vtMed;
+            hasMedications = true; pastMeds = [String(medVal).substring(0,80)];
         }
     }
     
-    var hasClinicalAssessment = !!(symptoms || currentDiagnosis || voiceDiagnosis);
-    console.log('Has Clinical Assessment:', hasClinicalAssessment, 'Symptoms:', symptoms, 'Diagnosis:', !!currentDiagnosis, 'Voice:', !!voiceDiagnosis);
+    var hasClinicalAssessment = !!(symptoms || currentDiagnosis || voiceDiagnosis || voiceTranscription);
+    console.log('Has Clinical Assessment:', hasClinicalAssessment, 'Symptoms:', symptoms, 'Diagnosis:', !!currentDiagnosis, 'Voice:', !!voiceDiagnosis, 'VT:', !!voiceTranscription);
 
-    // Check if symptoms from patient_data.symptoms is populated — include voice fallback
+    // Check if symptoms from patient_data.symptoms is populated — include voice fallback (VT structured_chart)
     var hasPatientDataSymptoms = !!(currentDiagnosis && currentDiagnosis.patient_data && currentDiagnosis.patient_data.symptoms && currentDiagnosis.patient_data.symptoms.trim() !== '');
-    if (!hasPatientDataSymptoms && voiceDiagnosis) {
-        const vSym = voiceDiagnosis.patient_data?.symptoms || voiceDiagnosis.structured_chart?.symptoms || (voiceDiagnosis.ai_analysis ? String(voiceDiagnosis.ai_analysis).match(/Symptoms:\s*([^\n]+)/i)?.[1] : null);
+    if (!hasPatientDataSymptoms && (voiceDiagnosis || voiceTranscription)) {
+        const vSym = voiceDiagnosis?.patient_data?.symptoms || voiceDiagnosis?.structured_chart?.symptoms || voiceTranscription?.structured_chart?.symptoms || voiceTranscription?.extracted_data?.symptoms || (voiceDiagnosis?.ai_analysis ? String(voiceDiagnosis.ai_analysis).match(/Symptoms:\s*([^\n]+)/i)?.[1] : null) || (voiceTranscription?.raw_transcription ? 'voice transcript present' : null);
         if (vSym && String(vSym).trim().length > 0) hasPatientDataSymptoms = true;
     }
+    // Also consider voiceTranscription existence as clinical assessment
+    if (!hasPatientDataSymptoms && voiceTranscription) hasPatientDataSymptoms = true;
 
     // Only add to missing if truly missing (fallback considered available)
     if (!hasAllergies) {
@@ -770,9 +777,13 @@ window.resetPrescriptionForm = window.resetPrescriptionForm || function() {
 
 @php
 $_voiceDiag = null;
+$_voiceTranscription = null;
 if($appointment->patient){
     $_voiceDiag = \App\Models\AiAssistantResult::where('patient_id', $appointment->patient->id)->where('source', 'voice_assistant')->latest()->first();
     if(!$_voiceDiag) $_voiceDiag = \App\Models\VoiceTranscription::where('patient_id', $appointment->patient->id)->whereNotNull('ai_analysis')->where('ai_analysis','!=','')->latest()->first();
+    // Always fetch latest VT with structured_chart for fallback (Khalid 82kg case: AiAssistantResult is empty but VT has data)
+    $_voiceTranscription = \App\Models\VoiceTranscription::where('patient_id', $appointment->patient->id)->latest()->first();
+    if($_voiceTranscription && empty($_voiceTranscription->structured_chart) && empty($_voiceTranscription->extracted_data)) $_voiceTranscription = null;
 }
 @endphp
 let _cachedAppointment = @json($appointment);
@@ -780,6 +791,7 @@ let _cachedPatient = @json($appointment->patient);
 let _cachedCurrentDiagnosis = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->latest()->first() : null);
 let _cachedPastDiagnoses = @json($appointment->patient ? \App\Models\Diagnosis::where('patient_id', $appointment->patient->id)->orderBy('created_at', 'desc')->skip(1)->take(10)->get() : collect());
 let _cachedVoiceDiagnosis = @json($_voiceDiag);
+let _cachedVoiceTranscription = @json($_voiceTranscription);
 // AI Data Sources Modal Functions
 function populateDataSourcesModal() {
     const appointment = _cachedAppointment;
@@ -787,20 +799,21 @@ function populateDataSourcesModal() {
     const currentDiagnosis = _cachedCurrentDiagnosis;
     const pastDiagnoses = _cachedPastDiagnoses;
     const voiceDiagnosis = _cachedVoiceDiagnosis;
+    const voiceTranscription = typeof _cachedVoiceTranscription !== 'undefined' ? _cachedVoiceTranscription : null;
 
     // Get patient data from the most recent diagnosis
     const patientData = currentDiagnosis ? currentDiagnosis.patient_data : null;
 
-    // Precise fallback helpers: use voice layer when Diagnosis not yet saved (weight 82kg case)
-    const voiceAllergiesRaw = voiceDiagnosis?.patient_data?.allergies || voiceDiagnosis?.extracted_data?.allergies || voiceDiagnosis?.structured_chart?.medical_history || currentDiagnosis?.patient_data?.medical_history || '';
-    const voiceMedsRaw = voiceDiagnosis?.patient_data?.medications || voiceDiagnosis?.patient_data?.past_medications || voiceDiagnosis?.extracted_data?.medications || voiceDiagnosis?.structured_chart?.medications || currentDiagnosis?.patient_data?.medications || '';
-    const voiceDoctorNotesRaw = appointment.doctor_notes || currentDiagnosis?.diagnosis_text || voiceDiagnosis?.patient_data?.diagnosis || voiceDiagnosis?.ai_analysis || '';
+    // Precise fallback helpers: use voice layer when Diagnosis not yet saved (weight 82kg case) — includes VT structured_chart (Khalid fix)
+    const voiceAllergiesRaw = voiceDiagnosis?.patient_data?.allergies || voiceDiagnosis?.extracted_data?.allergies || voiceDiagnosis?.structured_chart?.medical_history || voiceTranscription?.structured_chart?.medical_history || voiceTranscription?.extracted_data?.medical_history || currentDiagnosis?.patient_data?.medical_history || voiceTranscription?.structured_chart?.medical_history || '';
+    const voiceMedsRaw = voiceDiagnosis?.patient_data?.medications || voiceDiagnosis?.patient_data?.past_medications || voiceDiagnosis?.extracted_data?.medications || voiceDiagnosis?.structured_chart?.medications || voiceTranscription?.structured_chart?.medications || voiceTranscription?.extracted_data?.medications || currentDiagnosis?.patient_data?.medications || '';
+    const voiceDoctorNotesRaw = appointment.doctor_notes || currentDiagnosis?.diagnosis_text || voiceDiagnosis?.patient_data?.diagnosis || voiceDiagnosis?.ai_analysis || voiceTranscription?.structured_chart?.diagnosis || voiceTranscription?.extracted_data?.diagnosis || '';
     const hasAllergiesDirect = patientData && patientData.allergies && (Array.isArray(patientData.allergies) ? patientData.allergies.length > 0 : (typeof patientData.allergies === 'string' && patientData.allergies.trim().length > 0));
     const hasAllergiesFallback = !hasAllergiesDirect && voiceAllergiesRaw && String(voiceAllergiesRaw).trim().length > 0 && /no known|none|nkda|no allergies|allergy/i.test(String(voiceAllergiesRaw));
     const hasMedsDirect = patientData && (patientData.medications || patientData.past_medications) && (Array.isArray(patientData.medications || patientData.past_medications) ? (patientData.medications || patientData.past_medications).length > 0 : (typeof (patientData.medications || patientData.past_medications) === 'string' && (patientData.medications || patientData.past_medications).trim().length > 0));
     const hasMedsFallback = !hasMedsDirect && voiceMedsRaw && String(voiceMedsRaw).trim().length > 0;
     const hasDoctorNotesFallback = !!voiceDoctorNotesRaw && String(voiceDoctorNotesRaw).trim().length > 0;
-    // Weight fallback: parse from vital_signs strings (82kg from "BP 122/78...Wt 82kg")
+    // Weight fallback: parse from vital_signs strings (82kg from "BP 122/78...Wt 82kg") — includes VT fallback
     const voiceWeightRaw = (() => {
         const candidates = [
             patientData?.weight,
@@ -808,8 +821,11 @@ function populateDataSourcesModal() {
             voiceDiagnosis?.structured_chart?.vital_signs,
             voiceDiagnosis?.patient_data?.vital_signs,
             voiceDiagnosis?.extracted_data?.vital_signs,
+            voiceTranscription?.structured_chart?.vital_signs,
+            voiceTranscription?.extracted_data?.vital_signs,
             currentDiagnosis?.patient_data?.vital_signs,
-            voiceDiagnosis?.ai_analysis
+            voiceDiagnosis?.ai_analysis,
+            voiceTranscription?.raw_transcription
         ];
         for (const c of candidates) {
             if (!c) continue;
