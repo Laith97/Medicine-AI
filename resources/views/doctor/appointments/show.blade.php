@@ -822,9 +822,6 @@
                                 <button type="button" class="btn btn-sm" style="background:#fff; border:1px solid #e2e8f0; color:#64748b; border-radius:8px; font-size:0.72rem;" data-bs-toggle="modal" data-bs-target="#prescriptionHelpModal">
                                     <i class="fas fa-question-circle me-1"></i>Help
                                 </button>
-                                <button type="button" class="btn btn-sm" style="background:#fff; border:1px solid #e2e8f0; color:#2563eb; border-radius:8px; font-size:0.72rem;" data-bs-toggle="modal" data-bs-target="#aiDataSourcesModal">
-                                    <i class="fas fa-database me-1"></i>AI Sources
-                                </button>
                             </div>
                         </div>
 

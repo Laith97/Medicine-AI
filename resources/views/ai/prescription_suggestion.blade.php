@@ -1,20 +1,328 @@
 @push('styles')
 <style>
-.suggestion-item.accepted {
-    border-color: #198754 !important;
-    background-color: #f8fff9 !important;
+/* Modern Professional AI Suggestion Design System */
+.ai-section .btn-primary-modern {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    box-shadow: 0 8px 24px rgba(30,41,59,0.18);
+    transition: all 0.2s ease;
 }
-.suggestion-item.rejected {
-    border-color: #dc3545 !important;
-    background-color: #fff5f5 !important;
-    opacity: 0.7;
+.ai-section .btn-primary-modern:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgba(30,41,59,0.24);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 }
-.suggestion-item.accepted .badge {
-    background-color: #198754 !important;
+
+/* Clinical Data Used - Modern Card */
+#clinical-data-summary {
+    background: #fff !important;
+    border: 1px solid #eef2f7 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.04) !important;
+    overflow: hidden;
+    padding: 0 !important;
 }
-.suggestion-item.rejected .badge {
-    background-color: #dc3545 !important;
+#clinical-data-summary .cds-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #eef2f7;
+    padding: 0.9rem 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
 }
+#clinical-data-summary .cds-header-icon {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    color: #0f172a;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.04);
+}
+#clinical-data-summary .cds-title {
+    font-weight: 800;
+    font-size: 0.86rem;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+#clinical-data-summary .cds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.75rem;
+    padding: 1rem 1.1rem;
+}
+.cds-item {
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+}
+.cds-item-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.cds-item-value {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.5;
+}
+.cds-footer {
+    background: #f0fdf4;
+    border-top: 1px solid #dcfce7;
+    padding: 0.65rem 1.1rem;
+    font-size: 0.74rem;
+    color: #15803d;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* Modern Suggestion Cards */
+#ai-suggestions {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+.modern-suggestion-card {
+    background: #fff;
+    border: 1px solid #eef2f7;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.04);
+    transition: all 0.2s ease;
+    margin-bottom: 0.85rem;
+}
+.modern-suggestion-card:hover {
+    box-shadow: 0 8px 24px rgba(15,23,42,0.08);
+    transform: translateY(-1px);
+    border-color: #e2e8f0;
+}
+.modern-suggestion-card.accepted {
+    border-color: #86efac !important;
+    background: #f0fdf4 !important;
+    box-shadow: 0 4px 16px rgba(16,185,129,0.12);
+}
+.modern-suggestion-card.rejected {
+    border-color: #fecaca !important;
+    background: #fef2f2 !important;
+    opacity: 0.85;
+}
+.suggestion-header {
+    padding: 0.95rem 1.1rem 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+.suggestion-med-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
+    display: flex; align-items: center; justify-content: center;
+    color: #1d4ed8;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.suggestion-med-info {
+    flex: 1;
+    min-width: 0;
+}
+.suggestion-med-name {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.15rem;
+    line-height: 1.3;
+}
+.suggestion-med-reason {
+    font-size: 0.78rem;
+    color: #64748b;
+    line-height: 1.45;
+    margin: 0;
+}
+.confidence-badge {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.15rem;
+}
+.confidence-badge .badge {
+    border-radius: 20px;
+    padding: 0.35rem 0.65rem;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: -0.01em;
+    border: 1px solid transparent;
+}
+.confidence-badge .badge.high {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+.confidence-badge .badge.medium {
+    background: #fef9c3;
+    color: #854d0e;
+    border-color: #fde68a;
+}
+.confidence-badge .badge.low {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+.suggestion-body {
+    padding: 0.85rem 1.1rem;
+}
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.65rem;
+    margin-bottom: 0.75rem;
+}
+@media (max-width: 640px) {
+    .detail-grid { grid-template-columns: 1fr; }
+}
+.detail-item {
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 0.65rem 0.75rem;
+    text-align: center;
+}
+.detail-label {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+}
+.detail-value {
+    font-weight: 700;
+    font-size: 0.86rem;
+    color: #0f172a;
+}
+.warnings-section, .interactions-section {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 0.65rem 0.75rem;
+    margin-top: 0.6rem;
+}
+.interactions-section {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+.warnings-header, .interactions-header {
+    font-weight: 700;
+    font-size: 0.76rem;
+    color: #92400e;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.interactions-header { color: #991b1b; }
+.warnings-section ul, .interactions-section ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.78rem;
+    color: #78350f;
+    line-height: 1.5;
+}
+.interactions-section ul { color: #7f1d1d; }
+.suggestion-footer {
+    padding: 0.75rem 1.1rem;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+.btn-accept-modern {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.5rem 0.85rem;
+    font-weight: 700;
+    font-size: 0.82rem;
+    box-shadow: 0 4px 12px rgba(16,185,129,0.2);
+    transition: all 0.15s ease;
+}
+.btn-accept-modern:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16,185,129,0.28); color: #fff; }
+.btn-accept-modern:disabled { opacity: 0.6; transform: none; box-shadow: none; }
+.btn-reject-modern {
+    background: #fff;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.5rem 0.85rem;
+    font-weight: 600;
+    font-size: 0.82rem;
+}
+.btn-reject-modern:hover { background: #f8fafc; border-color: #cbd5e1; }
+.suggestion-disclaimer {
+    width: 100%;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.72rem;
+    color: #475569;
+    margin-top: 0.25rem;
+    display: flex;
+    gap: 0.4rem;
+}
+#ai-risks {
+    background: #fff !important;
+    border: 1px solid #fee2e2 !important;
+    border-radius: 16px !important;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(239,68,68,0.04) !important;
+}
+#ai-risks .risks-header {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-bottom: 1px solid #fecaca;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 800;
+    font-size: 0.84rem;
+    color: #991b1b;
+}
+#ai-risks #risks-content ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.8rem;
+    color: #7f1d1d;
+    line-height: 1.6;
+}
+#ai-risks hr { border-color: #fee2e2; }
+.suggestion-item.accepted { border-color: #86efac !important; background: #f0fdf4 !important; }
+.suggestion-item.rejected { border-color: #fecaca !important; background: #fef2f2 !important; opacity: 0.85; }
 </style>
 @endpush
 
@@ -22,31 +330,33 @@
 <input type="hidden" name="ai_risk_flags" id="ai_risk_flags" value="">
 
 <div class="ai-section">
-    <button type="button" id="aiSuggestBtn" class="btn fw-semibold w-100" style="background:#1e293b; color:#fff; border:1px solid #1e293b; border-radius:10px; padding:0.6rem; font-size:0.86rem; box-shadow: 0 4px 10px rgba(30,41,59,0.15);">
-        <i class="fas fa-magic me-2"></i>Get AI Medication Suggestions
+    <button type="button" id="aiSuggestBtn" class="btn-primary-modern w-100 d-flex align-items-center justify-content-center gap-2">
+        <span class="d-flex align-items-center justify-content-center" style="width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,0.14);"><i class="fas fa-wand-magic-sparkles" style="font-size:0.82rem;"></i></span>
+        <span>Get AI Medication Suggestions</span>
+        <span class="ms-auto d-none d-sm-inline-flex align-items-center gap-1" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.18);border-radius:20px;padding:0.2rem 0.55rem;font-size:0.68rem;font-weight:700;"><i class="fas fa-shield-halved" style="font-size:0.68rem;"></i> CDS</span>
     </button>
-    <div class="small text-muted mt-2" style="font-size:0.74rem; color:#64748b; line-height:1.4;">
-        <i class="fas fa-info-circle me-1"></i>Analyzes symptoms, doctor notes, allergies, and medical history. <strong>All suggestions require clinical review.</strong>
+    <div class="d-flex align-items-center justify-content-between gap-2 mt-2 px-1">
+        <div class="d-flex align-items-center gap-2" style="font-size:0.72rem; color:#64748b; line-height:1.4;">
+            <span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:20px;height:20px;border-radius:7px;background:#f1f5f9;border:1px solid #e2e8f0;"><i class="fas fa-lock" style="font-size:0.62rem;color:#475569;"></i></span>
+            <span>Analyzes verified symptoms, allergies & meds. <strong style="color:#334155;">Requires clinical review.</strong></span>
+        </div>
+        <button type="button" class="btn btn-sm d-inline-flex align-items-center gap-1 flex-shrink-0" style="background:#fff;border:1px solid #e2e8f0;color:#2563eb;border-radius:20px;font-size:0.7rem;font-weight:600;padding:0.3rem 0.65rem;white-space:nowrap;" data-bs-toggle="modal" data-bs-target="#aiDataSourcesModal">
+            <i class="fas fa-database" style="font-size:0.68rem;"></i> AI Sources
+        </button>
     </div>
 </div>
 
-<!-- Clinical Data Summary — premium -->
-<div id="clinical-data-summary" class="mb-3 p-3" style="display:none; background:#f8fafc; border:1px solid #eef2f7; border-radius:10px;">
-    <h6 class="mb-2 fw-bold" style="font-size:0.84rem; color:#1e293b;"><i class="fas fa-clipboard-check me-2" style="color:#475569;"></i>Clinical Data Used</h6>
-    <div id="clinical-data-content" class="small" style="font-size:0.78rem; color:#334155;"></div>
+<!-- Clinical Data Summary — modern -->
+<div id="clinical-data-summary" class="mb-3" style="display:none;">
+    <div id="clinical-data-content"></div>
 </div>
 
-<!-- AI Suggestions — premium -->
-<div id="ai-suggestions" class="mb-3 p-3" style="display:none; background:#fff; border:1px solid #e2e8f0; border-radius:10px;"></div>
-<div id="ai-risks" class="mb-3" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:1rem;">
-    <i class="fas fa-shield-alt me-2"></i>
-    <strong>⚠️ CLINICAL DECISION SUPPORT WARNINGS:</strong>
-    <div id="risks-content" class="mt-2"></div>
-    <hr class="my-2">
-    <small class="text-muted">
-        <strong>IMPORTANT:</strong> These are AI-generated suggestions for clinical decision support only.
-        All medication decisions must be made by qualified healthcare professionals after thorough clinical evaluation.
-    </small>
+<!-- AI Suggestions — modern stack -->
+<div id="ai-suggestions" class="mb-3" style="display:none;"></div>
+<div id="ai-risks" class="mb-3" style="display:none;">
+    <div class="risks-header"><span class="d-flex align-items-center justify-content-center" style="width:28px;height:28px;border-radius:9px;background:#fee2e2;border:1px solid #fecaca;"><i class="fas fa-shield-alt" style="font-size:0.78rem;color:#dc2626;"></i></span> Clinical Decision Support Warnings</div>
+    <div id="risks-content" class="p-3"></div>
+    <div class="px-3 pb-3"><div class="suggestion-disclaimer" style="margin-top:0;"><i class="fas fa-circle-info" style="color:#64748b;margin-top:2px;"></i><span><strong>IMPORTANT:</strong> AI-generated suggestions for decision support only. All medication decisions must be made by qualified clinicians after thorough evaluation and FDA validation check.</span></div></div>
 </div>
 
 @push('scripts')
@@ -87,51 +397,42 @@ function saveQuickDataToAppointment(allergies, medications, notes) {
     });
 }
 
-// Function to show clinical data summary — precise deduplication + voice truncate
+// Modern Clinical Data Summary — professional, deduplicated, compact
 function showClinicalDataSummary(clinicalData) {
-    var summaryHtml = '';
-
-    if (clinicalData && typeof clinicalData === 'object' && Object.keys(clinicalData).length > 0) {
-        summaryHtml += '<div class="row g-2">';
-
-        // Deduplicate symptoms vs current_diagnosis (your case: both "Acute bacterial sinusitis, moderate...")
-        const norm = s => String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
-        const sym = clinicalData.symptoms ? String(clinicalData.symptoms).trim() : '';
-        const diag = clinicalData.current_diagnosis ? String(clinicalData.current_diagnosis).trim() : '';
-        const dup = sym && diag && norm(sym) === norm(diag);
-
-        if (sym && !dup) {
-            summaryHtml += '<div class="col-12"><strong>📋 Symptoms:</strong> ' + sym.substring(0,300) + (sym.length>300?'...':'') + '</div>';
-        } else if (sym && dup) {
-            summaryHtml += '<div class="col-12"><strong>📋 Symptoms / Diagnosis:</strong> ' + sym.substring(0,300) + (sym.length>300?'...':'') + '</div>';
-        }
-        if (clinicalData.doctor_notes && !dup) {
-            summaryHtml += '<div class="col-12"><strong>👨‍⚕️ Doctor Notes:</strong> ' + String(clinicalData.doctor_notes).substring(0,300) + '</div>';
-        }
-        if (diag && !dup) {
-            summaryHtml += '<div class="col-12"><strong>👨‍⚕️ Current Diagnosis:</strong> ' + diag.substring(0,300) + (diag.length>300?'...':'') + '</div>';
-        }
-        if (clinicalData.past_diagnoses && clinicalData.past_diagnoses.length > 0) {
-            summaryHtml += '<div class="col-12"><strong>📚 Past Diagnosis History:</strong> ' + clinicalData.past_diagnoses.join('; ').substring(0,300) + '</div>';
-        }
-        if (clinicalData.voice_diagnosis) {
-            let v = String(clinicalData.voice_diagnosis);
-            // Truncate voice: extract key findings only, not full LEVEL 1+2 (was 800+ chars duplicated)
-            const m = v.match(/Symptoms:\s*([^\n]+)/i);
-            if (m) v = 'Symptoms: ' + m[1].trim() + (v.includes('Medical History') ? ' | ' + (v.match(/Medical History:\s*([^\n]+)/i)?.[1]||'').trim() : '');
-            else v = v.replace(/🟢.*?LEVEL 1:.*?CHIEF COMPLAINT:/is, '').trim();
-            v = v.substring(0,200) + (String(clinicalData.voice_diagnosis).length>200 ? '...' : '');
-            summaryHtml += '<div class="col-12"><strong>🎤 Voice Assistant Diagnosis:</strong> ' + v + ' <span class="badge bg-info ms-1" style="font-size:0.65rem">AI-assisted</span></div>';
-        }
-
-        summaryHtml += '</div>';
-        summaryHtml += '<div class="mt-2 small text-success"><i class="fas fa-check-circle me-1"></i>AI analyzed the above verified clinical data to provide medication suggestions.</div>';
-    } else {
-        summaryHtml = '<div class="text-warning"><i class="fas fa-exclamation-triangle me-2"></i><strong>No clinical documentation found.</strong><br><em>The AI analyzed available patient data but found no specific symptoms, diagnosis, or clinical notes. Suggestions are based on general preventive care recommendations.</em></div>';
+    if (!clinicalData || typeof clinicalData !== 'object' || Object.keys(clinicalData).length === 0) {
+        $('#clinical-data-content').html('<div class="p-3"><div class="d-flex gap-2 align-items-start p-3" style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;"><span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;border-radius:10px;background:#fef3c7;"><i class="fas fa-triangle-exclamation" style="color:#d97706;font-size:0.82rem;"></i></span><div><strong style="font-size:0.84rem;color:#92400e;">No clinical documentation found.</strong><div style="font-size:0.76rem;color:#78350f;margin-top:2px;">AI analyzed general preventive care — add symptoms/diagnosis for accurate suggestions.</div></div></div></div>');
+        $('#clinical-data-summary').html('<div id="clinical-data-content">' + $('#clinical-data-content').html() + '</div>').show();
+        // Re-inject correctly
+        const html = $('#clinical-data-content').html();
+        $('#clinical-data-summary').html('<div class="cds-header"><div class="cds-header-icon"><i class="fas fa-clipboard-check"></i></div><div><div class="cds-title">Clinical Data Used</div><div style="font-size:0.7rem;color:#64748b;font-weight:500;">Verified sources prioritized</div></div><span class="ms-auto badge bg-warning text-dark" style="border-radius:20px;font-size:0.65rem;">Limited</span></div>' + html);
+        return;
     }
-
-    $('#clinical-data-content').html(summaryHtml);
-    $('#clinical-data-summary').show();
+    const norm = s => String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+    const sym = clinicalData.symptoms ? String(clinicalData.symptoms).trim() : '';
+    const diag = clinicalData.current_diagnosis ? String(clinicalData.current_diagnosis).trim() : '';
+    const dup = sym && diag && norm(sym) === norm(diag);
+    let items = '';
+    const addItem = (icon, label, value, accent) => {
+        if (!value) return;
+        const v = String(value).substring(0,180) + (String(value).length>180?'...':'');
+        items += `<div class="cds-item" style="${accent?'border-left:3px solid '+accent+';':''}"><div class="cds-item-label"><i class="${icon}"></i> ${label}</div><div class="cds-item-value">${$('<div>').text(v).html()}</div></div>`;
+    };
+    if (sym && !dup) addItem('fas fa-clipboard-list', 'Symptoms / Chief Complaint', sym, '#3b82f6');
+    else if (sym && dup) addItem('fas fa-stethoscope', 'Symptoms / Diagnosis', sym, '#0ea5e9');
+    if (clinicalData.doctor_notes && !dup) addItem('fas fa-user-doctor', 'Doctor Notes', String(clinicalData.doctor_notes).substring(0,180), '#8b5cf6');
+    if (diag && !dup) addItem('fas fa-file-medical', 'Current Diagnosis', diag, '#10b981');
+    if (clinicalData.past_diagnoses && clinicalData.past_diagnoses.length > 0) addItem('fas fa-clock-rotate-left', 'Past History', clinicalData.past_diagnoses.join('; ').substring(0,180), '#64748b');
+    if (clinicalData.voice_diagnosis) {
+        let v = String(clinicalData.voice_diagnosis);
+        const m = v.match(/Symptoms:\s*([^\n]+)/i);
+        if (m) v = m[1].trim() + (v.includes('Medical History') ? ' • ' + (v.match(/Medical History:\s*([^\n]+)/i)?.[1]||'').trim().substring(0,60) : '');
+        else v = v.replace(/🟢.*?LEVEL 1:.*?CHIEF COMPLAINT:/is, '').trim().substring(0,160);
+        addItem('fas fa-microphone', 'Voice Assistant', v, '#f59e0b');
+    }
+    const header = `<div class="cds-header"><div class="cds-header-icon"><i class="fas fa-clipboard-check"></i></div><div><div class="cds-title">Clinical Data Used</div><div style="font-size:0.7rem;color:#64748b;font-weight:500;">Verified • ${Object.keys(clinicalData).filter(k=>clinicalData[k]).length} sources analyzed</div></div><span class="ms-auto badge bg-success" style="border-radius:20px;font-size:0.65rem;"><i class="fas fa-check me-1"></i>Verified</span></div>`;
+    const grid = `<div class="cds-grid">${items || '<div class="cds-item"><div class="cds-item-value text-muted">No specific clinical data — preventive guidance only</div></div>'}</div>`;
+    const footer = `<div class="cds-footer"><i class="fas fa-circle-check"></i> AI analyzed verified clinical data above to generate suggestions. Review required.</div>`;
+    $('#clinical-data-summary').html(header + grid + footer).show();
 }
 
 // Prescription AI Suggestion
@@ -586,108 +887,113 @@ $('#aiSuggestBtn').click(function(e) {
             // Show clinical data summary first
             showClinicalDataSummary(response.clinical_data_used);
 
-            // Suggestions
+            // Modern Suggestions — professional cards
             if (response.suggestions && response.suggestions.length > 0) {
-                var suggestionsHtml = '<h6 class="mb-3 text-primary"><i class="fas fa-pills me-2"></i>AI Suggested Medications:</h6>';
-                $.each(response.suggestions, function(i, suggestion) {
-                    console.log('Processing suggestion ' + i + ':', suggestion);
-
-                    // Ensure suggestion is an object
-                    if (typeof suggestion !== 'object' || suggestion === null) {
-                        console.error('Suggestion is not an object:', suggestion);
-                        return true; // continue to next iteration
-                    }
-
-                    var confidence = suggestion.confidence || 0;
-                    var confidenceClass = confidence >= 80 ? 'success' : (confidence >= 60 ? 'warning' : 'danger');
-                    var confidenceText = confidence >= 80 ? 'High' : (confidence >= 60 ? 'Medium' : 'Low');
-
-                    suggestionsHtml += '<div class="suggestion-item p-3 bg-white border border-warning rounded mb-3" data-index="' + i + '">';
-                    suggestionsHtml += '<div class="d-flex justify-content-between align-items-start mb-2">';
-                    suggestionsHtml += '<div class="flex-grow-1">';
-                    suggestionsHtml += '<h6 class="mb-1 text-primary"><i class="fas fa-pills me-2"></i>' + (suggestion.med || 'Unknown Medication') + '</h6>';
-                    suggestionsHtml += '<small class="text-muted">' + (suggestion.reason || 'Clinical decision support suggestion') + '</small>';
-                    suggestionsHtml += '</div>';
-                    suggestionsHtml += '<span class="badge bg-' + confidenceClass + ' ms-2"><i class="fas fa-chart-line me-1"></i>' + confidence + '% ' + confidenceText + '</span>';
-                    suggestionsHtml += '</div>';
-
-                    // Enhanced medication details
-                    suggestionsHtml += '<div class="row text-small mb-2">';
-                    suggestionsHtml += '<div class="col-md-4"><strong>Dosage:</strong> <span class="text-primary">' + (suggestion.dosage || 'N/A') + '</span></div>';
-                    suggestionsHtml += '<div class="col-md-4"><strong>Frequency:</strong> <span class="text-primary">' + (suggestion.freq || 'N/A') + '</span></div>';
-                    suggestionsHtml += '<div class="col-md-4"><strong>Duration:</strong> <span class="text-primary">' + (suggestion.dur || 'N/A') + '</span></div>';
-                    suggestionsHtml += '</div>';
-
-                    // Show warnings and interactions if available
-                    if (suggestion.warnings && suggestion.warnings.length > 0) {
-                        suggestionsHtml += '<div class="mb-2"><strong class="text-warning">⚠️ Warnings:</strong><ul class="mb-1 small">';
-                        $.each(suggestion.warnings, function(j, warning) {
-                            suggestionsHtml += '<li>' + warning + '</li>';
-                        });
-                        suggestionsHtml += '</ul></div>';
-                    }
-
-                    if (suggestion.interactions && suggestion.interactions.length > 0) {
-                        suggestionsHtml += '<div class="mb-2"><strong class="text-danger">💊 Interactions:</strong><ul class="mb-1 small">';
-                        $.each(suggestion.interactions, function(j, interaction) {
-                            suggestionsHtml += '<li>' + interaction + '</li>';
-                        });
-                        suggestionsHtml += '</ul></div>';
-                    }
-
-                    suggestionsHtml += '<div class="d-flex gap-2 mt-2">';
-                    suggestionsHtml += '<button type="button" class="btn btn-success btn-sm accept-suggestion" data-index="' + i + '">';
-                    suggestionsHtml += '<i class="fas fa-check me-1"></i>Use Suggestion</button>';
-                    suggestionsHtml += '<button type="button" class="btn btn-outline-secondary btn-sm reject-suggestion" data-index="' + i + '">';
-                    suggestionsHtml += '<i class="fas fa-times me-1"></i>Dismiss</button>';
-                    suggestionsHtml += '</div>';
-
-                    // Professional disclaimer
-                    suggestionsHtml += '<div class="mt-2 p-2 bg-light rounded small text-muted">';
-                    suggestionsHtml += '<i class="fas fa-user-md me-1"></i><strong>Clinical Decision Support:</strong> This AI suggestion must be reviewed and approved by a licensed healthcare professional before use.';
-                    suggestionsHtml += '</div>';
-
-                    suggestionsHtml += '</div>';
-                });
-                $('#ai-suggestions').html(suggestionsHtml).show();
-
-                // Set hidden field
-                $('#ai_suggestions').val(JSON.stringify(response.suggestions));
+                const isBlocked = response.suggestions.length === 1 && response.suggestions[0].med === 'Critical Data Missing';
+                if (isBlocked) {
+                    const s = response.suggestions[0];
+                    const blockedHtml = `
+                        <div class="modern-suggestion-card" style="border-color:#fecaca;background:#fef2f2;">
+                            <div class="suggestion-header" style="background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);">
+                                <span class="suggestion-med-icon" style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border-color:#fde68a;color:#92400e;"><i class="fas fa-triangle-exclamation"></i></span>
+                                <div class="suggestion-med-info"><div class="suggestion-med-name" style="color:#92400e;">Critical Data Missing</div><div class="suggestion-med-reason">${$('<div>').text(s.reason||'Complete allergies, medications and assessment.').html()}</div></div>
+                                <span class="badge low" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;">Blocked</span>
+                            </div>
+                            <div class="suggestion-body"><div class="warnings-section"><div class="warnings-header"><i class="fas fa-shield-halved"></i> Why blocked</div><ul><li>Allergies required to prevent anaphylaxis</li><li>Current meds required for interaction check</li><li>Clinical assessment required</li></ul></div></div>
+                        </div>`;
+                    $('#ai-suggestions').html(`<div class="d-flex align-items-center justify-content-between mb-2 px-1"><h6 class="mb-0" style="font-weight:800;color:#0f172a;letter-spacing:-0.01em;"><i class="fas fa-brain me-2" style="color:#6366f1;"></i>AI Clinical Support</h6><span class="badge bg-danger" style="border-radius:20px;">Blocked</span></div>` + blockedHtml).show();
+                    $('#ai_suggestions').val('');
+                } else {
+                    let suggestionsHtml = `<div class="d-flex align-items-center justify-content-between mb-2 px-1">
+                        <h6 class="mb-0" style="font-weight:800;color:#0f172a;letter-spacing:-0.01em;font-size:0.92rem;"><i class="fas fa-sparkles me-2" style="color:#6366f1;"></i>AI Suggested Medications <span class="text-muted" style="font-weight:600;font-size:0.72rem;">• ${response.suggestions.length} options • Review required</span></h6>
+                        <span class="badge" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:20px;font-size:0.68rem;"><i class="fas fa-wand-magic-sparkles me-1"></i> CDS</span>
+                    </div>`;
+                    $.each(response.suggestions, function(i, suggestion) {
+                        if (typeof suggestion !== 'object' || suggestion === null) return true;
+                        const confidence = suggestion.confidence || 0;
+                        const level = confidence >= 80 ? 'high' : (confidence >= 60 ? 'medium' : 'low');
+                        const levelText = confidence >= 80 ? 'High' : (confidence >= 60 ? 'Medium' : 'Low');
+                        const levelIcon = level==='high' ? 'fa-circle-check' : level==='medium' ? 'fa-chart-simple' : 'fa-triangle-exclamation';
+                        const med = $('<div>').text(suggestion.med || 'Unknown').html();
+                        const reason = $('<div>').text(suggestion.reason || 'Clinical decision support suggestion').html();
+                        let warningsHtml = '';
+                        if (suggestion.warnings && suggestion.warnings.length > 0) {
+                            warningsHtml = '<div class="warnings-section"><div class="warnings-header"><i class="fas fa-triangle-exclamation"></i> Warnings</div><ul>';
+                            $.each(suggestion.warnings, function(_,w){ warningsHtml += '<li>' + $('<div>').text(w).html() + '</li>'; });
+                            warningsHtml += '</ul></div>';
+                        }
+                        let interactionsHtml = '';
+                        if (suggestion.interactions && suggestion.interactions.length > 0) {
+                            interactionsHtml = '<div class="interactions-section"><div class="interactions-header"><i class="fas fa-pills"></i> Interactions</div><ul>';
+                            $.each(suggestion.interactions, function(_,it){ interactionsHtml += '<li>' + $('<div>').text(it).html() + '</li>'; });
+                            interactionsHtml += '</ul></div>';
+                        }
+                        suggestionsHtml += `
+                        <div class="modern-suggestion-card" data-index="${i}">
+                            <div class="suggestion-header">
+                                <span class="suggestion-med-icon"><i class="fas fa-prescription-bottle-medical"></i></span>
+                                <div class="suggestion-med-info">
+                                    <div class="suggestion-med-name">${med}</div>
+                                    <div class="suggestion-med-reason">${reason}</div>
+                                </div>
+                                <div class="confidence-badge">
+                                    <span class="badge ${level}"><i class="fas ${levelIcon} me-1"></i>${confidence}% ${levelText}</span>
+                                    <span style="font-size:0.66rem;color:#64748b;font-weight:600;">Confidence</span>
+                                </div>
+                            </div>
+                            <div class="suggestion-body">
+                                <div class="detail-grid">
+                                    <div class="detail-item"><div class="detail-label"><i class="fas fa-prescription-bottle"></i> Dosage</div><div class="detail-value">${$('<div>').text(suggestion.dosage||'N/A').html()}</div></div>
+                                    <div class="detail-item"><div class="detail-label"><i class="fas fa-clock"></i> Frequency</div><div class="detail-value">${$('<div>').text(suggestion.freq||'N/A').html()}</div></div>
+                                    <div class="detail-item"><div class="detail-label"><i class="fas fa-calendar-days"></i> Duration</div><div class="detail-value">${$('<div>').text(suggestion.dur||'N/A').html()}</div></div>
+                                </div>
+                                ${warningsHtml}
+                                ${interactionsHtml}
+                            </div>
+                            <div class="suggestion-footer">
+                                <button type="button" class="btn-accept-modern accept-suggestion" data-index="${i}"><i class="fas fa-check me-1"></i>Use Suggestion</button>
+                                <button type="button" class="btn-reject-modern reject-suggestion" data-index="${i}"><i class="fas fa-xmark me-1"></i>Dismiss</button>
+                                <span class="ms-auto d-none d-md-inline-flex align-items-center gap-1" style="font-size:0.7rem;color:#64748b;"><i class="fas fa-user-doctor" style="color:#334155;"></i> Requires clinician approval</span>
+                            </div>
+                        </div>`;
+                    });
+                    $('#ai-suggestions').html(suggestionsHtml).show();
+                    $('#ai_suggestions').val(JSON.stringify(response.suggestions));
+                }
             } else {
-                $('#ai-suggestions').html('<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i><strong>Preventive Care Recommendations:</strong> No specific medications needed based on current clinical data. The AI suggests focusing on preventive care measures appropriate for the patient\'s age and health status.</div>').show();
+                $('#ai-suggestions').html('<div class="modern-suggestion-card"><div class="p-3 d-flex gap-3 align-items-start"><span class="suggestion-med-icon" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;"><i class="fas fa-heart-pulse"></i></span><div><div class="suggestion-med-name">Preventive Care</div><div class="suggestion-med-reason">No specific medications indicated — focus on preventive measures for age/health status.</div></div></div></div>').show();
                 $('#ai_suggestions').val('');
             }
 
-            // Risks - Always show warnings for safety
-            if (response.risk_flags && response.risk_flags.length > 0) {
-                var risksHtml = '<ul class="mb-0">';
-                $.each(response.risk_flags, function(i, risk) {
-                    risksHtml += '<li>' + risk + '</li>';
+            // Modern Risks — professional list with icons
+            const renderRisks = (flags, disclaimer) => {
+                let html = '<div class="d-flex flex-column gap-2">';
+                $.each(flags, function(_, r){
+                    const txt = $('<div>').text(r).html();
+                    const isCritical = /critical|blocked|allergy|fda/i.test(r);
+                    const isWarning = /verify|check|consider|clinical/i.test(r);
+                    const icon = isCritical ? 'fa-triangle-exclamation' : isWarning ? 'fa-circle-exclamation' : 'fa-circle-info';
+                    const bg = isCritical ? '#fee2e2' : isWarning ? '#fef9c3' : '#f1f5f9';
+                    const border = isCritical ? '#fecaca' : isWarning ? '#fde68a' : '#e2e8f0';
+                    const color = isCritical ? '#991b1b' : isWarning ? '#854d0e' : '#334155';
+                    html += `<div class="d-flex gap-2 align-items-start p-2" style="background:${bg};border:1px solid ${border};border-radius:12px;font-size:0.78rem;color:${color};line-height:1.5;"><span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:26px;height:26px;border-radius:9px;background:#fff;border:1px solid ${border};"><i class="fas ${icon}" style="font-size:0.72rem;"></i></span><span>${txt}</span></div>`;
                 });
-                risksHtml += '</ul>';
-
-                // Add disclaimer if provided
-                if (response.disclaimer) {
-                    risksHtml += '<div class="mt-2 p-2 bg-light rounded small"><strong>Disclaimer:</strong> ' + response.disclaimer + '</div>';
-                }
-
-                $('#risks-content').html(risksHtml);
+                html += '</div>';
+                if (disclaimer) html += `<div class="suggestion-disclaimer"><i class="fas fa-circle-info"></i><span><strong>Disclaimer:</strong> ${$('<div>').text(disclaimer).html()}</span></div>`;
+                return html;
+            };
+            if (response.risk_flags && response.risk_flags.length > 0) {
+                $('#risks-content').html(renderRisks(response.risk_flags, response.disclaimer));
                 $('#ai-risks').show();
                 $('#ai_risk_flags').val(JSON.stringify(response.risk_flags));
             } else {
-                // Show default safety warnings even if no specific risks
-                var defaultWarnings = [
-                    '⚠️ CLINICAL DECISION SUPPORT ONLY - Professional medical judgment required',
-                    '⚠️ Verify patient allergies and contraindications',
-                    '⚠️ Check current medications for interactions',
-                    '⚠️ Consider patient age, weight, and organ function'
+                const defaultWarnings = [
+                    'CLINICAL DECISION SUPPORT ONLY — Professional medical judgment required',
+                    'Verify patient allergies and contraindications',
+                    'Check current medications for interactions',
+                    'Consider patient age, weight, and renal/hepatic function'
                 ];
-                var risksHtml = '<ul class="mb-0">';
-                $.each(defaultWarnings, function(i, risk) {
-                    risksHtml += '<li>' + risk + '</li>';
-                });
-                risksHtml += '</ul>';
-                $('#risks-content').html(risksHtml);
+                $('#risks-content').html(renderRisks(defaultWarnings, null));
                 $('#ai-risks').show();
                 $('#ai_risk_flags').val(JSON.stringify(defaultWarnings));
             }
