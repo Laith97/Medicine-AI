@@ -704,7 +704,7 @@ public function destroy(User $user)
             ->groupBy('request_type')
             ->get();
 
-        // Top users by usage
+        // Top users by usage - fixed for ONLY_FULL_GROUP_BY (prod strict mode)
         $topUsers = User::withCount(['openaiUsages as total_requests' => function($query) use ($startDate, $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);
         }])
@@ -713,7 +713,6 @@ public function destroy(User $user)
                   ->selectRaw('user_id, SUM(total_tokens) as total_tokens, SUM(cost_estimate) as total_cost')
                   ->groupBy('user_id');
         }])
-        ->groupBy('id')
         ->having('total_requests', '>', 0)
         ->orderBy('total_requests', 'desc')
         ->limit(10)
