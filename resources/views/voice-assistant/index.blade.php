@@ -36,24 +36,183 @@
     <div class="row mb-3">
         <div class="col-12">
             <div class="card modern-card">
-                <div class="card-body d-flex align-items-end gap-3 flex-nowrap">
-                    <div class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;border-radius:10px;background:#eff6ff;color:#2563eb;margin-bottom:1px"><i class="fas fa-user-injured" style="font-size:0.9rem"></i></div>
-                    <div class="flex-grow-1 min-w-0">
-                        <label for="patientSelect" class="form-label fw-bold mb-1 d-block" style="font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;line-height:1">Patient</label>
-                        <select id="patientSelect" class="form-select" style="border-radius:10px;border:1px solid #e2e8f0;font-weight:600;color:#1e293b;height:38px;padding:6px 12px;font-size:0.9rem">
-                            <option value="">Select a patient — search by name...</option>
-                            @foreach($patients as $patient)
-                                <option value="{{ $patient['id'] }}" {{ request('patient') == $patient['id'] ? 'selected' : '' }}>{{ $patient['name'] }} ({{ $patient['age'] ? $patient['age'] . 'y' : 'Age N/A' }}, {{ $patient['gender'] ? ucfirst($patient['gender']) : 'Gender N/A' }})</option>
-                            @endforeach
-                        </select>
+                <div class="card-body">
+                    <label for="patientSearchInput" class="form-label fw-bold mb-2 d-block" style="font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;line-height:1">Patient</label>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;border-radius:10px;background:#eff6ff;color:#2563eb"><i class="fas fa-user-injured" style="font-size:0.9rem"></i></div>
+                        <div class="flex-grow-1 min-w-0 position-relative">
+                            <div class="position-relative">
+                                <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.85rem"></i>
+                                <input type="text" id="patientSearchInput" class="form-control" placeholder="Search by name, phone or click to browse..." autocomplete="off" value="{{ collect($patients)->firstWhere('id', request('patient'))['name'] ?? '' }}" style="border-radius:10px;border:1px solid #e2e8f0;font-weight:600;color:#1e293b;height:38px;padding:6px 12px 6px 34px;font-size:0.9rem">
+                                <button type="button" id="clearPatientSearch" class="btn btn-sm position-absolute" style="right:6px;top:50%;transform:translateY(-50%);background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:2px 8px;display:none"><i class="fas fa-times" style="font-size:0.7rem"></i></button>
+                            </div>
+                            <input type="hidden" id="patientSelect" value="{{ request('patient') }}">
+                            <div id="patientSearchResults" class="position-absolute bg-white border shadow-sm" style="top:calc(100% + 6px);left:0;right:0;z-index:1055;border-radius:12px;display:none;max-height:300px;overflow-y:auto;box-shadow:0 12px 24px rgba(15,23,42,0.12)"></div>
+                        </div>
+                        <button id="showNewPatientFormBtn" class="btn btn-light border flex-shrink-0" type="button" style="border-radius:10px;font-weight:700;color:#1e293b;height:38px;padding:0 14px;white-space:nowrap;font-size:0.88rem">
+                            <i class="fas fa-user-plus me-1 text-primary"></i> New Patient
+                        </button>
                     </div>
-                    <button id="showNewPatientFormBtn" class="btn btn-light border flex-shrink-0" type="button" style="border-radius:10px;font-weight:700;color:#1e293b;height:38px;padding:0 14px;white-space:nowrap;font-size:0.88rem">
-                        <i class="fas fa-user-plus me-1 text-primary"></i> New Patient
-                    </button>
+                    <div class="form-text" style="font-size:0.72rem;color:#64748b;margin-left:50px"><span id="patientSearchHint">Click to browse · type 2+ chars to search · shows 10</span> <span id="patientSelectedHint" class="text-success fw-bold" style="display:none"><i class="fas fa-check me-1"></i> Selected</span></div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+    (function(){
+        const searchInput = document.getElementById('patientSearchInput');
+        const hiddenSelect = document.getElementById('patientSelect');
+        const resultsBox = document.getElementById('patientSearchResults');
+        const clearBtn = document.getElementById('clearPatientSearch');
+        const hint = document.getElementById('patientSearchHint');
+        const selectedHint = document.getElementById('patientSelectedHint');
+        let debounceTimer = null;
+        let selectedPatientData = null;
+
+        function showSelected(){
+            if(hiddenSelect.value){
+                hint.style.display='none';
+                selectedHint.style.display='inline';
+                clearBtn.style.display='block';
+            } else {
+                hint.style.display='inline';
+                selectedHint.style.display='none';
+                clearBtn.style.display='none';
+            }
+        }
+        showSelected();
+
+        // If pre-selected from ?patient=, fetch name already set, ensure hidden has value
+        if(hiddenSelect.value && searchInput.value){
+            showSelected();
+        }
+
+        function hideResults(){ resultsBox.style.display='none'; resultsBox.innerHTML=''; }
+
+        function renderResults(patients){
+            if(!patients.length){
+                resultsBox.innerHTML = '<div class="p-3 text-center text-muted small">No patients found · try different term or <a href="#" onclick="document.getElementById(\'showNewPatientFormBtn\').click();return false;">create new</a></div>';
+                resultsBox.style.display='block';
+                return;
+            }
+            resultsBox.innerHTML = patients.map(p => `
+                <button type="button" class="w-100 text-start p-2 px-3 d-flex align-items-center gap-3" data-id="${p.id}" data-name="${p.name.replace(/"/g,'&quot;')}" style="background:#fff;border:none;border-bottom:1px solid #f1f5f9;transition:background 0.15s">
+                    <span style="width:36px;height:36px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#0f172a;font-weight:800">${(p.name||'?').charAt(0).toUpperCase()}</span>
+                    <span class="flex-grow-1 text-start">
+                        <span style="font-weight:700;color:#0f172a;font-size:0.88rem;display:block">${p.name}</span>
+                        <span style="font-size:0.74rem;color:#64748b">${p.email||''} ${p.phone?'· '+p.phone:''}</span>
+                    </span>
+                    <i class="fas fa-chevron-right" style="color:#cbd5e1;font-size:0.7rem"></i>
+                </button>
+            `).join('');
+            resultsBox.style.display='block';
+            resultsBox.querySelectorAll('button').forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    const id = btn.getAttribute('data-id');
+                    const name = btn.getAttribute('data-name');
+                    hiddenSelect.value = id;
+                    searchInput.value = name;
+                    selectedPatientData = {id, name};
+                    hideResults();
+                    showSelected();
+                    // Trigger change for existing listeners
+                    hiddenSelect.dispatchEvent(new Event('change', {bubbles:true}));
+                    searchInput.dispatchEvent(new Event('change', {bubbles:true}));
+                });
+                btn.addEventListener('mouseenter', ()=> btn.style.background='#f8fafc');
+                btn.addEventListener('mouseleave', ()=> btn.style.background='#fff');
+            });
+        }
+
+        searchInput.addEventListener('input', function(){
+            const q = this.value.trim();
+            hiddenSelect.value = '';
+            selectedPatientData = null;
+            showSelected();
+            if(debounceTimer) clearTimeout(debounceTimer);
+            if(q.length < 2){
+                hideResults();
+                if(!q) return;
+                resultsBox.innerHTML = '<div class="p-3 text-center text-muted small">Type 2+ characters to search</div>';
+                resultsBox.style.display='block';
+                return;
+            }
+            debounceTimer = setTimeout(()=>{
+                resultsBox.innerHTML = '<div class="p-3 text-center text-muted small"><span class="spinner-border spinner-border-sm me-2"></span>Searching...</div>';
+                resultsBox.style.display='block';
+                fetch(`{{ route('doctor.patients.search') }}?query=${encodeURIComponent(q)}`, {headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
+                    .then(r=>r.json())
+                    .then(data=>{
+                        const patients = data.patients || data || [];
+                        renderResults(patients);
+                    })
+                    .catch(()=>{
+                        resultsBox.innerHTML = '<div class="p-3 text-center text-danger small">Search failed · try again</div>';
+                    });
+            }, 300);
+        });
+
+        const initialPatients = @json(collect($patients)->take(10)->values());
+        searchInput.addEventListener('focus', function(){
+            const q = this.value.trim();
+            if(q.length >= 2 && resultsBox.innerHTML){
+                resultsBox.style.display='block';
+                return;
+            }
+            if(q === ''){
+                // Show browse-any: recent 10 patients
+                const recent = initialPatients.map(p => ({ id: p.id, name: p.name, email: p.email ?? '', phone: p.phone ?? '' }));
+                if(recent.length){
+                    resultsBox.innerHTML = '<div class="px-3 py-2 small fw-bold" style="color:#64748b;background:#f8fafc;border-bottom:1px solid #eef2f7;border-radius:12px 12px 0 0"><i class="fas fa-clock me-1"></i> Recent patients — click any to select</div>' + recent.map(p => `
+                        <button type="button" class="w-100 text-start p-2 px-3 d-flex align-items-center gap-3" data-id="${p.id}" data-name="${String(p.name).replace(/"/g,'&quot;')}" style="background:#fff;border:none;border-bottom:1px solid #f1f5f9">
+                            <span style="width:36px;height:36px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#0f172a;font-weight:800">${(p.name||'?').charAt(0).toUpperCase()}</span>
+                            <span class="flex-grow-1 text-start"><span style="font-weight:700;color:#0f172a;font-size:0.88rem;display:block">${p.name}</span><span style="font-size:0.74rem;color:#64748b">${p.email||''}</span></span>
+                            <i class="fas fa-chevron-right" style="color:#cbd5e1;font-size:0.7rem"></i>
+                        </button>
+                    `).join('') + '<div class="p-2 text-center"><small class="text-muted">Showing 10 recent · type to search all</small></div>';
+                    resultsBox.style.display='block';
+                    resultsBox.querySelectorAll('button').forEach(btn=>{
+                        btn.addEventListener('click', ()=>{
+                            hiddenSelect.value = btn.getAttribute('data-id');
+                            searchInput.value = btn.getAttribute('data-name');
+                            hideResults(); showSelected();
+                            hiddenSelect.dispatchEvent(new Event('change',{bubbles:true}));
+                        });
+                        btn.addEventListener('mouseenter', ()=> btn.style.background='#f8fafc');
+                        btn.addEventListener('mouseleave', ()=> btn.style.background='#fff');
+                    });
+                } else {
+                    resultsBox.innerHTML = '<div class="p-3 text-center text-muted small">No recent patients · type to search or create new</div>';
+                    resultsBox.style.display='block';
+                }
+            }
+        });
+
+        document.addEventListener('click', function(e){
+            if(!searchInput.contains(e.target) && !resultsBox.contains(e.target)){
+                hideResults();
+            }
+        });
+
+        clearBtn.addEventListener('click', function(){
+            searchInput.value='';
+            hiddenSelect.value='';
+            selectedPatientData=null;
+            hideResults();
+            showSelected();
+            searchInput.focus();
+            hiddenSelect.dispatchEvent(new Event('change', {bubbles:true}));
+        });
+
+        // If hiddenSelect has initial value but input empty (e.g., back button), ensure input shows name
+        if(hiddenSelect.value && !searchInput.value){
+            // Try to find name from initial patients collection via data attribute if available, else keep hidden
+            // Fallback: show ID
+            searchInput.placeholder = 'Selected patient ID '+hiddenSelect.value+' · search to change';
+        }
+    })();
+    </script>
 
     <!-- New Patient Form - Modern -->
     <div id="newPatientForm" class="row mb-4" style="display: none;">
