@@ -87,28 +87,41 @@ function saveQuickDataToAppointment(allergies, medications, notes) {
     });
 }
 
-// Function to show clinical data summary
+// Function to show clinical data summary — precise deduplication + voice truncate
 function showClinicalDataSummary(clinicalData) {
     var summaryHtml = '';
 
-    // Handle edge cases: null, undefined, empty array, or empty object all mean no data
     if (clinicalData && typeof clinicalData === 'object' && Object.keys(clinicalData).length > 0) {
         summaryHtml += '<div class="row g-2">';
 
-        if (clinicalData.symptoms) {
-            summaryHtml += '<div class="col-12"><strong>📋 Symptoms:</strong> ' + clinicalData.symptoms + '</div>';
+        // Deduplicate symptoms vs current_diagnosis (your case: both "Acute bacterial sinusitis, moderate...")
+        const norm = s => String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+        const sym = clinicalData.symptoms ? String(clinicalData.symptoms).trim() : '';
+        const diag = clinicalData.current_diagnosis ? String(clinicalData.current_diagnosis).trim() : '';
+        const dup = sym && diag && norm(sym) === norm(diag);
+
+        if (sym && !dup) {
+            summaryHtml += '<div class="col-12"><strong>📋 Symptoms:</strong> ' + sym.substring(0,300) + (sym.length>300?'...':'') + '</div>';
+        } else if (sym && dup) {
+            summaryHtml += '<div class="col-12"><strong>📋 Symptoms / Diagnosis:</strong> ' + sym.substring(0,300) + (sym.length>300?'...':'') + '</div>';
         }
-        if (clinicalData.doctor_notes) {
-            summaryHtml += '<div class="col-12"><strong>👨‍⚕️ Doctor Notes:</strong> ' + clinicalData.doctor_notes + '</div>';
+        if (clinicalData.doctor_notes && !dup) {
+            summaryHtml += '<div class="col-12"><strong>👨‍⚕️ Doctor Notes:</strong> ' + String(clinicalData.doctor_notes).substring(0,300) + '</div>';
         }
-        if (clinicalData.current_diagnosis) {
-            summaryHtml += '<div class="col-12"><strong>👨‍⚕️ Current Diagnosis:</strong> ' + clinicalData.current_diagnosis + '</div>';
+        if (diag && !dup) {
+            summaryHtml += '<div class="col-12"><strong>👨‍⚕️ Current Diagnosis:</strong> ' + diag.substring(0,300) + (diag.length>300?'...':'') + '</div>';
         }
         if (clinicalData.past_diagnoses && clinicalData.past_diagnoses.length > 0) {
-            summaryHtml += '<div class="col-12"><strong>📚 Past Diagnosis History:</strong> ' + clinicalData.past_diagnoses.join('; ') + '</div>';
+            summaryHtml += '<div class="col-12"><strong>📚 Past Diagnosis History:</strong> ' + clinicalData.past_diagnoses.join('; ').substring(0,300) + '</div>';
         }
         if (clinicalData.voice_diagnosis) {
-            summaryHtml += '<div class="col-12"><strong>🎤 Voice Assistant Diagnosis:</strong> ' + clinicalData.voice_diagnosis + '</div>';
+            let v = String(clinicalData.voice_diagnosis);
+            // Truncate voice: extract key findings only, not full LEVEL 1+2 (was 800+ chars duplicated)
+            const m = v.match(/Symptoms:\s*([^\n]+)/i);
+            if (m) v = 'Symptoms: ' + m[1].trim() + (v.includes('Medical History') ? ' | ' + (v.match(/Medical History:\s*([^\n]+)/i)?.[1]||'').trim() : '');
+            else v = v.replace(/🟢.*?LEVEL 1:.*?CHIEF COMPLAINT:/is, '').trim();
+            v = v.substring(0,200) + (String(clinicalData.voice_diagnosis).length>200 ? '...' : '');
+            summaryHtml += '<div class="col-12"><strong>🎤 Voice Assistant Diagnosis:</strong> ' + v + ' <span class="badge bg-info ms-1" style="font-size:0.65rem">AI-assisted</span></div>';
         }
 
         summaryHtml += '</div>';
@@ -229,22 +242,47 @@ $('#aiSuggestBtn').click(function(e) {
         }
     }
     console.log('Has Medications:', hasMedications, 'Value:', pastMeds);
+
+    // Precise fallback to voice layer when Diagnosis empty (your Khalid case: no known allergies -> None)
+    if (!hasAllergies && voiceDiagnosis) {
+        const vAll = voiceDiagnosis.patient_data?.allergies || voiceDiagnosis.patient_data?.medical_history || voiceDiagnosis.ai_analysis || '';
+        if (vAll && String(vAll).trim().length > 0 && /no known|none|nkda|no allergies|allergy/i.test(String(vAll))) {
+            hasAllergies = true;
+            allergies = [String(vAll).substring(0,80)];
+            console.log('🔍 Voice fallback allergies:', vAll);
+        } else if (voiceDiagnosis.structured_chart?.medical_history && /no known|none|nkda/i.test(voiceDiagnosis.structured_chart.medical_history)) {
+            hasAllergies = true; allergies = ['None'];
+        }
+    }
+    if (!hasMedications && voiceDiagnosis) {
+        const vMed = voiceDiagnosis.patient_data?.medications || voiceDiagnosis.patient_data?.past_medications || voiceDiagnosis.structured_chart?.medications || voiceDiagnosis.ai_analysis || '';
+        if (vMed && String(vMed).trim().length > 0 && /none|no.*medications|no.*meds|no current/i.test(String(vMed).toLowerCase())) {
+            hasMedications = true;
+            pastMeds = [String(vMed).substring(0,80)];
+            console.log('🔍 Voice fallback meds:', vMed);
+        } else if (voiceDiagnosis.structured_chart?.medications && String(voiceDiagnosis.structured_chart.medications).trim().length > 0) {
+            hasMedications = true; pastMeds = [voiceDiagnosis.structured_chart.medications];
+        }
+    }
     
-    var hasClinicalAssessment = !!(symptoms || currentDiagnosis);
-    console.log('Has Clinical Assessment:', hasClinicalAssessment, 'Symptoms:', symptoms, 'Diagnosis:', !!currentDiagnosis);
+    var hasClinicalAssessment = !!(symptoms || currentDiagnosis || voiceDiagnosis);
+    console.log('Has Clinical Assessment:', hasClinicalAssessment, 'Symptoms:', symptoms, 'Diagnosis:', !!currentDiagnosis, 'Voice:', !!voiceDiagnosis);
 
-    // Check if symptoms from patient_data.symptoms is populated
+    // Check if symptoms from patient_data.symptoms is populated — include voice fallback
     var hasPatientDataSymptoms = !!(currentDiagnosis && currentDiagnosis.patient_data && currentDiagnosis.patient_data.symptoms && currentDiagnosis.patient_data.symptoms.trim() !== '');
+    if (!hasPatientDataSymptoms && voiceDiagnosis) {
+        const vSym = voiceDiagnosis.patient_data?.symptoms || voiceDiagnosis.structured_chart?.symptoms || (voiceDiagnosis.ai_analysis ? String(voiceDiagnosis.ai_analysis).match(/Symptoms:\s*([^\n]+)/i)?.[1] : null);
+        if (vSym && String(vSym).trim().length > 0) hasPatientDataSymptoms = true;
+    }
 
-    // Only add to missing if truly missing
+    // Only add to missing if truly missing (fallback considered available)
     if (!hasAllergies) {
         missingData.push('Patient Allergies');
     }
     if (!hasMedications) {
         missingData.push('Current Medications');
     }
-    // Note: If patient_data.symptoms is empty but diagnosis_text exists, diagnosis_text is used as symptoms fallback
-    if (!hasPatientDataSymptoms) {
+    if (!hasPatientDataSymptoms && !hasClinicalAssessment) {
         missingData.push('Symptoms (empty - diagnosis text will be used)');
     }
     
