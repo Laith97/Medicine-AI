@@ -1196,12 +1196,57 @@
                         });
                         const data = await res.json();
                         if(data.success && data.aiAnalysis){
-                            const symEl=document.getElementById('symptoms');
-                            if(symEl && !symEl.value.trim()){
-                                const firstPart = data.aiAnalysis.split('\n').filter(l=>l.trim()).slice(0,4).join('\n');
-                                symEl.value = firstPart.substring(0,300);
-                                symEl.dispatchEvent(new Event('input',{bubbles:true}));
-                            }
+                            try{
+                                const txt = data.aiAnalysis || '';
+                                const tryPatterns = (patterns) => {
+                                    for(const re of patterns){
+                                        const m = txt.match(re);
+                                        if(m && m[1] && m[1].trim()){
+                                            const val = m[1].trim().replace(/\s+/g,' ').replace(/^[•\-]\s*/,'');
+                                            if(val.length>3 && !/^LEVEL\s*\d/i.test(val)) return val;
+                                        }
+                                    }
+                                    return '';
+                                };
+                                const fillIfEmpty2 = (id, val) => {
+                                    const el=document.getElementById(id);
+                                    if(el && !el.value.trim() && val && String(val).trim()){
+                                        el.value = String(val).trim().substring(0,600);
+                                        el.dispatchEvent(new Event('input',{bubbles:true}));
+                                    }
+                                };
+                                fillIfEmpty2('symptoms', tryPatterns([
+                                    /\*\*Symptoms:?\*\*\s*([^\n]+(?:\n(?!\*\*|📋|🔍|💊|🧪|⚠️|🚨|🔵|---|LEVEL)[^\n]*)*)/i,
+                                    /Symptoms\s*:\s*([^\n]+(?:\n(?![A-Z][A-Za-z ]+:\s)[^\n]*)*)/i,
+                                    /CHIEF COMPLAINT\s*:?\s*([\s\S]*?)(?=\n\s*🔍|\n\s*KEY FINDINGS|\n\s*\*\*|$)/i
+                                ]));
+                                fillIfEmpty2('medicalHistory', tryPatterns([
+                                    /\*\*Medical History:?\*\*\s*([^\n]+(?:\n(?!\*\*|📋|🔍|💊|🧪|⚠️|🚨)[^\n]*)*)/i,
+                                    /Medical History\s*:\s*([^\n]+(?:\n(?![A-Z][A-Za-z ]+:\s)[^\n]*)*)/i,
+                                    /Relevant History\s*:\s*([^\n]+)/i
+                                ]));
+                                fillIfEmpty2('physicalFindings', tryPatterns([
+                                    /\*\*Physical Findings:?\*\*\s*([^\n]+(?:\n(?!\*\*|📋|🔍|💊|🧪|⚠️|🚨)[^\n]*)*)/i,
+                                    /Physical Findings\s*:\s*([^\n]+)/i
+                                ]));
+                                fillIfEmpty2('medications', tryPatterns([
+                                    /\*\*Current Medications:?\*\*\s*([^\n]+)/i,
+                                    /Current Medications\s*:\s*([^\n]+)/i,
+                                    /\*\*Medications:?\*\*\s*([^\n]+)/i,
+                                    /Medications\s*:\s*([^\n]+)/i
+                                ]));
+                                fillIfEmpty2('vitalSigns', tryPatterns([
+                                    /\*\*Vital Signs:?\*\*\s*([^\n]+)/i,
+                                    /Vital Signs\s*:\s*([^\n]+)/i
+                                ]));
+                                const diag = tryPatterns([/PRELIMINARY ASSESSMENT[\s\S]*?1\.\s*([^\n\-]+?)\s*-\s*Supported/i, /\bDiagnosis\s*:\s*([^\n]+)/i, /ASSESSMENT\s*:?\s*([\s\S]*?)(?=\n\s*RECOMMENDATIONS|\n\s*---)/i]);
+                                if(diag) fillIfEmpty2('diagnosis', diag);
+                                fillIfEmpty2('carePlan', tryPatterns([
+                                    /RECOMMENDATIONS\s*:?\s*([\s\S]*?)(?=\n\s*---|\n\s*LEVEL|\n\s*NEXT STEPS|$)/i,
+                                    /Prescribe appropriate antibiotic[^\n]*/i,
+                                    /Supportive care[:\s]*([^\n]+)/i
+                                ]));
+                            }catch(e){ console.warn('Auto-fill from AI analysis failed', e); }
                             alert('Clinical Chart auto-filled from AI analysis. Please review and edit as needed.');
                         } else {
                             alert('Could not auto-fill chart: ' + (data.message || 'Unknown error'));
@@ -1254,33 +1299,63 @@
             })
             .then(data => {
                 if (data.success) {
-                    // Fill Clinical Chart from AI analysis (fallback only - empty fields) - safe, no overwrite
+                    // Fill Clinical Chart from AI analysis (fallback only - empty fields) - robust parsing for LEVEL 1/2 markdown
                     try{
                         const txt = data.aiAnalysis || '';
                         const fillIfEmpty = (id, val) => {
                             const el=document.getElementById(id);
                             if(el && !el.value.trim() && val && String(val).trim()){
-                                el.value = String(val).trim().substring(0,500);
+                                let v = String(val).trim().replace(/\s+/g,' ').substring(0,600);
+                                // Guard: never dump LEVEL header as symptom
+                                if(/^LEVEL\s*\d|^🟢|^🔵/i.test(v)) return;
+                                el.value = v;
                                 el.dispatchEvent(new Event('input',{bubbles:true}));
                             }
                         };
-                        const extractSection = (re) => { const m=txt.match(re); return m ? m[1].trim() : ''; };
-                        // Heuristic parsing of AI markdown
-                        fillIfEmpty('symptoms', extractSection(/\*\*Symptoms\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|\n🔍|\n💊|\n🧪|\n⚠️|\n🔵|$)/i));
-                        fillIfEmpty('medicalHistory', extractSection(/\*\*Medical History\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|\n🔍|\n💊|\n🧪|\n⚠️|\n🔵|$)/i) || extractSection(/\*\*Relevant History\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|$)/i));
-                        fillIfEmpty('physicalFindings', extractSection(/\*\*Physical Findings\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|$)/i));
-                        fillIfEmpty('medications', extractSection(/\*\*Current Medications\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|$)/i) || extractSection(/\*\*Medications\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|$)/i));
-                        fillIfEmpty('vitalSigns', extractSection(/\*\*Vital Signs\*\*[:\s]*\n?([\s\S]*?)(?=\n\*\*|$)/i));
-                        const diagMatch = txt.match(/1\.\s*\*?\*?([^*\n]+)\*?\*?\s*\(Probability/i);
-                        if(diagMatch) fillIfEmpty('diagnosis', diagMatch[1].trim());
-                        const planMatch = txt.match(/💊\s*INITIAL\s*MANAGEMENT\s*PLAN:([\s\S]*?)(?=⚠️|---|🔵|$)/i);
-                        if(planMatch) fillIfEmpty('carePlan', planMatch[1].trim());
-                        // Fallback: if still empty symptoms, use first lines
-                        const symEl=document.getElementById('symptoms');
-                        if(symEl && !symEl.value.trim()){
-                            const firstPart = txt.split('\n').filter(l=>l.trim()).slice(0,4).join('\n');
-                            if(firstPart) fillIfEmpty('symptoms', firstPart);
+                        const tryPat = (res) => {
+                            for(const re of res){
+                                const m=txt.match(re);
+                                if(m && m[1] && m[1].trim()){
+                                    const v=m[1].trim().replace(/\s+/g,' ').replace(/^[•\-]\s*/,'');
+                                    if(v.length>3 && !/^LEVEL\s*\d/i.test(v) && !/^QUICK CLINICAL/i.test(v)) return v;
+                                }
+                            }
+                            return '';
+                        };
+                        fillIfEmpty('symptoms', tryPat([
+                            /\*\*Symptoms:?\*\*\s*([^\n]+(?:\n(?!\*\*|📋|🔍|💊|🧪|⚠️|🚨|🔵|---|LEVEL)[^\n]*)*)/i,
+                            /Symptoms\s*:\s*([^\n]+(?:\n(?![A-Z][A-Za-z ]+:\s)[^\n]*)*)/i,
+                            /CHIEF COMPLAINT\s*:?\s*([\s\S]*?)(?=\n\s*🔍|\n\s*KEY FINDINGS|\n\s*\*\*|$)/i
+                        ]));
+                        fillIfEmpty('medicalHistory', tryPat([
+                            /\*\*Medical History:?\*\*\s*([^\n]+(?:\n(?!\*\*|📋|🔍|💊|🧪|⚠️|🚨)[^\n]*)*)/i,
+                            /Medical History\s*:\s*([^\n]+(?:\n(?![A-Z][A-Za-z ]+:\s)[^\n]*)*)/i
+                        ]) || tryPat([/Relevant History\s*:\s*([^\n]+)/i]));
+                        fillIfEmpty('physicalFindings', tryPat([
+                            /\*\*Physical Findings:?\*\*\s*([^\n]+(?:\n(?!\*\*|📋|🔍|💊|🧪|⚠️|🚨)[^\n]*)*)/i,
+                            /Physical Findings\s*:\s*([^\n]+)/i
+                        ]));
+                        fillIfEmpty('medications', tryPat([
+                            /\*\*Current Medications:?\*\*\s*([^\n]+)/i,
+                            /Current Medications\s*:\s*([^\n]+)/i,
+                            /\*\*Medications:?\*\*\s*([^\n]+)/i,
+                            /Medications\s*:\s*([^\n]+)/i
+                        ]));
+                        fillIfEmpty('vitalSigns', tryPat([
+                            /\*\*Vital Signs:?\*\*\s*([^\n]+)/i,
+                            /Vital Signs\s*:\s*([^\n]+)/i
+                        ]));
+                        const diag = tryPat([/PRELIMINARY ASSESSMENT[\s\S]*?1\.\s*([^\n\-]+?)\s*-\s*Supported/i, /ASSESSMENT\s*:?\s*[\s\S]*?1\.\s*([^\n]+)/i, /\bDiagnosis\s*:\s*([^\n]+)/i]);
+                        if(diag) fillIfEmpty('diagnosis', diag);
+                        else {
+                            const d2 = txt.match(/1\.\s*\*?\*?([^*\n]+)\*?\*?\s*-\s*Supported/i);
+                            if(d2) fillIfEmpty('diagnosis', d2[1].trim());
                         }
+                        fillIfEmpty('carePlan', tryPat([
+                            /RECOMMENDATIONS\s*:?\s*([\s\S]*?)(?=\n\s*---|\n\s*LEVEL|\n\s*NEXT STEPS|$)/i,
+                            /Supportive care[:\s]*([^\n]+)/i,
+                            /Prescribe appropriate antibiotic[^\n]*/i
+                        ]) || (txt.match(/💊\s*INITIAL\s*MANAGEMENT\s*PLAN:([\s\S]*?)(?=⚠️|---|🔵|$)/i)?.[1]||'').trim());
                     }catch(e){ console.warn('Chart fill from AI analysis failed', e); }
                     // Persist AI result for Voice Assistant Diagnosis (so AI Clinical Data Sources shows Available)
                     try{

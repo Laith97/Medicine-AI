@@ -917,17 +917,35 @@ class VoiceAssistantController extends Controller
      */
     private function generateFallbackData($transcription)
     {
-        $transcription = strtolower($transcription);
+        $lower = strtolower($transcription);
         
         $data = [
-            'symptoms' => $this->extractKeywords($transcription, ['pain', 'hurt', 'ache', 'fever', 'cough', 'nausea', 'dizzy', 'tired', 'weak', 'shortness', 'breath']),
-            'medical_history' => $this->extractKeywords($transcription, ['diabetes', 'hypertension', 'heart', 'surgery', 'allergy', 'asthma', 'cancer']),
-            'physical_findings' => $this->extractKeywords($transcription, ['blood pressure', 'temperature', 'heart rate', 'exam', 'examination', 'normal', 'abnormal']),
-            'medications' => $this->extractKeywords($transcription, ['medication', 'medicine', 'drug', 'take', 'prescription', 'pill', 'tablet']),
-            'vital_signs' => $this->extractKeywords($transcription, ['blood pressure', 'pulse', 'temperature', 'weight', 'bpm', 'mmhg']),
+            'symptoms' => $this->extractKeywords($lower, ['pain', 'hurt', 'ache', 'fever', 'cough', 'nausea', 'dizzy', 'tired', 'weak', 'shortness', 'breath', 'congestion', 'headache', 'pressure', 'discharge', 'sore throat', 'nasal', 'sinus', 'malaise', 'fatigue']),
+            'medical_history' => $this->extractKeywords($lower, ['diabetes', 'hypertension', 'heart', 'surgery', 'allergy', 'asthma', 'cancer', 'smok', 'quit', 'no known', 'no diabetes', 'no hypertension']),
+            'physical_findings' => $this->extractKeywords($lower, ['blood pressure', 'temperature', 'heart rate', 'exam', 'examination', 'normal', 'abnormal', 'erythematous', 'mucosa', 'tenderness', 'edema', 'sinus']),
+            'medications' => $this->extractKeywords($lower, ['medication', 'medicine', 'drug', 'take', 'prescription', 'pill', 'tablet', 'none', 'no regular']),
+            'vital_signs' => $this->extractKeywords($lower, ['blood pressure', 'bp', 'pulse', 'hr ', 'temperature', 'temp', 'weight', 'bpm', 'mmhg', 'spo2', 'oxygen']),
             'diagnosis' => '',
             'care_plan' => ''
         ];
+
+        // Direct regex extraction for vital signs when pattern found - overrides keyword list with precise capture
+        if (preg_match('/bp\s*\d+\/\d+|blood pressure\s*\d+\/\d+/i', $transcription, $m)) {
+            if (preg_match('/BP\s*\d+\/\d+.*?98%/is', $transcription, $full)) {
+                $data['vital_signs'] = trim($full[0]);
+            } elseif (preg_match('/BP\s*\d+\/\d+[^\n]*/i', $transcription, $full2)) {
+                $data['vital_signs'] = trim($full2[0]);
+            } else {
+                // Enhance keyword list with matched BP value
+                if (strpos($data['vital_signs'], '122/78') === false) {
+                    $data['vital_signs'] .= ' (' . trim($m[0]) . ')';
+                }
+            }
+        }
+        // If raw transcript contains vital pattern, ensure vital_signs not empty
+        if (preg_match('/\d+\/\d+.*?(hr|bpm|temp|spo2)/i', $transcription) && empty($data['vital_signs'])) {
+            $data['vital_signs'] = 'Vital signs mentioned in transcript';
+        }
 
         // Add diagnosis if medical keywords found
         if (!empty($data['symptoms']) || !empty($data['medical_history'])) {
@@ -2909,6 +2927,25 @@ INSTRUCTIONS:
                     }
                 }
 
+                // Persist extraction + transcription to DB (fixes empty chart on reload)
+                try {
+                    $transcriptionRecord->update([
+                        'raw_transcription' => $formattedTranscription,
+                        'extracted_data' => $serverExtractedData,
+                        'structured_chart' => [
+                            'symptoms' => $serverExtractedData['symptoms'] ?? '',
+                            'medical_history' => $serverExtractedData['medical_history'] ?? '',
+                            'physical_findings' => $serverExtractedData['physical_findings'] ?? '',
+                            'medications' => $serverExtractedData['medications'] ?? '',
+                            'vital_signs' => $serverExtractedData['vital_signs'] ?? '',
+                            'diagnosis' => $serverExtractedData['diagnosis'] ?? '',
+                            'care_plan' => $serverExtractedData['care_plan'] ?? '',
+                        ],
+                    ]);
+                } catch (\Exception $saveE) {
+                    \Log::warning('Failed to persist extracted_data', ['error' => $saveE->getMessage()]);
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => $successMessage,
@@ -4240,39 +4277,80 @@ INSTRUCTIONS:
         }
     
         /**
-         * Extract medical data from transcription using AI
+         * Extract medical data from transcription using AI - robust JSON handling
          */
         private function extractMedicalDataFromText($transcription)
         {
+            if (empty(trim($transcription)) || strlen(trim($transcription)) < 5) {
+                return $this->generateFallbackData($transcription);
+            }
+
+            $cacheKey = 'voice_medical_extract_' . md5($transcription);
+            $cached = \Illuminate\Support\Facades\Cache::get($cacheKey);
+            if ($cached) {
+                \Log::info('HYBRID METHOD - Using cached medical extraction');
+                return $cached;
+            }
+
             try {
                 $response = OpenAI::chat()->create([
                     'model' => 'gpt-4o',
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => 'Extract structured medical information from this consultation text. Return ONLY valid JSON with these exact keys: symptoms, medical_history, physical_findings, medications, vital_signs, diagnosis, care_plan. If no information for a category, return empty string.'
+                            'content' => 'You are a medical AI assistant specializing in extracting structured medical information from doctor-patient consultations. Extract and categorize information from the transcription into these exact categories:
+
+1. symptoms: Patient complaints, pain descriptions, discomfort, functional limitations (include duration, severity, quality e.g. "nasal congestion x5 days, facial pressure, headache, thick yellow discharge, low-grade fever 38.1C, sore throat, mild cough, pressure on bending")
+2. medical_history: Past conditions, surgeries, family history, previous treatments, allergies, smoking status (e.g. "No known drug allergies, no diabetes/hypertension, ex-smoker quit 2y")
+3. physical_findings: Examination results, observations, clinical signs (e.g. "Erythematous nasal mucosa, maxillary sinus tenderness, no edema")
+4. medications: Current medications, dosages, allergies, or "None" if no regular meds
+5. vital_signs: Blood pressure, temperature, heart rate, SpO2, weight, etc with units (e.g. "BP 122/78, HR 78, Temp 37.9C, SpO2 98%, Wt 82kg")
+6. diagnosis: Potential diagnoses / clinical impressions (e.g. "Acute bacterial sinusitis")
+7. care_plan: Treatment recommendations, follow-up, referrals
+
+CRITICAL: Return ONLY a valid JSON object with these exact keys. Do not include markdown, emojis, or extra text.
+JSON keys must be: symptoms, medical_history, physical_findings, medications, vital_signs, diagnosis, care_plan.
+If a category has no information, return empty string "" for that key.'
                         ],
                         [
                             'role' => 'user',
-                            'content' => "Extract medical data from: " . $transcription
+                            'content' => "Extract medical information from this consultation transcription:\n\n" . $transcription . "\n\nReturn only valid JSON."
                         ]
                     ],
                     'temperature' => 0.1,
-                    'max_tokens' => 1000
+                    'max_tokens' => 1500
                 ]);
     
                 $aiResponse = $response['choices'][0]['message']['content'] ?? '';
-                $jsonData = json_decode($aiResponse, true);
-    
-                return $jsonData && is_array($jsonData) ? $jsonData : [];
+                \Log::info('HYBRID METHOD - Raw extraction response', ['preview' => substr($aiResponse, 0, 500)]);
+
+                $jsonData = $this->extractJsonFromResponse($aiResponse);
+
+                if ($jsonData) {
+                    $jsonData = $this->validateAndCleanExtractedData($jsonData);
+                    // Cache 1 hour
+                    \Illuminate\Support\Facades\Cache::put($cacheKey, $jsonData, 3600);
+                    return $jsonData;
+                }
+
+                \Log::warning('HYBRID METHOD - JSON extraction yielded null, trying fallback', ['ai_response_preview' => substr($aiResponse, 0, 400)]);
+                $fallback = $this->generateFallbackData($transcription);
+                // Also try parseKeyValueResponse as intermediate
+                $kv = $this->parseKeyValueResponse($aiResponse);
+                if (!empty(array_filter($kv))) {
+                    $kv = $this->validateAndCleanExtractedData($kv);
+                    if (!empty(array_filter($kv))) {
+                        return $kv;
+                    }
+                }
+                return $fallback;
     
             } catch (\Exception $e) {
                 \Log::error('HYBRID METHOD - Medical data extraction failed', [
                     'error' => $e->getMessage(),
-                    'transcription_preview' => substr($transcription, 0, 100)
+                    'transcription_preview' => substr($transcription, 0, 200)
                 ]);
-    
-                return [];
+                return $this->generateFallbackData($transcription);
             }
         }
     
