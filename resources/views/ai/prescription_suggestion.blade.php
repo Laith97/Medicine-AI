@@ -347,7 +347,7 @@
 </div>
 
 <!-- Professional Popup for AI Response — compact, not inline -->
-<div class="modal fade modal-premium" id="aiResponseModal" tabindex="-1" aria-labelledby="aiResponseModalLabel" aria-hidden="true">
+<div class="modal modal-premium" id="aiResponseModal" tabindex="-1" aria-labelledby="aiResponseModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="true">
   <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
     <div class="modal-content" style="border:none;border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(15,23,42,0.18);">
       <div class="modal-header" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border:none; padding:1.15rem 1.35rem; color:#fff;">
@@ -986,8 +986,9 @@ $('#aiSuggestBtn').click(function(e) {
                         $('#aiResponseSuggestions').html(suggestionsHtml);
                     }
                     if ($('#aiResponseModal').length) {
-                        const modal = new bootstrap.Modal(document.getElementById('aiResponseModal'));
-                        modal.show();
+                        const el = document.getElementById('aiResponseModal');
+                        const modal = bootstrap.Modal.getOrCreateInstance(el);
+                        if (!el.classList.contains('show')) modal.show();
                     }
                     $('#ai_suggestions').val(JSON.stringify(response.suggestions));
                 }
@@ -996,8 +997,9 @@ $('#aiSuggestBtn').click(function(e) {
                 $('#ai-suggestions').html(emptyHtml).show();
                 if ($('#aiResponseSuggestions').length) $('#aiResponseSuggestions').html(emptyHtml);
                 if ($('#aiResponseModal').length) {
-                    const modal = new bootstrap.Modal(document.getElementById('aiResponseModal'));
-                    modal.show();
+                    const el2 = document.getElementById('aiResponseModal');
+                    const modal2 = bootstrap.Modal.getOrCreateInstance(el2);
+                    if (!el2.classList.contains('show')) modal2.show();
                 }
                 $('#ai_suggestions').val('');
             }
