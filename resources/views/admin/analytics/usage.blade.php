@@ -1,339 +1,159 @@
 @extends('layouts.admin')
-
-@section('title', 'Usage Analytics')
-
-@push('styles')
-<style>
-    .analytics-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid #e9ecef;
-        margin-bottom: 1.5rem;
-    }
-
-    .chart-container {
-        position: relative;
-        height: 300px;
-        margin: 1rem 0;
-    }
-
-    .metric-card {
-        background: linear-gradient(135deg, #DE6262 0%, #E87A7A 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        margin-bottom: 1rem;
-    }
-
-    .metric-card h4 {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-
-    .metric-card p {
-        margin: 0;
-        opacity: 0.9;
-    }
-
-    .user-list {
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    .user-item {
-        display: flex;
-        justify-content-between;
-        align-items: center;
-        padding: 0.75rem;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .user-item:last-child {
-        border-bottom: none;
-    }
-
-    .user-info {
-        flex-grow: 1;
-    }
-
-    .user-stats {
-        text-align: right;
-        font-size: 0.9rem;
-    }
-
-    .filter-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid #e9ecef;
-        margin-bottom: 1.5rem;
-    }
-
-    .table th {
-        background-color: #f8f9fa;
-        border: none;
-        font-weight: 600;
-        color: #495057;
-        padding: 1rem 0.75rem;
-    }
-
-    .table td {
-        border: none;
-        padding: 1rem 0.75rem;
-        vertical-align: middle;
-    }
-
-    .table tbody tr {
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-</style>
-@endpush
-
+@section('title','Usage Analytics')
 @section('content')
-<div class="container-fluid px-2 px-md-4">
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <!-- Page Header -->
-            <div class="page-header text-center text-md-start mb-4">
-                <h2><i class="fas fa-chart-line me-2"></i>Usage Analytics</h2>
-                <p>Detailed insights into OpenAI API usage patterns</p>
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border-radius:16px;padding:1.4rem 1.6rem;box-shadow:0 8px 24px rgba(15,23,42,0.12)">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center"><i class="fas fa-chart-line" style="color:#fff;font-size:1.1rem"></i></div>
+            <div>
+                <h1 style="font-size:1.35rem;font-weight:800;color:#fff;letter-spacing:-0.02em;margin:0">Usage Analytics</h1>
+                <p style="font-size:0.78rem;color:rgba(255,255,255,0.75);margin:2px 0 0">OpenAI API usage patterns · {{ $startDate->format('M j, Y') }} – {{ $endDate->format('M j, Y') }}</p>
             </div>
+        </div>
+        <span class="badge d-none d-md-inline" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:20px;padding:6px 12px;font-weight:700">{{ ucfirst(str_replace('_',' ', $period)) }}</span>
+    </div>
 
-            <!-- Filters -->
-            <div class="filter-card">
-                <form method="GET" action="{{ route('admin.usage-analytics') }}" class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                        <label for="period" class="form-label">Time Period</label>
-                        <select name="period" id="period" class="form-select" onchange="this.form.submit()">
-                            <option value="7_days" {{ $period === '7_days' ? 'selected' : '' }}>Last 7 Days</option>
-                            <option value="30_days" {{ $period === '30_days' ? 'selected' : '' }}>Last 30 Days</option>
-                            <option value="90_days" {{ $period === '90_days' ? 'selected' : '' }}>Last 90 Days</option>
-                            <option value="1_year" {{ $period === '1_year' ? 'selected' : '' }}>Last Year</option>
-                        </select>
-                    </div>
-                    <div class="col-md-8">
-                        <small class="text-muted">
-                            {{ $startDate->format('M j, Y') }} - {{ $endDate->format('M j, Y') }}
-                        </small>
-                    </div>
-                </form>
-            </div>
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;overflow:hidden">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ route('admin.usage-analytics') }}" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label for="period" class="form-label" style="font-weight:700;color:#0f172a;font-size:0.72rem;letter-spacing:0.04em;text-transform:uppercase">Time Period</label>
+                    <select name="period" id="period" class="form-select" onchange="this.form.submit()" style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem">
+                        <option value="7_days" {{ $period === '7_days' ? 'selected' : '' }}>Last 7 Days</option>
+                        <option value="30_days" {{ $period === '30_days' ? 'selected' : '' }}>Last 30 Days</option>
+                        <option value="90_days" {{ $period === '90_days' ? 'selected' : '' }}>Last 90 Days</option>
+                        <option value="1_year" {{ $period === '1_year' ? 'selected' : '' }}>Last Year</option>
+                    </select>
+                </div>
+                <div class="col-md-8 d-flex align-items-end">
+                    <div class="p-2 px-3" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;font-size:0.82rem;color:#475569"><i class="far fa-calendar me-1" style="color:#94a3b8"></i> {{ $startDate->format('M j, Y') }} – {{ $endDate->format('M j, Y') }}</div>
+                </div>
+            </form>
+        </div>
+    </div>
 
-            <!-- Daily Usage Chart -->
-            <div class="analytics-card">
-                <h5 class="mb-3">Daily Usage Trends</h5>
-                <div class="chart-container">
-                    <canvas id="dailyUsageChart"></canvas>
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;overflow:hidden">
+        <div class="card-header bg-white" style="padding:1rem 1.25rem;border-bottom:1px solid #eef2f7"><h5 class="mb-0 d-flex align-items-center gap-2" style="font-weight:800;color:#0f172a;font-size:0.95rem"><i class="fas fa-chart-area" style="color:#64748b"></i> Daily Usage Trends</h5></div>
+        <div class="card-body p-3">
+            <div style="position:relative;height:300px"><canvas id="dailyUsageChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden">
+                <div class="card-header bg-white" style="padding:1rem 1.25rem;border-bottom:1px solid #eef2f7"><h5 class="mb-0 d-flex align-items-center gap-2" style="font-weight:800;color:#0f172a;font-size:0.95rem"><i class="fas fa-layer-group" style="color:#64748b"></i> Usage by Request Type</h5></div>
+                <div class="table-responsive" style="border-top:1px solid #f1f5f9">
+                    <table class="table mb-0" style="font-size:0.84rem;border-collapse:separate;border-spacing:0">
+                        <thead>
+                            <tr style="background:#f8fafc">
+                                <th style="padding:0.9rem 1.1rem;border:none;border-bottom:1px solid #e2e8f0;font-size:0.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.05em">Type</th>
+                                <th style="padding:0.9rem 1.1rem;border:none;border-bottom:1px solid #e2e8f0;font-size:0.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.05em">Requests</th>
+                                <th style="padding:0.9rem 1.1rem;border:none;border-bottom:1px solid #e2e8f0;font-size:0.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.05em">Tokens</th>
+                                <th style="padding:0.9rem 1.1rem;border:none;border-bottom:1px solid #e2e8f0;font-size:0.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.05em">Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($usageByType as $type)
+                            <tr>
+                                <td style="padding:1rem 1.1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle"><span class="badge" style="background:#eff6ff;border:1px solid #dbeafe;color:#1d4ed8;border-radius:20px;font-size:0.68rem">{{ ucfirst($type->request_type) }}</span></td>
+                                <td style="padding:1rem 1.1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle;font-weight:700;color:#0f172a">{{ number_format($type->requests) }}</td>
+                                <td style="padding:1rem 1.1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle">{{ number_format($type->tokens) }}</td>
+                                <td style="padding:1rem 1.1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle;font-weight:600;color:#059669">${{ number_format($type->cost, 4) }}</td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="4" class="text-center py-4 text-muted">No data available</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </div>
 
-            <div class="row">
-                <!-- Usage by Type -->
-                <div class="col-md-6">
-                    <div class="analytics-card">
-                        <h5 class="mb-3">Usage by Request Type</h5>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Type</th>
-                                        <th>Requests</th>
-                                        <th>Tokens</th>
-                                        <th>Cost</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($usageByType as $type)
-                                    <tr>
-                                        <td>
-                                            <span class="badge bg-primary">{{ ucfirst($type->request_type) }}</span>
-                                        </td>
-                                        <td>{{ number_format($type->requests) }}</td>
-                                        <td>{{ number_format($type->tokens) }}</td>
-                                        <td>${{ number_format($type->cost, 4) }}</td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="4" class="text-center text-muted">No data available</td>
-                                    </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Model Usage -->
-                <div class="col-md-6">
-                    <div class="analytics-card">
-                        <h5 class="mb-3">Model Usage Statistics</h5>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Model</th>
-                                        <th>Requests</th>
-                                        <th>Avg Tokens</th>
-                                        <th>Total Tokens</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($modelUsage as $model)
-                                    <tr>
-                                        <td>
-                                            <code>{{ $model->model_used ?: 'Unknown' }}</code>
-                                        </td>
-                                        <td>{{ number_format($model->requests) }}</td>
-                                        <td>{{ number_format($model->avg_tokens) }}</td>
-                                        <td>{{ number_format($model->tokens) }}</td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="4" class="text-center text-muted">No data available</td>
-                                    </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Top Users -->
-            <div class="analytics-card">
-                <h5 class="mb-3">Top Users by Usage</h5>
-                <div class="user-list">
-                    @forelse($topUsers as $user)
-                    <div class="user-item">
-                        <div class="user-info">
-                            <strong>{{ $user->name }}</strong>
-                            <br>
-                            <small class="text-muted">{{ $user->email }}</small>
-                        </div>
-                        <div class="user-stats">
-                            <div><strong>{{ number_format($user->total_requests) }}</strong> requests</div>
-                            <div class="text-muted">
-                                @php
-                                    $totalTokens = $user->openaiUsages->sum('total_tokens');
-                                    $totalCost = $user->openaiUsages->sum('total_cost');
-                                @endphp
-                                {{ number_format($totalTokens) }} tokens
-                                <br>
-                                ${{ number_format($totalCost, 4) }}
-                            </div>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="text-center py-4">
-                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">No usage data available for the selected period.</p>
-                    </div>
-                    @endforelse
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden">
+                <div class="card-header bg-white" style="padding:1rem 1.25rem;border-bottom:1px solid #eef2f7"><h5 class="mb-0 d-flex align-items-center gap-2" style="font-weight:800;color:#0f172a;font-size:0.95rem"><i class="fas fa-robot" style="color:#64748b"></i> Model Usage Statistics</h5></div>
+                <div class="table-responsive" style="border-top:1px solid #f1f5f9">
+                    <table class="table mb-0" style="font-size:0.84rem;border-collapse:separate;border-spacing:0">
+                        <thead>
+                            <tr style="background:#f8fafc">
+                                <th style="padding:0.9rem 1.1rem;border:none;border-bottom:1px solid #e2e8f0;font-size:0.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.05em">Model</th>
+                                <th style="padding:0.9rem 1.1rem;border:none;border-bottom:1px solid #e2e8f0;font-size:0.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.05em">Requests</th>
+                                <th style="padding:0.9rem 1.1rem;border:none;border-bottom:1px solid #e2e8f0;font-size:0.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.05em">Avg Tokens</th>
+                                <th style="padding:0.9rem 1.1rem;border:none;border-bottom:1px solid #e2e8f0;font-size:0.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.05em">Total Tokens</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($modelUsage as $model)
+                            <tr>
+                                <td style="padding:1rem 1.1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle"><code style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:2px 6px;font-size:0.76rem;color:#334155">{{ $model->model_used ?: 'Unknown' }}</code></td>
+                                <td style="padding:1rem 1.1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle;font-weight:700;color:#0f172a">{{ number_format($model->requests) }}</td>
+                                <td style="padding:1rem 1.1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle">{{ number_format($model->avg_tokens) }}</td>
+                                <td style="padding:1rem 1.1rem;border-bottom:1px solid #f1f5f9;vertical-align:middle">{{ number_format($model->tokens) }}</td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="4" class="text-center py-4 text-muted">No data available</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
-</div>
-@endsection
 
+    <div class="card border-0 shadow-sm mt-4" style="border-radius:14px;overflow:hidden">
+        <div class="card-header bg-white" style="padding:1rem 1.25rem;border-bottom:1px solid #eef2f7"><h5 class="mb-0 d-flex align-items-center gap-2" style="font-weight:800;color:#0f172a;font-size:0.95rem"><i class="fas fa-users" style="color:#64748b"></i> Top Users by Usage <span class="badge bg-light border text-muted" style="border-radius:20px">{{ $topUsers->count() }}</span></h5></div>
+        <div class="card-body p-0">
+            @forelse($topUsers as $user)
+            <div class="d-flex justify-content-between align-items-center px-3 py-3" style="border-bottom:1px solid #f1f5f9">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.82rem">{{ strtoupper(substr($user->name,0,1)) }}</div>
+                    <div>
+                        <div style="font-weight:700;color:#0f172a;font-size:0.88rem">{{ $user->name }}</div>
+                        <div style="font-size:0.74rem;color:#64748b">{{ $user->email }}</div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div style="font-weight:800;color:#0f172a;font-size:0.88rem">{{ number_format($user->total_requests) }} requests</div>
+                    <div style="font-size:0.76rem;color:#64748b">
+                        @php $totalTokens = $user->openaiUsages->sum('total_tokens'); $totalCost = $user->openaiUsages->sum('total_cost'); @endphp
+                        {{ number_format($totalTokens) }} tokens · ${{ number_format($totalCost, 4) }}
+                    </div>
+                </div>
+            </div>
+            @empty
+            <div class="text-center py-5"><div style="width:56px;height:56px;border-radius:16px;background:#f8fafc;border:1px dashed #e2e8f0;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#94a3b8"><i class="fas fa-users"></i></div><p class="text-muted small mb-0">No usage data available for the selected period.</p></div>
+            @endforelse
+        </div>
+    </div>
+</div>
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Daily Usage Chart
-    const dailyUsageCtx = document.getElementById('dailyUsageChart').getContext('2d');
-    const dailyUsageData = @json($dailyUsage);
-    
-    new Chart(dailyUsageCtx, {
+    const ctx = document.getElementById('dailyUsageChart').getContext('2d');
+    const data = @json($dailyUsage);
+    new Chart(ctx, {
         type: 'line',
         data: {
-            labels: dailyUsageData.map(item => {
-                const date = new Date(item.date);
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            }),
+            labels: data.map(item => { const d=new Date(item.date); return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }),
             datasets: [
-                {
-                    label: 'Requests',
-                    data: dailyUsageData.map(item => item.requests),
-                    borderColor: '#DE6262',
-                    backgroundColor: 'rgba(222, 98, 98, 0.1)',
-                    tension: 0.4,
-                    yAxisID: 'y'
-                },
-                {
-                    label: 'Tokens (thousands)',
-                    data: dailyUsageData.map(item => item.tokens / 1000),
-                    borderColor: '#2c3e50',
-                    backgroundColor: 'rgba(44, 62, 80, 0.1)',
-                    tension: 0.4,
-                    yAxisID: 'y1'
-                }
+                { label: 'Requests', data: data.map(item => item.requests), borderColor: '#0f172a', backgroundColor: 'rgba(15,23,42,0.06)', tension: 0.4, fill: true, yAxisID: 'y', borderWidth: 2 },
+                { label: 'Tokens (thousands)', data: data.map(item => item.tokens / 1000), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.06)', tension: 0.4, yAxisID: 'y1', borderWidth: 2 }
             ]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
             scales: {
-                x: {
-                    display: true,
-                    title: {
-                        display: true,
-                        text: 'Date'
-                    }
-                },
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Requests'
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Tokens (thousands)'
-                    },
-                    grid: {
-                        drawOnChartArea: false,
-                    },
-                }
+                x: { grid:{display:false}, ticks:{color:'#64748b',font:{size:11}} },
+                y: { type:'linear', display:true, position:'left', title:{display:true,text:'Requests',color:'#64748b'}, grid:{color:'#f1f5f9'}, ticks:{color:'#64748b'} },
+                y1: { type:'linear', display:true, position:'right', title:{display:true,text:'Tokens (thousands)',color:'#64748b'}, grid:{drawOnChartArea:false}, ticks:{color:'#64748b'} }
             },
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                tooltip: {
-                    callbacks: {
-                        afterLabel: function(context) {
-                            if (context.datasetIndex === 0) {
-                                const dataPoint = dailyUsageData[context.dataIndex];
-                                return `Cost: $${parseFloat(dataPoint.cost).toFixed(4)}`;
-                            }
-                            return '';
-                        }
-                    }
-                }
-            }
+            plugins: { legend:{ position:'top', labels:{usePointStyle:true,color:'#0f172a',font:{weight:'700'}} }, tooltip:{ callbacks:{ afterLabel:function(c){ if(c.datasetIndex===0){ const p=data[c.dataIndex]; return `Cost: $${parseFloat(p.cost).toFixed(4)}`; } return ''; } } } }
         }
     });
 });
 </script>
 @endpush
+@endsection

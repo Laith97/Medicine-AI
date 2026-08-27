@@ -1,254 +1,87 @@
 @extends('layouts.admin')
-
-@section('title', 'User Details')
-
-@push('styles')
-<style>
-    .admin-page {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        min-height: 100vh;
-        padding: 1rem 0;
-    }
-
-    .info-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        border: none;
-        margin-bottom: 1.5rem;
-    }
-
-    .user-avatar-large {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #DE6262 0%, #c55252 100%);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 4px 12px rgba(222, 98, 98, 0.3);
-    }
-
-    .info-item {
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #f1f3f4;
-    }
-
-    .info-item:last-child {
-        border-bottom: none;
-    }
-
-    .info-label {
-        font-weight: 600;
-        color: #6c757d;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .info-value {
-        font-size: 1.1rem;
-        color: #2c3e50;
-        margin-top: 0.25rem;
-    }
-
-    .analysis-card {
-        background: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 10px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .analysis-card:hover {
-        background: #e9ecef;
-        transform: translateY(-2px);
-    }
-</style>
-@endpush
-
+@section('title','User Details')
 @section('content')
-<div class="admin-page">
-    <div class="container">
-        <!-- Header -->
-        <div class="admin-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h2 mb-2 text-white">User Details</h1>
-                    <p class="mb-0 opacity-75">Detailed information about {{ $user->name }}</p>
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border-radius:16px;padding:1.4rem 1.6rem;box-shadow:0 8px 24px rgba(15,23,42,0.12)">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center"><i class="fas fa-user" style="color:#fff;font-size:1.1rem"></i></div>
+            <div>
+                <h1 style="font-size:1.35rem;font-weight:800;color:#fff;letter-spacing:-0.02em;margin:0">User Details</h1>
+                <p style="font-size:0.78rem;color:rgba(255,255,255,0.75);margin:2px 0 0">Detailed information about {{ $user->name }} · #{{ $user->id }}</p>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.users.index') }}" class="btn btn-sm" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:10px;font-weight:700"><i class="fas fa-arrow-left me-1"></i>Back</a>
+            <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm" style="background:#fff;color:#0f172a;border-radius:10px;font-weight:700;border:none"><i class="fas fa-pen me-1"></i>Edit User</a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden">
+                <div class="card-body p-4 text-center" style="background:#fff">
+                    <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.4rem;margin:0 auto 14px;box-shadow:0 8px 20px rgba(102,126,234,0.35)">{{ strtoupper(substr($user->name,0,1)) }}</div>
+                    <h3 style="font-weight:800;color:#0f172a;margin:0;font-size:1.25rem">{{ $user->name }}</h3>
+                    <div class="mt-2"><span class="badge" style="background:#f8fafc;border:1px solid #e2e8f0;color:#475569;border-radius:20px;padding:6px 12px;font-weight:700">{{ ucfirst($user->role ?? 'Regular User') }}</span> @if($user->email_verified_at)<span class="badge bg-success" style="border-radius:20px">Verified</span>@else<span class="badge bg-light border text-muted" style="border-radius:20px">Not Verified</span>@endif</div>
+                    <div class="row g-3 mt-3 text-start">
+                        <div class="col-md-6"><div class="p-3" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:12px"><div style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#64748b">Email Address</div><div style="font-weight:700;color:#0f172a;font-size:0.9rem;word-break:break-all">{{ $user->email }}</div></div></div>
+                        <div class="col-md-6"><div class="p-3" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:12px"><div style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#64748b">Member Since</div><div style="font-weight:700;color:#0f172a;font-size:0.9rem">{{ $user->created_at->format('F j, Y') }}</div></div></div>
+                        <div class="col-md-6"><div class="p-3" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:12px"><div style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#64748b">Last Updated</div><div style="font-weight:700;color:#0f172a;font-size:0.9rem">{{ $user->updated_at->format('F j, Y g:i A') }}</div></div></div>
+                        <div class="col-md-6"><div class="p-3" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:12px"><div style="font-size:0.68rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#64748b">Email Verification</div><div>@if($user->email_verified_at)<span class="badge bg-success" style="border-radius:20px"><i class="fas fa-check-circle me-1"></i>Verified</span>@else<span class="badge bg-danger" style="border-radius:20px"><i class="fas fa-times-circle me-1"></i>Not Verified</span>@endif</div></div></div>
+                    </div>
                 </div>
-                <div class="d-flex gap-3">
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-light">
-                        <i class="bi bi-arrow-left me-2"></i>Back to Users
-                    </a>
-                    <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-warning">
-                        <i class="bi bi-pencil me-2"></i>Edit User
-                    </a>
+            </div>
+
+            <div class="card border-0 shadow-sm mt-4" style="border-radius:14px;overflow:hidden">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center" style="padding:1rem 1.25rem;border-bottom:1px solid #eef2f7">
+                    <h5 class="mb-0 d-flex align-items-center gap-2" style="font-weight:800;color:#0f172a;font-size:0.95rem"><i class="fas fa-file-medical" style="color:#64748b"></i> Patient Analyses <span class="badge bg-light border text-muted" style="border-radius:20px">{{ $user->patientAnalyses->count() }}</span></h5>
+                    @if($user->patientAnalyses->count() > 0)<a href="{{ route('admin.users.patient-analyses', $user) }}" class="btn btn-light border btn-sm" style="border-radius:10px;font-weight:600">View All</a>@endif
+                </div>
+                <div class="card-body p-3" style="background:#fff">
+                    @if($user->patientAnalyses->count() > 0)
+                        <div class="d-flex flex-column gap-2">
+                        @foreach($user->patientAnalyses->take(5) as $analysis)
+                            <div class="d-flex justify-content-between align-items-start p-3" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:12px">
+                                <div style="min-width:0;flex:1">
+                                    <div style="font-weight:700;color:#0f172a;font-size:0.88rem">Patient: {{ $analysis->name }} <span class="badge bg-light border text-muted" style="font-size:0.68rem;border-radius:20px">{{ $analysis->gender }}, {{ $analysis->age }} y/o</span></div>
+                                    <div style="font-size:0.78rem;color:#64748b;margin-top:4px;line-height:1.4"><strong>Symptoms:</strong> {{ Str::limit($analysis->symptoms ?? 'No symptoms recorded', 110) }}</div>
+                                </div>
+                                <small class="text-muted ms-3" style="font-size:0.72rem;white-space:nowrap">{{ $analysis->created_at->diffForHumans() }}</small>
+                            </div>
+                        @endforeach
+                        </div>
+                        @if($user->patientAnalyses->count() > 5)
+                            <div class="text-center mt-3"><a href="{{ route('admin.users.patient-analyses', $user) }}" class="btn btn-primary btn-sm" style="background:#0f172a;border:none;border-radius:10px;font-weight:700">View All {{ $user->patientAnalyses->count() }} Records</a></div>
+                        @endif
+                    @else
+                        <div class="text-center py-5"><div style="width:56px;height:56px;border-radius:16px;background:#f8fafc;border:1px dashed #e2e8f0;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#94a3b8"><i class="fas fa-file-medical"></i></div><p class="text-muted small mb-0">No patient analyses found.</p></div>
+                    @endif
                 </div>
             </div>
         </div>
 
-        <div class="row">
-            <!-- User Information -->
-            <div class="col-lg-8">
-                <div class="info-card">
-                    <div class="text-center mb-4">
-                        <div class="user-avatar-large mx-auto">
-                            {{ substr($user->name, 0, 1) }}
-                        </div>
-                        <h3>{{ $user->name }}</h3>
-                        <span class="badge bg-secondary fs-6">
-                            <i class="bi bi-person me-1"></i>Regular User
-                        </span>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="info-item">
-                                <div class="info-label">Email Address</div>
-                                <div class="info-value">{{ $user->email }}</div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="info-item">
-                                <div class="info-label">Member Since</div>
-                                <div class="info-value">{{ $user->created_at->format('F j, Y') }}</div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="info-item">
-                                <div class="info-label">Last Updated</div>
-                                <div class="info-value">{{ $user->updated_at->format('F j, Y g:i A') }}</div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="info-item">
-                                <div class="info-label">Email Verification</div>
-                                <div class="info-value">
-                                    @if($user->email_verified_at)
-                                        <span class="badge bg-success">
-                                            <i class="bi bi-check-circle me-1"></i>Verified
-                                        </span>
-                                    @else
-                                        <span class="badge bg-danger">
-                                            <i class="bi bi-x-circle me-1"></i>Not Verified
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Patient Analyses -->
-                <div class="info-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="mb-0">
-                            <i class="bi bi-file-medical me-2"></i>Patient Analyses
-                            <span class="badge bg-primary ms-2">{{ $user->patientAnalyses->count() }}</span>
-                        </h5>
-                        @if($user->patientAnalyses->count() > 0)
-                            <a href="{{ route('admin.users.patient-analyses', $user) }}" class="btn btn-primary btn-sm">
-                                <i class="bi bi-search me-1"></i>View All Patient Data
-                            </a>
-                        @endif
-                    </div>
-
-                    @if($user->patientAnalyses->count() > 0)
-                        @foreach($user->patientAnalyses->take(5) as $analysis)
-                            <div class="analysis-card">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="mb-1">
-                                            Patient: {{ $analysis->name }}
-                                            <span class="badge bg-secondary ms-1">{{ $analysis->gender }}, {{ $analysis->age }} y/o</span>
-                                        </h6>
-                                        <p class="text-muted mb-0 small">
-                                            <strong>Symptoms:</strong> {{ Str::limit($analysis->symptoms ?? 'No symptoms recorded', 100) }}
-                                        </p>
-                                    </div>
-                                    <small class="text-muted">{{ $analysis->created_at->diffForHumans() }}</small>
-                                </div>
-                            </div>
-                        @endforeach
-
-                        @if($user->patientAnalyses->count() > 5)
-                            <div class="text-center mt-3">
-                                <a href="{{ route('admin.users.patient-analyses', $user) }}" class="btn btn-primary-custom btn-sm">
-                                    View All {{ $user->patientAnalyses->count() }} Patient Records
-                                </a>
-                            </div>
-                        @endif
-                    @else
-                        <div class="text-center py-4">
-                            <i class="bi bi-file-medical display-4 text-muted"></i>
-                            <p class="text-muted mt-2">No patient analyses found.</p>
-                        </div>
-                    @endif
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden">
+                <div class="card-header bg-white" style="padding:1rem 1.25rem;border-bottom:1px solid #eef2f7"><h5 class="mb-0 d-flex align-items-center gap-2" style="font-weight:800;color:#0f172a;font-size:0.95rem"><i class="fas fa-chart-bar" style="color:#64748b"></i> Statistics</h5></div>
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center p-3 mb-2" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:12px"><span style="font-size:0.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.04em">Total Analyses</span><span style="font-weight:800;color:#0f172a;font-size:1.1rem">{{ $user->patientAnalyses->count() }}</span></div>
+                    <div class="d-flex justify-content-between align-items-center p-3 mb-2" style="background:#fff;border:1px solid #eef2f7;border-radius:12px"><span style="font-size:0.78rem;font-weight:700;color:#475569">Account Age</span><span style="font-weight:600;color:#0f172a;font-size:0.84rem">{{ $user->created_at->diffForHumans(null, true) }}</span></div>
+                    @if($user->setting)<div class="d-flex justify-content-between align-items-center p-3" style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px"><span style="font-size:0.78rem;font-weight:700;color:#065f46">Settings</span><span class="badge bg-success" style="border-radius:20px">Configured</span></div>@endif
                 </div>
             </div>
 
-            <!-- Statistics & Actions -->
-            <div class="col-lg-4">
-                <!-- Statistics -->
-                <div class="info-card">
-                    <h5 class="mb-4">
-                        <i class="bi bi-graph-up me-2"></i>Statistics
-                    </h5>
-
-                    <div class="info-item">
-                        <div class="info-label">Total Analyses</div>
-                        <div class="info-value">
-                            <span class="h4 text-primary">{{ $user->patientAnalyses->count() }}</span>
-                        </div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-label">Account Age</div>
-                        <div class="info-value">{{ $user->created_at->diffForHumans(null, true) }}</div>
-                    </div>
-
-                    @if($user->setting)
-                        <div class="info-item">
-                            <div class="info-label">Settings Configured</div>
-                            <div class="info-value">
-                                <span class="badge bg-success">
-                                    <i class="bi bi-check-circle me-1"></i>Yes
-                                </span>
-                            </div>
-                        </div>
-                    @endif
+            @if($user->id !== auth()->id())
+            <div class="card border-0 shadow-sm mt-4" style="border-radius:14px;overflow:hidden">
+                <div class="card-header bg-white" style="padding:1rem 1.25rem;border-bottom:1px solid #eef2f7"><h5 class="mb-0 d-flex align-items-center gap-2" style="font-weight:800;color:#0f172a;font-size:0.95rem"><i class="fas fa-bolt" style="color:#f59e0b"></i> Quick Actions</h5></div>
+                <div class="card-body p-3">
+                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn btn-danger w-100" style="border-radius:10px;font-weight:700"><i class="fas fa-trash me-1"></i>Delete User</button>
+                    </form>
+                    <div class="mt-2 p-2" style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;font-size:0.72rem;color:#991b1b"><i class="fas fa-exclamation-triangle me-1"></i>Deletion is permanent and will remove all associated data.</div>
                 </div>
-
-                <!-- Quick Actions -->
-                @if($user->id !== auth()->id())
-                    <div class="info-card">
-                        <h5 class="mb-4">
-                            <i class="bi bi-lightning me-2"></i>Quick Actions
-                        </h5>
-
-                        <div class="d-grid gap-3">
-                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST"
-                                  onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger w-100">
-                                    <i class="bi bi-trash me-2"></i>Delete User
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                @endif
             </div>
+            @endif
         </div>
     </div>
 </div>

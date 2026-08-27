@@ -18,11 +18,11 @@ return new class extends Migration
             $table->foreignId('doctor_id')->constrained('doctors')->onDelete('cascade');
             $table->foreignId('patient_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('diagnosis_id')->constrained('diagnoses')->onDelete('cascade');
-            $table->foreignId('appointment_id')->constrained('appointments')->onDelete('cascade');
+            $table->foreignId('appointment_id')->nullable()->constrained('appointments')->onDelete('cascade');
             $table->integer('duration_weeks');
             $table->integer('frequency_per_week');
-            $table->text('goals');
-            $table->text('precautions');
+            $table->text('goals')->nullable();
+            $table->text('precautions')->nullable();
             $table->enum('status', ['draft', 'active', 'completed', 'paused'])->default('active');
             $table->timestamps();
         });

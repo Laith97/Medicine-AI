@@ -277,17 +277,24 @@ class AdminController extends Controller
     {
         $validationRules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id ?? ''],
-            'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:users,phone,'.$user->id ?? ''],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'phone' => ['required', 'string', 'regex:/^\+?[1-9]\d{6,14}$/', 'unique:users,phone,'.$user->id],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'specialty_select' => ['nullable', 'string', 'max:255'],
             'custom_specialty' => ['nullable', 'string', 'max:255'],
-            'specialty' => ['required', 'string', 'max:255'],
             'monthly_cost_limit' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'grace_period_days' => ['nullable', 'integer', 'min:1', 'max:30'],
             'reminder_frequency_days' => ['nullable', 'integer', 'min:1', 'max:30'],
             'is_verified' => ['nullable', 'boolean'],
+            'date_of_birth' => ['nullable', 'date', 'before:today'],
+            'gender' => ['nullable', 'in:male,female,other'],
         ];
+        // Specialty required only for doctors
+        if ($user->isDoctor()) {
+            $validationRules['specialty'] = ['required', 'string', 'max:255'];
+        } else {
+            $validationRules['specialty'] = ['nullable', 'string', 'max:255'];
+        }
 
         // Validate the request
         $request->validate($validationRules);
@@ -297,7 +304,9 @@ class AdminController extends Controller
             'email' => $request->email,
             'phone' => $request->phone,
             'monthly_cost_limit' => $request->monthly_cost_limit ?? 0,
-            'role' => 'doctor', // Ensure role is set to doctor for medical AI users
+            // keep existing role — role not editable from this form
+            'date_of_birth' => $request->date_of_birth,
+            'gender' => $request->gender,
         ];
 
         if ($request->filled('password')) {
@@ -309,31 +318,29 @@ class AdminController extends Controller
             $userData['email_verified_at'] = $request->boolean('is_verified') ? now() : null;
         }
 
-        // Process specialty field based on form input
-        $specialty = $request->specialty;
-        if ($request->specialty_select === 'other' && $request->filled('custom_specialty')) {
-            $specialty = trim($request->custom_specialty);
-        } elseif ($request->filled('specialty_select') && $request->specialty_select !== 'other') {
-            $specialty = $request->specialty_select;
-        }
-
-        // Ensure we have a valid specialty
-        if (empty($specialty)) {
-            return back()->withErrors(['specialty' => 'Please select a medical specialty.'])->withInput();
+        // Process specialty only for doctors
+        $specialty = null;
+        if ($user->isDoctor()) {
+            $specialty = $request->specialty;
+            if ($request->specialty_select === 'other' && $request->filled('custom_specialty')) {
+                $specialty = trim($request->custom_specialty);
+            } elseif ($request->filled('specialty_select') && $request->specialty_select !== 'other') {
+                $specialty = $request->specialty_select;
+            }
+            if (empty($specialty)) {
+                return back()->withErrors(['specialty' => 'Please select a medical specialty.'])->withInput();
+            }
         }
 
         $user->update($userData);
 
-        // Update user settings
-        if ($user->setting) {
-            $user->setting->update([
-                'specialty' => $specialty,
-            ]);
-        } else {
-            $user->setting()->create([
-                'specialty' => $specialty,
-                'criterion' => 'CDC',
-            ]);
+        // Update user settings (specialty only for doctors)
+        if ($user->isDoctor() && $specialty) {
+            if ($user->setting) {
+                $user->setting->update(['specialty' => $specialty]);
+            } else {
+                $user->setting()->create(['specialty' => $specialty, 'criterion' => 'CDC']);
+            }
         }
 
         // Update monthly invoice setting with user-specific or global pricing
@@ -840,8 +847,8 @@ public function destroy(User $user)
     }
 
     /**
-     * Display SMS settings page with country-based provider management
-     */
+      * Display SMS settings page — supports both hierarchical (hospital/doctor) and country-based views
+      */
     public function smsSettings()
     {
         $smsService = app(\App\Services\SmsService::class);
@@ -849,12 +856,46 @@ public function destroy(User $user)
         $activeProvidersWithCountries = $smsService->getActiveProvidersWithCountries();
         $allCountries = \App\Models\SmsProviderCountry::getAllCountries();
         $unassignedCountries = \App\Models\SmsProviderCountry::getUnassignedCountries();
+        // Hierarchical view variables expected by resources/views/admin/sms-settings.blade.php:24
+        $systemProvider = $smsService->getSystemProviderPublic();
+        $totalHospitals = \App\Models\Hospital::count();
+        $hospitalsWithCustomProvider = \App\Models\Hospital::whereNotNull('sms_provider')->where('sms_provider','!=','')->count();
+        $totalDoctorsWithOverrides = \App\Models\Doctor::whereNotNull('sms_provider')->where('sms_provider','!=','')->count();
+        $hospitals = \App\Models\Hospital::with(['doctors.user', 'doctors' => function($q){ $q->with('user'); }])->get()->map(function($hospital){
+            $doctors = $hospital->doctors; // users with role doctor via hospital_id
+            $doctorModels = \App\Models\Doctor::whereIn('user_id', $doctors->pluck('id'))->get()->keyBy('user_id');
+            $overrides = $doctors->filter(function($u) use ($doctorModels){
+                $d = $doctorModels->get($u->id);
+                return $d && !empty($d->sms_provider);
+            });
+            return [
+                'id' => $hospital->id,
+                'name' => $hospital->name,
+                'doctor_count' => $doctors->count(),
+                'doctor_overrides' => $overrides->count(),
+                'has_custom_provider' => !empty($hospital->sms_provider),
+                'provider' => $hospital->sms_provider,
+                'doctors_with_overrides' => $overrides->map(function($u) use ($doctorModels){
+                    $d = $doctorModels->get($u->id);
+                    return [
+                        'name' => $u->name,
+                        'specialty' => $u->doctor && $u->doctor->specialty ? $u->doctor->specialty->name : ($u->setting->specialty ?? 'General'),
+                        'sms_provider' => $d->sms_provider ?? '',
+                    ];
+                })->values()->toArray(),
+            ];
+        });
 
         return view('admin.sms-settings', compact(
             'providers',
             'activeProvidersWithCountries',
             'allCountries',
-            'unassignedCountries'
+            'unassignedCountries',
+            'systemProvider',
+            'totalHospitals',
+            'hospitalsWithCustomProvider',
+            'totalDoctorsWithOverrides',
+            'hospitals'
         ));
     }
 
@@ -1491,6 +1532,16 @@ public function destroy(User $user)
             'web_auth_check' => auth('web')->check(),
             'web_auth_user_id' => auth('web')->id(),
         ]);
+
+        // If redirect param provided (from admin tables), honor it — allows admin to land directly on diagnosis/appointment as that doctor
+        $redirect = request()->input('redirect');
+        if ($redirect && is_string($redirect)) {
+            // Only allow internal redirects to prevent open redirect
+            $isInternal = str_starts_with($redirect, '/') || str_starts_with($redirect, config('app.url')) || str_starts_with($redirect, request()->getSchemeAndHttpHost());
+            if ($isInternal) {
+                return redirect()->to($redirect)->with('success', "You are now logged in as {$user->role}: {$user->name}");
+            }
+        }
 
         // Redirect to appropriate dashboard - admin sees exactly what the user sees
         if ($user->role === 'hospital_admin') {

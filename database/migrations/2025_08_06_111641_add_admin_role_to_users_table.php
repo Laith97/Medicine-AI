@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            return;
+        }
         // Update role enum to include admin
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('role');
@@ -26,6 +29,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            return;
+        }
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('role');
         });

@@ -198,9 +198,24 @@ class UnifiedNotificationSystem {
     }
 
     handleNotification(eventType, data) {
+        // Prevent duplicate professional toast for appointment completion:
+        // both 'appointment-completed' and 'appointment-status-changed' fire for same appointment.
+        // Only show one professional toast - prefer 'appointment-completed' (professional unified toast).
+        if (eventType === 'appointment-status-changed') {
+            const newStatus = data.data?.new_status || data.new_status;
+            if (newStatus === 'completed') {
+                console.log(`🚫 Suppressing status-changed toast for completed appointment - professional toast will be shown via appointment-completed`);
+                // Still sync dropdown but skip toast - unified system will show professional toast via appointment-completed
+                const notificationConfig = this.getNotificationConfig(eventType, data);
+                this.syncAlpineDropdown(data, notificationConfig);
+                if (this.soundEnabled) this.playNotificationSound();
+                return;
+            }
+        }
+
         const notificationConfig = this.getNotificationConfig(eventType, data);
 
-        // Show toast notification
+        // Show toast notification - professional unified toast
         this.showToast(notificationConfig);
 
         // Update the Alpine component's dropdown if it exists

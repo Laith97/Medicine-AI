@@ -38,23 +38,42 @@ class AuditLog extends Model
     }
 
     /**
-     * Create a new audit log entry
-     */
+      * Create a new audit log entry — FK-safe: never throw on constraint violation (admins table separate)
+      */
     public static function log($action, $userId = null, $patientId = null, $doctorId = null, $metadata = [])
     {
-        return self::create([
-            'user_id' => $userId,
-            'patient_id' => $patientId,
-            'doctor_id' => $doctorId,
-            'action' => $action,
-            'metadata' => array_merge($metadata, [
+        try {
+            // Sanitize FKs: if id does not exist in users, null it to avoid 1452 violation (admins are in separate table)
+            if ($userId !== null && !\App\Models\User::where('id', $userId)->exists()) {
+                $metadata['original_user_id'] = $userId;
+                $metadata['user_id_fk_skipped'] = true;
+                $userId = null;
+            }
+            if ($patientId !== null && !\App\Models\User::where('id', $patientId)->exists()) {
+                $metadata['original_patient_id'] = $patientId;
+                $patientId = null;
+            }
+            if ($doctorId !== null && !\App\Models\User::where('id', $doctorId)->exists()) {
+                $metadata['original_doctor_id'] = $doctorId;
+                $doctorId = null;
+            }
+            return self::create([
+                'user_id' => $userId,
+                'patient_id' => $patientId,
+                'doctor_id' => $doctorId,
+                'action' => $action,
+                'metadata' => array_merge($metadata, [
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'timestamp' => now()
+                ]),
                 'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-                'timestamp' => now()
-            ]),
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent()
-        ]);
+                'user_agent' => request()->userAgent()
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('AuditLog::log failed (non-blocking): '.$e->getMessage(), ['action'=>$action,'userId'=>$userId]);
+            return null;
+        }
     }
 
     /**

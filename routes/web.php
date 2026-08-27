@@ -1130,24 +1130,31 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::get('/hospital-admins/{user}/doctors', [AdminController::class, 'manageHospitalDoctors'])->name('hospital-admins.doctors');
     Route::post('/hospital-admins/{user}/doctors/{doctor}/toggle-status', [AdminController::class, 'toggleHospitalDoctorStatus'])->name('hospital-admins.doctors.toggle-status');
 
-    // Billing and subscription management
-    Route::get('/billing', [AdminController::class, 'billing'])->name('billing');
-    Route::get('/billing/export', [AdminController::class, 'exportBilling'])->name('billing.export');
+    // Appointments
+    Route::get('/appointments', [\App\Http\Controllers\Admin\AppointmentController::class, 'index'])->name('appointments.index');
+    Route::get('/appointments/{appointment}', [\App\Http\Controllers\Admin\AppointmentController::class, 'show'])->name('appointments.show');
+    // Diagnoses
+    Route::get('/diagnoses', [\App\Http\Controllers\Admin\DiagnosisController::class, 'index'])->name('diagnoses.index');
+    Route::get('/diagnoses/{diagnosis}', [\App\Http\Controllers\Admin\DiagnosisController::class, 'show'])->name('diagnoses.show');
+
+    // Billing and subscription management - DISABLED (hidden per request, keep usage-analytics)
+    // Route::get('/billing', [AdminController::class, 'billing'])->name('billing');
+    // Route::get('/billing/export', [AdminController::class, 'exportBilling'])->name('billing.export');
     Route::get('/usage-analytics', [AdminController::class, 'usageAnalytics'])->name('usage-analytics');
 
-    // System settings
-    Route::get('/system-settings', [AdminController::class, 'systemSettings'])->name('system-settings');
-    Route::post('/system-settings', [AdminController::class, 'updateSystemSettings'])->name('system-settings.update');
+    // System settings - DISABLED (not SaaS, Pricing Section hidden)
+    // Route::get('/system-settings', [AdminController::class, 'systemSettings'])->name('system-settings');
+    // Route::post('/system-settings', [AdminController::class, 'updateSystemSettings'])->name('system-settings.update');
 
-    // Subscription plan management
-    Route::resource('subscription-plans', SubscriptionPlanController::class);
-    Route::post('/subscription-plans/{subscriptionPlan}/toggle-active', [SubscriptionPlanController::class, 'toggleActive'])->name('subscription-plans.toggle-active');
+    // Subscription plan management - DISABLED (billing not used)
+    // Route::resource('subscription-plans', SubscriptionPlanController::class);
+    // Route::post('/subscription-plans/{subscriptionPlan}/toggle-active', [SubscriptionPlanController::class, 'toggleActive'])->name('subscription-plans.toggle-active');
 
-    // User pricing management
-    Route::get('/user-pricing', [App\Http\Controllers\Admin\UserPricingController::class, 'index'])->name('user-pricing.index');
-    Route::get('/user-pricing/{user}/edit', [App\Http\Controllers\Admin\UserPricingController::class, 'edit'])->name('user-pricing.edit');
-    Route::put('/user-pricing/{user}', [App\Http\Controllers\Admin\UserPricingController::class, 'update'])->name('user-pricing.update');
-    Route::post('/user-pricing/bulk-update', [App\Http\Controllers\Admin\UserPricingController::class, 'bulkUpdate'])->name('user-pricing.bulk-update');
+    // User pricing management - DISABLED (billing not used)
+    // Route::get('/user-pricing', [App\Http\Controllers\Admin\UserPricingController::class, 'index'])->name('user-pricing.index');
+    // Route::get('/user-pricing/{user}/edit', [App\Http\Controllers\Admin\UserPricingController::class, 'edit'])->name('user-pricing.edit');
+    // Route::put('/user-pricing/{user}', [App\Http\Controllers\Admin\UserPricingController::class, 'update'])->name('user-pricing.update');
+    // Route::post('/user-pricing/bulk-update', [App\Http\Controllers\Admin\UserPricingController::class, 'bulkUpdate'])->name('user-pricing.bulk-update');
 
     // SMS settings with country-based provider management
     Route::get('/sms-settings', [AdminController::class, 'smsSettings'])->name('sms-settings');
@@ -1155,27 +1162,27 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::post('/sms-settings/remove-assignments', [AdminController::class, 'removeProviderCountryAssignments'])->name('sms-settings.remove-assignments');
     Route::post('/sms-settings/test', [AdminController::class, 'sendTestSms'])->name('sms-settings.test');
 
-    // Invoice management for admin
-    Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
-    Route::post('/invoices', [AdminInvoiceController::class, 'store'])->name('invoices.store');
-    Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
-    Route::post('/invoices/{invoice}/mark-paid', [AdminInvoiceController::class, 'markAsPaid'])->name('invoices.mark-paid');
-    Route::post('/invoices/{invoice}/void', [AdminInvoiceController::class, 'void'])->name('invoices.void');
-    Route::get('/invoices/{invoice}/pdf', [AdminInvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
-    Route::post('/invoices/generate-monthly', [AdminInvoiceController::class, 'generateMonthlyInvoices'])->name('invoices.generate-monthly');
-    Route::get('/invoices/export', [AdminInvoiceController::class, 'export'])->name('invoices.export');
+    // Invoice management for admin - DISABLED (hidden per request)
+    // Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
+    // Route::get('/invoices/create', [AdminInvoiceController::class, 'create'])->name('invoices.create');
+    // Route::post('/invoices', [AdminInvoiceController::class, 'store'])->name('invoices.store');
+    // Route::get('/invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
+    // Route::post('/invoices/{invoice}/mark-paid', [AdminInvoiceController::class, 'markAsPaid'])->name('invoices.mark-paid');
+    // Route::post('/invoices/{invoice}/void', [AdminInvoiceController::class, 'void'])->name('invoices.void');
+    // Route::get('/invoices/{invoice}/pdf', [AdminInvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
+    // Route::post('/invoices/generate-monthly', [AdminInvoiceController::class, 'generateMonthlyInvoices'])->name('invoices.generate-monthly');
+    // Route::get('/invoices/export', [AdminInvoiceController::class, 'export'])->name('invoices.export');
 
-    // Monthly invoice management
-    Route::get('/monthly-invoices', [MonthlyInvoiceController::class, 'index'])->name('monthly-invoices.index');
-    Route::get('/monthly-invoices/{user}/edit', [MonthlyInvoiceController::class, 'edit'])->name('monthly-invoices.edit');
-    Route::put('/monthly-invoices/{user}', [MonthlyInvoiceController::class, 'update'])->name('monthly-invoices.update');
-    Route::post('/monthly-invoices/{user}/restrict', [MonthlyInvoiceController::class, 'restrict'])->name('monthly-invoices.restrict');
-    Route::post('/monthly-invoices/{user}/unrestrict', [MonthlyInvoiceController::class, 'unrestrict'])->name('monthly-invoices.unrestrict');
-    Route::post('/monthly-invoices/process-overdue', [MonthlyInvoiceController::class, 'processOverdue'])->name('monthly-invoices.process-overdue');
-    Route::post('/monthly-invoices/process-payments', [MonthlyInvoiceController::class, 'processPayments'])->name('monthly-invoices.process-payments');
-    Route::post('/monthly-invoices/bulk-update', [MonthlyInvoiceController::class, 'bulkUpdate'])->name('monthly-invoices.bulk-update');
-    Route::post('/monthly-invoices/generate', [MonthlyInvoiceController::class, 'generate'])->name('monthly-invoices.generate');
+    // Monthly invoice management - DISABLED
+    // Route::get('/monthly-invoices', [MonthlyInvoiceController::class, 'index'])->name('monthly-invoices.index');
+    // Route::get('/monthly-invoices/{user}/edit', [MonthlyInvoiceController::class, 'edit'])->name('monthly-invoices.edit');
+    // Route::put('/monthly-invoices/{user}', [MonthlyInvoiceController::class, 'update'])->name('monthly-invoices.update');
+    // Route::post('/monthly-invoices/{user}/restrict', [MonthlyInvoiceController::class, 'restrict'])->name('monthly-invoices.restrict');
+    // Route::post('/monthly-invoices/{user}/unrestrict', [MonthlyInvoiceController::class, 'unrestrict'])->name('monthly-invoices.unrestrict');
+    // Route::post('/monthly-invoices/process-overdue', [MonthlyInvoiceController::class, 'processOverdue'])->name('monthly-invoices.process-overdue');
+    // Route::post('/monthly-invoices/process-payments', [MonthlyInvoiceController::class, 'processPayments'])->name('monthly-invoices.process-payments');
+    // Route::post('/monthly-invoices/bulk-update', [MonthlyInvoiceController::class, 'bulkUpdate'])->name('monthly-invoices.bulk-update');
+    // Route::post('/monthly-invoices/generate', [MonthlyInvoiceController::class, 'generate'])->name('monthly-invoices.generate');
 
     // Contact submission management
     Route::get('/contact-submissions', [ContactController::class, 'adminIndex'])->name('contact-submissions');
@@ -1189,27 +1196,27 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     Route::prefix('kiosks')->name('kiosks.')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\KioskController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\Admin\KioskController::class, 'create'])->name('create');
+        Route::get('/statistics', [App\Http\Controllers\Admin\KioskController::class, 'statistics'])->name('statistics');
         Route::post('/', [App\Http\Controllers\Admin\KioskController::class, 'store'])->name('store');
         Route::get('/{kiosk}', [App\Http\Controllers\Admin\KioskController::class, 'show'])->name('show');
         Route::get('/{kiosk}/edit', [App\Http\Controllers\Admin\KioskController::class, 'edit'])->name('edit');
         Route::put('/{kiosk}', [App\Http\Controllers\Admin\KioskController::class, 'update'])->name('update');
         Route::delete('/{kiosk}', [App\Http\Controllers\Admin\KioskController::class, 'destroy'])->name('destroy');
-        Route::get('/statistics', [App\Http\Controllers\Admin\KioskController::class, 'statistics'])->name('statistics');
     });
 
     // Exercise Library Management
     Route::prefix('exercises')->name('exercises.')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\AdminExerciseController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\Admin\AdminExerciseController::class, 'create'])->name('create');
+        Route::get('/export', [App\Http\Controllers\Admin\AdminExerciseController::class, 'export'])->name('export');
+        Route::get('/import', [App\Http\Controllers\Admin\AdminExerciseController::class, 'importForm'])->name('import');
+        Route::post('/import', [App\Http\Controllers\Admin\AdminExerciseController::class, 'import'])->name('import.store');
+        Route::get('/template/download', [App\Http\Controllers\Admin\AdminExerciseController::class, 'downloadTemplate'])->name('template.download');
         Route::post('/', [App\Http\Controllers\Admin\AdminExerciseController::class, 'store'])->name('store');
         Route::get('/{exercise}', [App\Http\Controllers\Admin\AdminExerciseController::class, 'show'])->name('show');
         Route::get('/{exercise}/edit', [App\Http\Controllers\Admin\AdminExerciseController::class, 'edit'])->name('edit');
         Route::put('/{exercise}', [App\Http\Controllers\Admin\AdminExerciseController::class, 'update'])->name('update');
         Route::delete('/{exercise}', [App\Http\Controllers\Admin\AdminExerciseController::class, 'destroy'])->name('destroy');
-        Route::get('/export', [App\Http\Controllers\Admin\AdminExerciseController::class, 'export'])->name('export');
-        Route::get('/import', [App\Http\Controllers\Admin\AdminExerciseController::class, 'importForm'])->name('import');
-        Route::post('/import', [App\Http\Controllers\Admin\AdminExerciseController::class, 'import'])->name('import.store');
-        Route::get('/template/download', [App\Http\Controllers\Admin\AdminExerciseController::class, 'downloadTemplate'])->name('template.download');
     });
 
     // HEP Program Templates Management
@@ -1226,97 +1233,92 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
     });
 
     // Real-time Performance Monitoring Dashboard
-    Route::prefix('realtime-performance')->name('realtime-performance.')->group(function () {
-        Route::get('/', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/metrics', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getMetrics'])->name('metrics');
-        Route::get('/analytics', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getAnalytics'])->name('analytics');
-        Route::get('/load-stats', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getLoadStats'])->name('load-stats');
-        Route::get('/connection-stats', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getConnectionStats'])->name('connection-stats');
-        Route::get('/alerts', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getAlerts'])->name('alerts');
-        Route::get('/health-overview', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getHealthOverview'])->name('health-overview');
-        Route::delete('/clear-metrics', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'clearMetrics'])->name('clear-metrics');
-        Route::get('/export/{type}', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'exportData'])->name('export');
-    });
+    // Realtime Performance - DISABLED (broken view, not needed)
+    // Route::prefix('realtime-performance')->name('realtime-performance.')->group(function () {
+    //     Route::get('/', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'index'])->name('dashboard');
+    //     Route::get('/metrics', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getMetrics'])->name('metrics');
+    //     Route::get('/analytics', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getAnalytics'])->name('analytics');
+    //     Route::get('/load-stats', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getLoadStats'])->name('load-stats');
+    //     Route::get('/connection-stats', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getConnectionStats'])->name('connection-stats');
+    //     Route::get('/alerts', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getAlerts'])->name('alerts');
+    //     Route::get('/health-overview', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'getHealthOverview'])->name('health-overview');
+    //     Route::delete('/clear-metrics', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'clearMetrics'])->name('clear-metrics');
+    //     Route::get('/export/{type}', [App\Http\Controllers\RealtimePerformanceDashboardController::class, 'exportData'])->name('export');
+    // });
 
-    // Payer Rules Engine Management
-    Route::prefix('payers')->name('payers.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\AdminPayerController::class, 'index'])->name('index');
-        Route::get('/create', [App\Http\Controllers\Admin\AdminPayerController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\Admin\AdminPayerController::class, 'store'])->name('store');
-        Route::get('/{payer}', [App\Http\Controllers\Admin\AdminPayerController::class, 'show'])->name('show');
-        Route::get('/{payer}/edit', [App\Http\Controllers\Admin\AdminPayerController::class, 'edit'])->name('edit');
-        Route::put('/{payer}', [App\Http\Controllers\Admin\AdminPayerController::class, 'update'])->name('update');
-        Route::delete('/{payer}', [App\Http\Controllers\Admin\AdminPayerController::class, 'destroy'])->name('destroy');
+    // Payer Rules Engine Management - DISABLED (billing not used)
+    // Route::prefix('payers')->name('payers.')->group(function () {
+    //     Route::get('/', [App\Http\Controllers\Admin\AdminPayerController::class, 'index'])->name('index');
+    //     Route::get('/create', [App\Http\Controllers\Admin\AdminPayerController::class, 'create'])->name('create');
+    //     Route::post('/', [App\Http\Controllers\Admin\AdminPayerController::class, 'store'])->name('store');
+    //     Route::get('/{payer}', [App\Http\Controllers\Admin\AdminPayerController::class, 'show'])->name('show');
+    //     Route::get('/{payer}/edit', [App\Http\Controllers\Admin\AdminPayerController::class, 'edit'])->name('edit');
+    //     Route::put('/{payer}', [App\Http\Controllers\Admin\AdminPayerController::class, 'update'])->name('update');
+    //     Route::delete('/{payer}', [App\Http\Controllers\Admin\AdminPayerController::class, 'destroy'])->name('destroy');
+    //     Route::prefix('{payer}/rules')->name('rules.')->group(function () {
+    //         Route::get('/', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'index'])->name('index');
+    //         Route::get('/create', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'create'])->name('create');
+    //         Route::post('/', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'store'])->name('store');
+    //         Route::get('/{rule}', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'show'])->name('show');
+    //         Route::get('/{rule}/edit', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'edit'])->name('edit');
+    //         Route::put('/{rule}', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'update'])->name('update');
+    //         Route::delete('/{rule}', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'destroy'])->name('destroy');
+    //         Route::post('/{rule}/test', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'test'])->name('test');
+    //         Route::get('/export', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'export'])->name('export');
+    //         Route::get('/import', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'importForm'])->name('import');
+    //         Route::post('/import', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'import'])->name('import.store');
+    //     });
+    // });
+    // // Compliance Dashboard - DISABLED (billing not used)
+    // Route::prefix('compliance')->name('compliance.')->group(function () {
+    //     Route::get('/', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'index'])->name('dashboard');
+    //     Route::get('/metrics', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'metrics'])->name('metrics');
+    //     Route::get('/rule-effectiveness', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'ruleEffectiveness'])->name('rule-effectiveness');
+    //     Route::get('/rules-needing-attention', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'rulesNeedingAttention'])->name('rules-needing-attention');
+    //     Route::get('/rule-report/{ruleId}', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'ruleReport'])->name('rule-report');
+    //     Route::get('/hipaa-compliance', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'hipaaCompliance'])->name('hipaa-compliance');
+    //     Route::get('/audit-trail', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'auditTrail'])->name('audit-trail');
+    //     Route::get('/export', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'export'])->name('export');
+    // });
+    // // Advanced Alerts Management - DISABLED (billing not used)
+    // Route::prefix('alerts')->name('alerts.')->group(function () {
+    //     Route::get('/', [App\Http\Controllers\AlertController::class, 'index'])->name('index');
+    //     Route::get('/create', [App\Http\Controllers\AlertController::class, 'create'])->name('create');
+    //     Route::post('/', [App\Http\Controllers\AlertController::class, 'store'])->name('store');
+    //     Route::get('/{alert}', [App\Http\Controllers\AlertController::class, 'show'])->name('show');
+    //     Route::get('/{alert}/edit', [App\Http\Controllers\AlertController::class, 'edit'])->name('edit');
+    //     Route::put('/{alert}', [App\Http\Controllers\AlertController::class, 'update'])->name('update');
+    //     Route::delete('/{alert}', [App\Http\Controllers\AlertController::class, 'destroy'])->name('destroy');
+    //     Route::post('/{alert}/acknowledge', [App\Http\Controllers\AlertController::class, 'acknowledge'])->name('acknowledge');
+    //     Route::post('/{alert}/resolve', [App\Http\Controllers\AlertController::class, 'resolve'])->name('resolve');
+    //     Route::post('/bulk-acknowledge', [App\Http\Controllers\AlertController::class, 'bulkAcknowledge'])->name('bulk-acknowledge');
+    //     Route::post('/bulk-resolve', [App\Http\Controllers\AlertController::class, 'bulkResolve'])->name('bulk-resolve');
+    //     Route::get('/api/alerts', [App\Http\Controllers\AlertController::class, 'apiIndex'])->name('api.index');
+    //     Route::get('/api/rules', [App\Http\Controllers\AlertController::class, 'rules'])->name('api.rules');
+    //     Route::get('/api/statistics', [App\Http\Controllers\AlertController::class, 'statistics'])->name('api.statistics');
+    // });
 
-        // Rules management for each payer
-        Route::prefix('{payer}/rules')->name('rules.')->group(function () {
-            Route::get('/', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'index'])->name('index');
-            Route::get('/create', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'create'])->name('create');
-            Route::post('/', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'store'])->name('store');
-            Route::get('/{rule}', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'show'])->name('show');
-            Route::get('/{rule}/edit', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'edit'])->name('edit');
-            Route::put('/{rule}', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'update'])->name('update');
-            Route::delete('/{rule}', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'destroy'])->name('destroy');
-            Route::post('/{rule}/test', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'test'])->name('test');
-            Route::get('/export', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'export'])->name('export');
-            Route::get('/import', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'importForm'])->name('import');
-            Route::post('/import', [App\Http\Controllers\Admin\AdminPayerRuleController::class, 'import'])->name('import.store');
-        });
-    });
+    // System Monitoring Dashboard - DISABLED (mock data, not needed)
+    // Route::prefix('monitoring')->name('monitoring.')->group(function () {
+    //     Route::get('/dashboard', [App\Http\Controllers\Api\MonitoringController::class, 'showDashboard'])->name('dashboard');
+    // });
 
-    // Compliance Dashboard
-    Route::prefix('compliance')->name('compliance.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/metrics', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'metrics'])->name('metrics');
-        Route::get('/rule-effectiveness', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'ruleEffectiveness'])->name('rule-effectiveness');
-        Route::get('/rules-needing-attention', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'rulesNeedingAttention'])->name('rules-needing-attention');
-        Route::get('/rule-report/{ruleId}', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'ruleReport'])->name('rule-report');
-        Route::get('/hipaa-compliance', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'hipaaCompliance'])->name('hipaa-compliance');
-        Route::get('/audit-trail', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'auditTrail'])->name('audit-trail');
-        Route::get('/export', [App\Http\Controllers\Admin\ComplianceDashboardController::class, 'export'])->name('export');
-    });
+    // Clearinghouse Management - DISABLED (billing not used)
+    // Route::prefix('clearinghouse')->name('clearinghouse.')->group(function () {
+    //     Route::get('/accounts', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getClearinghouseAccounts'])->name('accounts');
+    //     Route::get('/monitoring', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getSubmissions'])->name('monitoring');
+    //     Route::get('/errors', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getFailedSubmissions'])->name('errors');
+    //     Route::get('/providers', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getClearinghouseAccounts'])->name('providers');
+    //     Route::get('/metrics', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'index'])->name('metrics');
+    //     Route::get('/metrics/data', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'getData'])->name('metrics.data');
+    //     Route::get('/metrics/export', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'export'])->name('metrics.export');
+    // });
 
-    // Advanced Alerts Management
-    Route::prefix('alerts')->name('alerts.')->group(function () {
-        Route::get('/', [App\Http\Controllers\AlertController::class, 'index'])->name('index');
-        Route::get('/create', [App\Http\Controllers\AlertController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\AlertController::class, 'store'])->name('store');
-        Route::get('/{alert}', [App\Http\Controllers\AlertController::class, 'show'])->name('show');
-        Route::get('/{alert}/edit', [App\Http\Controllers\AlertController::class, 'edit'])->name('edit');
-        Route::put('/{alert}', [App\Http\Controllers\AlertController::class, 'update'])->name('update');
-        Route::delete('/{alert}', [App\Http\Controllers\AlertController::class, 'destroy'])->name('destroy');
-
-        // Alert lifecycle management
-        Route::post('/{alert}/acknowledge', [App\Http\Controllers\AlertController::class, 'acknowledge'])->name('acknowledge');
-        Route::post('/{alert}/resolve', [App\Http\Controllers\AlertController::class, 'resolve'])->name('resolve');
-        Route::post('/bulk-acknowledge', [App\Http\Controllers\AlertController::class, 'bulkAcknowledge'])->name('bulk-acknowledge');
-        Route::post('/bulk-resolve', [App\Http\Controllers\AlertController::class, 'bulkResolve'])->name('bulk-resolve');
-
-        // API endpoints
-        Route::get('/api/alerts', [App\Http\Controllers\AlertController::class, 'apiIndex'])->name('api.index');
-        Route::get('/api/rules', [App\Http\Controllers\AlertController::class, 'rules'])->name('api.rules');
-        Route::get('/api/statistics', [App\Http\Controllers\AlertController::class, 'statistics'])->name('api.statistics');
-    });
-
-    // System Monitoring Dashboard
-    Route::prefix('monitoring')->name('monitoring.')->group(function () {
-        Route::get('/dashboard', [App\Http\Controllers\Api\MonitoringController::class, 'showDashboard'])->name('dashboard');
-    });
-
-    // Clearinghouse Management
-    Route::prefix('clearinghouse')->name('clearinghouse.')->group(function () {
-        Route::get('/accounts', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getClearinghouseAccounts'])->name('accounts');
-        Route::get('/monitoring', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getSubmissions'])->name('monitoring');
-        Route::get('/errors', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getFailedSubmissions'])->name('errors');
-        Route::get('/providers', [App\Http\Controllers\HospitalAdmin\ClaimController::class, 'getClearinghouseAccounts'])->name('providers');
-        Route::get('/metrics', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'index'])->name('metrics');
-        Route::get('/metrics/data', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'getData'])->name('metrics.data');
-        Route::get('/metrics/export', [App\Http\Controllers\Admin\ClearinghouseMetricsController::class, 'export'])->name('metrics.export');
-    });
-
-    // Waitlist Management
-    Route::get('/waitlist/dashboard', [AdminWaitlistController::class, 'dashboard'])->name('waitlist.dashboard');
-    Route::get('/waitlist/analytics', [AdminWaitlistController::class, 'analytics'])->name('waitlist.analytics');
+    // Waitlist Management - Web pages - DISABLED (not needed)
+    // Route::get('/waitlist/dashboard', [AdminWaitlistController::class, 'dashboard'])->name('waitlist.dashboard');
+    // Route::get('/waitlist/analytics', [AdminWaitlistController::class, 'analytics'])->name('waitlist.analytics');
+    // Route::get('/waitlist/manage', [AdminWaitlistController::class, 'manage'])->name('waitlist.manage');
+    // Route::get('/waitlist/manage/{doctorId}', [AdminWaitlistController::class, 'manage'])->name('waitlist.manage.doctor');
 
     // Data Migration Management
     Route::prefix('data-migration')->name('data-migration.')->group(function () {
@@ -1333,6 +1335,32 @@ Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function ()
         Route::get('/field-options/{entityType}', [App\Http\Controllers\Admin\DataMigrationController::class, 'getFieldOptions'])->name('field-options');
     });
 });
+
+// Admin Waitlist API routes - DISABLED (not needed)
+// Route::middleware(['auth:web,admin'])->group(function () {
+//     Route::prefix('api/admin/waitlist')->name('api.admin.waitlist.')->group(function () {
+//         Route::get('/dashboard', [AdminWaitlistController::class, 'apiDashboard'])->name('dashboard');
+//         Route::get('/analytics', [AdminWaitlistController::class, 'apiAnalytics'])->name('analytics');
+//         Route::get('/manage', [AdminWaitlistController::class, 'apiManage'])->name('manage');
+//         Route::post('/assign-slot', [AdminWaitlistController::class, 'apiAssignSlot'])->name('assign-slot');
+//         Route::post('/remove-patient', [AdminWaitlistController::class, 'apiRemovePatient'])->name('remove-patient');
+//         Route::post('/update-priority', [AdminWaitlistController::class, 'apiUpdatePriority'])->name('update-priority');
+//         Route::post('/update-status', [AdminWaitlistController::class, 'apiUpdateStatus'])->name('update-status');
+//         Route::post('/bulk-update', [AdminWaitlistController::class, 'apiBulkUpdate'])->name('bulk-update');
+//         Route::get('/export', [AdminWaitlistController::class, 'apiExport'])->name('export');
+//         Route::get('/analytics/export', [AdminWaitlistController::class, 'apiAnalyticsExport'])->name('analytics.export');
+//         Route::post('/bulk-priority', [AdminWaitlistController::class, 'apiBulkPriority'])->name('bulk-priority');
+//         Route::post('/bulk-status', [AdminWaitlistController::class, 'apiBulkStatus'])->name('bulk-status');
+//         Route::post('/priority-adjustments', [AdminWaitlistController::class, 'apiPriorityAdjustments'])->name('priority-adjustments');
+//         Route::post('/force-assign', [AdminWaitlistController::class, 'apiForceAssign'])->name('force-assign');
+//         Route::get('/patients', [AdminWaitlistController::class, 'apiPatients'])->name('patients');
+//         Route::get('/priority-data', [AdminWaitlistController::class, 'apiPriorityData'])->name('priority-data');
+//     });
+//     Route::prefix('api/admin')->name('api.admin.')->group(function () {
+//         Route::get('/doctors', [AdminWaitlistController::class, 'apiDoctors'])->name('doctors');
+//         Route::get('/waitlist/doctors', [AdminWaitlistController::class, 'apiDoctors'])->name('waitlist.doctors');
+//     });
+// });
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -1614,8 +1642,8 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureJsonResponse::class])->gro
     Route::get('/api/doctor/waitlist/patient/{waitlist}', [App\Http\Controllers\Doctor\WaitlistController::class, 'getPatient'])->name('api.doctor.waitlist.patient');
 });
 
-// Admin Settings Routes
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+// Admin Settings Routes - fixed guard to admin
+Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/settings/transcription', [App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings/transcription', [App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('settings.update');
 });

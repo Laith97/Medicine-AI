@@ -31,9 +31,18 @@ class HepProgramTemplate extends Model
     ];
 
     /**
-     * Get the user who created this template
+     * Get the admin who created this template
+     * Note: created_by stores admin id (auth('admin')->id()), fallback to User for legacy data
      */
     public function creator()
+    {
+        return $this->belongsTo(Admin::class, 'created_by');
+    }
+
+    /**
+     * Legacy creator as user (for backward compatibility)
+     */
+    public function creatorUser()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
@@ -133,10 +142,14 @@ class HepProgramTemplate extends Model
      */
     public function createProgram(User $doctor, User $patient, Diagnosis $diagnosis, array $customizations = [])
     {
+        // Resolve doctor_id to doctors.id (not users.id) - fallback to user id if no doctor profile
+        $doctorRecord = $doctor->doctor ?? \App\Models\Doctor::where('user_id', $doctor->id)->first();
+        $doctorId = $doctorRecord ? $doctorRecord->id : $doctor->id;
+
         $programData = [
             'title' => $customizations['title'] ?? $this->name . ' Program',
             'description' => $customizations['description'] ?? $this->description,
-            'doctor_id' => $doctor->id,
+            'doctor_id' => $doctorId,
             'patient_id' => $patient->id,
             'diagnosis_id' => $diagnosis->id,
             'duration_weeks' => $customizations['duration_weeks'] ?? $this->duration_weeks,

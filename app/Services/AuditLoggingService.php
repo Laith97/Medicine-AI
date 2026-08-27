@@ -57,19 +57,35 @@ class AuditLoggingService
     }
 
     /**
-     * Log admin impersonation
-     */
+      * Log admin impersonation — admin IDs are in `admins` table, not `users`, so avoid FK violation
+      */
     public static function logAdminImpersonation($adminId, $targetUserId, $context = [])
     {
-        AuditLog::log('admin_impersonation_started', $adminId, $targetUserId, null, $context);
+        try {
+            // Verify adminId exists in users to satisfy audit_logs.user_id FK; admins table is separate
+            $adminUserExists = $adminId ? \App\Models\User::where('id', $adminId)->exists() : false;
+            $effectiveUserId = $adminUserExists ? $adminId : null;
+            // Always keep admin identity in metadata for traceability
+            $context = array_merge($context, ['admin_id' => $adminId, 'admin_user_exists' => $adminUserExists]);
+            AuditLog::log('admin_impersonation_started', $effectiveUserId, $targetUserId, null, $context);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Audit log failed for admin_impersonation_started: '.$e->getMessage(), ['adminId'=>$adminId,'target'=>$targetUserId]);
+        }
     }
 
     /**
-     * Log admin impersonation ended
-     */
+      * Log admin impersonation ended — same FK-safe handling
+      */
     public static function logAdminImpersonationEnded($adminId, $context = [])
     {
-        AuditLog::log('admin_impersonation_ended', $adminId, null, null, $context);
+        try {
+            $adminUserExists = $adminId ? \App\Models\User::where('id', $adminId)->exists() : false;
+            $effectiveUserId = $adminUserExists ? $adminId : null;
+            $context = array_merge($context, ['admin_id' => $adminId]);
+            AuditLog::log('admin_impersonation_ended', $effectiveUserId, null, null, $context);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Audit log failed for admin_impersonation_ended: '.$e->getMessage(), ['adminId'=>$adminId]);
+        }
     }
 
     /**

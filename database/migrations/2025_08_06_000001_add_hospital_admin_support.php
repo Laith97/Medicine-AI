@@ -31,25 +31,35 @@ return new class extends Migration
         });
 
         // Update users table to support hospital admin role and hospital association
-        Schema::table('users', function (Blueprint $table) {
-            // Update role enum to include hospital_admin
-            $table->dropColumn('role');
-        });
+        // SQLite compatibility: avoid MySQL-specific enum/dropColumn issues
+        if (DB::getDriverName() === 'sqlite') {
+            Schema::table('users', function (Blueprint $table) {
+                if (!Schema::hasColumn('users', 'hospital_id')) {
+                    $table->unsignedBigInteger('hospital_id')->nullable();
+                    $table->index('hospital_id');
+                }
+            });
+        } else {
+            Schema::table('users', function (Blueprint $table) {
+                // Update role enum to include hospital_admin
+                $table->dropColumn('role');
+            });
 
-        Schema::table('users', function (Blueprint $table) {
-            // Only add hospital_id column if it doesn't exist to avoid duplicates
-            if (!Schema::hasColumn('users', 'hospital_id')) {
-                $table->unsignedBigInteger('hospital_id')->nullable();
-                $table->foreign('hospital_id')->references('id')->on('hospitals')->onDelete('set null');
-                $table->index('hospital_id');
-            }
+            Schema::table('users', function (Blueprint $table) {
+                // Only add hospital_id column if it doesn't exist to avoid duplicates
+                if (!Schema::hasColumn('users', 'hospital_id')) {
+                    $table->unsignedBigInteger('hospital_id')->nullable();
+                    $table->foreign('hospital_id')->references('id')->on('hospitals')->onDelete('set null');
+                    $table->index('hospital_id');
+                }
 
-            // Update the role enum to include hospital_admin if needed
-            if (!Schema::hasColumn('users', 'role') ||
-                !collect(DB::select("SHOW COLUMNS FROM users WHERE Field='role'"))->first()->Type->contains('hospital_admin')) {
-                $table->enum('role', ['patient', 'doctor', 'hospital_admin'])->default('patient');
-            }
-        });
+                // Update the role enum to include hospital_admin if needed
+                if (!Schema::hasColumn('users', 'role') ||
+                    !collect(DB::select("SHOW COLUMNS FROM users WHERE Field='role'"))->first()->Type->contains('hospital_admin')) {
+                    $table->enum('role', ['patient', 'doctor', 'hospital_admin'])->default('patient');
+                }
+            });
+        }
     }
 
     /**

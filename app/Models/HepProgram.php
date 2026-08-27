@@ -22,6 +22,7 @@ class HepProgram extends Model
         'precautions',
         'personalization_metadata',
         'status',
+        'template_id',
     ];
 
     protected $casts = [

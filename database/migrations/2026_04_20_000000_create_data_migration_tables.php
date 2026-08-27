@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->enum('status', ['pending', 'in_progress', 'completed', 'failed', 'cancelled'])->default('pending');
+            $table->enum('entity_type', ['department', 'specialty', 'doctor', 'patient', 'appointment', 'diagnosis', 'prescription', 'treatment', 'allergy', 'insurance', 'user', 'setting'])->nullable();
             $table->enum('source_type', ['csv', 'excel', 'api', 'sql_database', 'hl7', 'fhir'])->nullable();
             $table->string('source_path')->nullable();
             $table->json('source_config')->nullable(); // API credentials, DB connection details

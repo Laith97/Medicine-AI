@@ -23,7 +23,7 @@ return new class extends Migration
             $table->text('contraindications')->nullable();
             $table->text('equipment_required')->nullable();
             $table->text('target_muscle_groups')->nullable();
-            $table->integer('duration'); // in seconds
+            $table->integer('duration')->nullable(); // in seconds
             $table->timestamps();
         });
     }

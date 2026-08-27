@@ -56,12 +56,17 @@ class DataMigrationController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'source_type' => 'required|in:csv,excel,api,sql_database',
+            'source_type' => 'required|in:csv,excel',
             'file' => 'required_if:source_type,csv,excel|nullable|file|max:51200', // 50MB max
             'entity_type' => 'required|in:department,specialty,doctor,patient,appointment,diagnosis,prescription,treatment,allergy,insurance,user',
             'incremental_sync' => 'boolean',
             'template_id' => 'nullable|exists:data_migration_templates,id',
         ]);
+
+        // Gracefully handle Coming Soon source types if they slip through
+        if (in_array($request->source_type, ['api', 'sql_database'])) {
+            return redirect()->back()->withErrors(['source_type' => 'The selected source type is not yet available. Please choose CSV or Excel.'])->withInput();
+        }
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();

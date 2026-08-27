@@ -348,6 +348,7 @@ Route::middleware(['auth:web'])->group(function () {
         Route::get('/hospital/{hospital}/sms-settings', [SmsSettingsController::class, 'getHospitalSettings']);
         Route::put('/hospital/{hospital}/sms-settings', [SmsSettingsController::class, 'updateHospitalSettings']);
     });
+
 });
 
 // Public routes (for guest access with token verification)

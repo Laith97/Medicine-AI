@@ -1,339 +1,102 @@
 @extends('layouts.admin')
-
-@section('title', 'Create New User')
-
-@push('styles')
-<style>
-    .admin-page {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        min-height: 100vh;
-        padding: 2rem 0;
-    }
-
-    .admin-header {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        color: white;
-        padding: 2rem;
-        border-radius: 20px;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(44, 62, 80, 0.3);
-    }
-
-    .form-card {
-        background: white;
-        border-radius: 15px;
-        padding: 2rem;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        border: none;
-    }
-
-    .form-control:focus {
-        border-color: #DE6262;
-        box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
-    }
-
-    .form-check-input:checked {
-        background-color: #DE6262;
-        border-color: #DE6262;
-    }
-
-    .form-check-input:focus {
-        border-color: #DE6262;
-        box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
-    }
-
-    select.form-control {
-        -webkit-appearance: menulist;
-        -moz-appearance: menulist;
-        appearance: menulist;
-    }
-</style>
-@endpush
-
-@push('scripts')
-<script>
-function toggleMedicalSpecialty() {
-    const roleElement = document.getElementById('role');
-    const subscriptionSettings = document.getElementById('subscription-settings');
-    const dobField = document.getElementById('date-of-birth-field');
-    const genderField = document.getElementById('gender-field');
-
-    if (!roleElement) return;
-
-    const userType = roleElement.value;
-
-    // Toggle subscription settings (only for doctors)
-    if (subscriptionSettings) {
-        if (userType === 'doctor') {
-            subscriptionSettings.style.display = 'block';
-        } else {
-            subscriptionSettings.style.display = 'none';
-        }
-    }
-
-    // Toggle patient fields (DOB, Gender)
-    if (userType === 'patient') {
-        if (dobField) dobField.style.display = 'block';
-        if (genderField) genderField.style.display = 'block';
-    } else {
-        if (dobField) dobField.style.display = 'none';
-        if (genderField) genderField.style.display = 'none';
-    }
-}
-
-function toggleHospitalField() {
-    const roleElement = document.getElementById('role');
-    const hospitalAdminNote = document.getElementById('hospital-admin-note');
-
-    if (!roleElement || !hospitalAdminNote) {
-        return; // Elements don't exist, skip
-    }
-
-    const userType = roleElement.value;
-
-    if (userType === 'hospital_admin') {
-        hospitalAdminNote.style.display = 'block';
-    } else {
-        hospitalAdminNote.style.display = 'none';
-    }
-}
-
-function toggleCustomSpecialtyAdmin() {
-    const select = document.getElementById('specialty_select');
-    const customContainer = document.getElementById('custom_specialty_container_admin');
-    const customInput = document.getElementById('custom_specialty_admin');
-    const hiddenInput = document.getElementById('specialty_admin');
-
-    if (!select || !customContainer) return;
-
-    if (select.value === 'other') {
-        customContainer.style.display = 'block';
-        if (customInput) {
-            customInput.required = true;
-            customInput.focus();
-        }
-        if (hiddenInput) hiddenInput.value = '';
-    } else {
-        customContainer.style.display = 'none';
-        if (customInput) {
-            customInput.required = false;
-            customInput.value = '';
-        }
-        if (hiddenInput) hiddenInput.value = select.value;
-    }
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    toggleMedicalSpecialty();
-    toggleHospitalField();
-
-    // Also call it immediately in case no role is selected yet
-    const roleElement = document.getElementById('role');
-    if (roleElement && roleElement.value) {
-        toggleMedicalSpecialty();
-    }
-
-    const customInput = document.getElementById('custom_specialty_admin');
-    const hiddenInput = document.getElementById('specialty_admin');
-    const select = document.getElementById('specialty_select');
-
-    if (select) {
-        // Handle custom input changes
-        if (customInput) {
-            customInput.addEventListener('input', function() {
-                if (select.value === 'other' && hiddenInput) {
-                    hiddenInput.value = this.value;
-                }
-            });
-        }
-
-        select.addEventListener('change', function() {
-            toggleCustomSpecialtyAdmin();
-        });
-
-        // Handle form submission
-        const form = document.querySelector('form');
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                if (select.value === 'other' && customInput) {
-                    if (!customInput.value.trim()) {
-                        e.preventDefault();
-                        customInput.focus();
-                        customInput.style.borderColor = '#dc3545';
-                        return false;
-                    }
-                    if (hiddenInput) hiddenInput.value = customInput.value.trim();
-                } else if (hiddenInput) {
-                    hiddenInput.value = select.value;
-                    if (customInput) customInput.value = '';
-                }
-            });
-        }
-    }
-
-    // Add event listener to role dropdown
-    const roleElement = document.getElementById('role');
-    if (roleElement) {
-        roleElement.addEventListener('change', function() {
-            toggleMedicalSpecialty();
-            toggleHospitalField();
-        });
-    }
-});
-</script>
-@endpush
-
+@section('title','Create New User')
 @section('content')
-<div class="admin-page">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <!-- Header -->
-                <div class="admin-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="h2 mb-2 text-white">Create New User</h1>
-                            <p class="mb-0 opacity-75">Add a new user to the system</p>
-                        </div>
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-light">
-                            <i class="bi bi-arrow-left me-2"></i>Back to Users
-                        </a>
-                    </div>
-                </div>
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border-radius:16px;padding:1.4rem 1.6rem;box-shadow:0 8px 24px rgba(15,23,42,0.12)">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center"><i class="fas fa-user-plus" style="color:#fff;font-size:1.1rem"></i></div>
+            <div>
+                <h1 style="font-size:1.35rem;font-weight:800;color:#fff;letter-spacing:-0.02em;margin:0">Create New User</h1>
+                <p style="font-size:0.78rem;color:rgba(255,255,255,0.75);margin:2px 0 0">Add a new user to the system · Doctors, hospital admins or patients</p>
+            </div>
+        </div>
+        <a href="{{ route('admin.users.index') }}" class="btn btn-sm" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:10px;font-weight:700"><i class="fas fa-arrow-left me-1"></i>Back to Users</a>
+    </div>
 
-                <!-- Form -->
-                <div class="form-card">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden">
+                <div class="card-header bg-white" style="padding:1rem 1.25rem;border-bottom:1px solid #eef2f7">
+                    <h5 class="mb-0 d-flex align-items-center gap-2" style="font-weight:800;color:#0f172a;font-size:0.95rem"><i class="fas fa-user-edit" style="color:#64748b"></i> User Information</h5>
+                </div>
+                <div class="card-body p-4" style="background:#fff">
                     <form method="POST" action="{{ route('admin.users.store') }}">
                         @csrf
 
-                        <!-- Name -->
-                        <div class="mb-4">
-                            <label for="name" class="form-label fw-bold">Name</label>
-                            <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus
-                                   class="form-control @error('name') is-invalid @enderror">
-                            @error('name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <!-- Email -->
-                        <div class="mb-4">
-                            <label for="email" class="form-label fw-bold">Email</label>
-                            <input id="email" type="email" name="email" value="{{ old('email') }}" required
-                                   class="form-control @error('email') is-invalid @enderror">
-                            @error('email')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <!-- Phone Number -->
-                        <div class="mb-4">
-                            <label for="phone" class="form-label fw-bold">Phone Number <span class="text-danger">*</span></label>
-                            <input id="phone" type="tel" name="phone" value="{{ old('phone') }}" required
-                                   class="form-control @error('phone') is-invalid @enderror"
-                                   placeholder="Enter phone number (e.g., +1234567890)"
-                                   pattern="^\+?[1-9]\d{6,14}$">
-                            <div class="form-text">
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    Required for SMS invoice reminders. Include country code (e.g., +1 for US)
-                                </small>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label" style="font-weight:700;color:#0f172a;font-size:0.84rem">Name <span class="text-danger">*</span></label>
+                                <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus class="form-control @error('name') is-invalid @enderror" style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem" placeholder="Full name">
+                                @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
-                            @error('phone')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <!-- User Role -->
-                        <div class="mb-4">
-                            <label for="role" class="form-label fw-bold">User Role <span class="text-danger">*</span></label>
-                            <select id="role" name="role" class="form-control @error('role') is-invalid @enderror" 
-                                    onchange="toggleMedicalSpecialty(); toggleHospitalField();" required>
-                                <option value="">-- Select Role --</option>
-                                <option value="doctor" {{ old('role') == 'doctor' ? 'selected' : '' }}>Doctor</option>
-                                <option value="hospital_admin" {{ old('role') == 'hospital_admin' ? 'selected' : '' }}>Hospital Admin</option>
-                                <option value="patient" {{ old('role') == 'patient' ? 'selected' : '' }}>Patient</option>
-                            </select>
-                            <div class="form-text">
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    <strong>Doctor:</strong> Individual medical practitioner<br>
-                                    <strong>Hospital Admin:</strong> Manages doctors in a hospital/clinic<br>
-                                    <strong>Patient:</strong> Regular patient user
-                                </small>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label" style="font-weight:700;color:#0f172a;font-size:0.84rem">Email <span class="text-danger">*</span></label>
+                                <input id="email" type="email" name="email" value="{{ old('email') }}" required class="form-control @error('email') is-invalid @enderror" style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem" placeholder="email@example.com">
+                                @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
-                            @error('role')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <!-- Note for Hospital Admin -->
-                        <div class="mb-4" id="hospital-admin-note" style="display: {{ old('role') == 'hospital_admin' ? 'block' : 'none' }};">
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i>
-                                <strong>Hospital Admin Account:</strong> Hospital admins will manage their own hospital information after account creation, similar to how individual doctors manage their clinic information.
+                            <div class="col-12">
+                                <label for="phone" class="form-label" style="font-weight:700;color:#0f172a;font-size:0.84rem">Phone Number <span class="text-danger">*</span></label>
+                                <input id="phone" type="tel" name="phone" value="{{ old('phone') }}" required class="form-control @error('phone') is-invalid @enderror" style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem" placeholder="+1234567890" pattern="^\+?[1-9]\d{6,14}$">
+                                <div class="form-text" style="font-size:0.76rem;color:#64748b"><i class="fas fa-info-circle me-1"></i>Required for SMS invoice reminders. Include country code (e.g., +1)</div>
+                                @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-12">
+                                <label for="role" class="form-label" style="font-weight:700;color:#0f172a;font-size:0.84rem">User Role <span class="text-danger">*</span></label>
+                                <select id="role" name="role" class="form-select @error('role') is-invalid @enderror" onchange="toggleMedicalSpecialty(); toggleHospitalField();" required style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem">
+                                    <option value="">-- Select Role --</option>
+                                    <option value="doctor" {{ old('role') == 'doctor' ? 'selected' : '' }}>Doctor</option>
+                                    <option value="hospital_admin" {{ old('role') == 'hospital_admin' ? 'selected' : '' }}>Hospital Admin</option>
+                                    <option value="patient" {{ old('role') == 'patient' ? 'selected' : '' }}>Patient</option>
+                                </select>
+                                <div class="mt-2 p-2" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;font-size:0.76rem;color:#475569;line-height:1.5"><strong>Doctor:</strong> Individual practitioner · <strong>Hospital Admin:</strong> Manages doctors in a hospital · <strong>Patient:</strong> Regular patient</div>
+                                @error('role')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
 
-                        <!-- Password -->
-                        <div class="mb-4">
-                            <label for="password" class="form-label fw-bold">Password</label>
-                            <input id="password" type="password" name="password" required
-                                   class="form-control @error('password') is-invalid @enderror">
-                            @error('password')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div id="hospital-admin-note" class="mt-3" style="display: {{ old('role') == 'hospital_admin' ? 'block' : 'none' }};">
+                            <div class="alert d-flex align-items-start gap-2 mb-0" style="background:#eff6ff;border:1px solid #dbeafe;color:#1e40af;border-radius:10px;font-size:0.84rem"><i class="fas fa-info-circle mt-1"></i><div><strong>Hospital Admin Account:</strong> Hospital admins will manage their own hospital information after creation.</div></div>
                         </div>
 
-                        <!-- Confirm Password -->
-                        <div class="mb-4">
-                            <label for="password_confirmation" class="form-label fw-bold">Confirm Password</label>
-                            <input id="password_confirmation" type="password" name="password_confirmation" required
-                                   class="form-control @error('password_confirmation') is-invalid @enderror">
-                            @error('password_confirmation')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label for="password" class="form-label" style="font-weight:700;color:#0f172a;font-size:0.84rem">Password <span class="text-danger">*</span></label>
+                                <input id="password" type="password" name="password" required class="form-control @error('password') is-invalid @enderror" style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem" placeholder="••••••••">
+                                @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="password_confirmation" class="form-label" style="font-weight:700;color:#0f172a;font-size:0.84rem">Confirm Password <span class="text-danger">*</span></label>
+                                <input id="password_confirmation" type="password" name="password_confirmation" required class="form-control @error('password_confirmation') is-invalid @enderror" style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem" placeholder="••••••••">
+                                @error('password_confirmation')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
                         </div>
 
-                        <!-- Date of Birth - Only for Patients -->
-                        <div class="mb-4" id="date-of-birth-field" style="display: {{ old('role') == 'patient' ? 'block' : 'none' }}">
-                            <label for="date_of_birth" class="form-label fw-bold">Date of Birth</label>
-                            <input id="date_of_birth" type="date" name="date_of_birth" value="{{ old('date_of_birth') }}"
-                                   max="{{ date('Y-m-d') }}"
-                                   class="form-control @error('date_of_birth') is-invalid @enderror">
-                            <small class="text-muted">Required for patient identification</small>
-                            @error('date_of_birth')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6" id="date-of-birth-field" style="display: {{ old('role') == 'patient' ? 'block' : 'none' }}">
+                                <label for="date_of_birth" class="form-label" style="font-weight:700;color:#0f172a;font-size:0.84rem">Date of Birth</label>
+                                <input id="date_of_birth" type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" max="{{ date('Y-m-d') }}" class="form-control @error('date_of_birth') is-invalid @enderror" style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem">
+                                <small style="font-size:0.72rem;color:#64748b">Required for patient identification</small>
+                                @error('date_of_birth')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-md-6" id="gender-field" style="display: {{ old('role') == 'patient' ? 'block' : 'none' }}">
+                                <label for="gender" class="form-label" style="font-weight:700;color:#0f172a;font-size:0.84rem">Gender</label>
+                                <select id="gender" name="gender" class="form-select @error('gender') is-invalid @enderror" style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem">
+                                    <option value="">-- Select Gender --</option>
+                                    <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
+                                    <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
+                                    <option value="other" {{ old('gender') == 'other' ? 'selected' : '' }}>Other</option>
+                                </select>
+                                @error('gender')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
                         </div>
 
-                        <!-- Gender - Only for Patients -->
-                        <div class="mb-4" id="gender-field" style="display: {{ old('role') == 'patient' ? 'block' : 'none' }}">
-                            <label for="gender" class="form-label fw-bold">Gender</label>
-                            <select id="gender" name="gender" class="form-control @error('gender') is-invalid @enderror">
-                                <option value="">-- Select Gender --</option>
-                                <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
-                                <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
-                                <option value="other" {{ old('gender') == 'other' ? 'selected' : '' }}>Other</option>
-                            </select>
-                            <small class="text-muted">Required for patient identification</small>
-                            @error('gender')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <!-- Medical Specialty -->
-                        <div class="mb-4" id="specialty-field">
-                            <label for="specialty_select" class="form-label fw-bold">Medical Specialty</label>
-                            <select class="form-control @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialtyAdmin()">
+                        <div class="mt-3" id="specialty-field" style="display: {{ old('role')=='doctor' ? 'block' : 'none' }}">
+                            <label for="specialty_select" class="form-label" style="font-weight:700;color:#0f172a;font-size:0.84rem">Medical Specialty <span class="text-danger">*</span></label>
+                            <select class="form-select @error('specialty') is-invalid @enderror" name="specialty_select" id="specialty_select" onchange="toggleCustomSpecialtyAdmin()" style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem">
                                 <option value="" {{ old('specialty_select') == '' ? 'selected' : '' }}>-- Select Specialty --</option>
-                                
                                 <optgroup label="🧠 General & Internal Medicine">
                                     <option value="General Practitioner" {{ old('specialty_select') == 'General Practitioner' ? 'selected' : '' }}>General Practitioner (GP) / Family Medicine</option>
                                     <option value="Internal Medicine" {{ old('specialty_select') == 'Internal Medicine' ? 'selected' : '' }}>Internal Medicine (Internist)</option>
                                 </optgroup>
-                                
                                 <optgroup label="🩺 Internal Medicine Subspecialties">
                                     <option value="Cardiology" {{ old('specialty_select') == 'Cardiology' ? 'selected' : '' }}>Cardiology (Heart)</option>
                                     <option value="Pulmonology" {{ old('specialty_select') == 'Pulmonology' ? 'selected' : '' }}>Pulmonology (Lungs)</option>
@@ -348,17 +111,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <option value="Allergy & Immunology" {{ old('specialty_select') == 'Allergy & Immunology' ? 'selected' : '' }}>Allergy & Immunology</option>
                                     <option value="Reproductive Endocrinology" {{ old('specialty_select') == 'Reproductive Endocrinology' ? 'selected' : '' }}>Reproductive Endocrinology (Fertility hormones)</option>
                                 </optgroup>
-                                
                                 <optgroup label="🧠 Emergency & Critical Care">
                                     <option value="Emergency Medicine" {{ old('specialty_select') == 'Emergency Medicine' ? 'selected' : '' }}>Emergency Medicine</option>
                                     <option value="Critical Care" {{ old('specialty_select') == 'Critical Care' ? 'selected' : '' }}>Critical Care / Intensive Care Medicine</option>
                                 </optgroup>
-                                
                                 <optgroup label="💉 Anesthesia & Pain Management">
                                     <option value="Anesthesiology" {{ old('specialty_select') == 'Anesthesiology' ? 'selected' : '' }}>Anesthesiology</option>
                                     <option value="Pain Management" {{ old('specialty_select') == 'Pain Management' ? 'selected' : '' }}>Pain Management / Interventional Pain Medicine</option>
                                 </optgroup>
-                                
                                 <optgroup label="🧠 Neurology & Psychiatry">
                                     <option value="Neurology" {{ old('specialty_select') == 'Neurology' ? 'selected' : '' }}>Neurology (Brain & nerves)</option>
                                     <option value="Neurosurgery" {{ old('specialty_select') == 'Neurosurgery' ? 'selected' : '' }}>Neurosurgery (Brain & spine surgery)</option>
@@ -366,7 +126,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <option value="Child & Adolescent Psychiatry" {{ old('specialty_select') == 'Child & Adolescent Psychiatry' ? 'selected' : '' }}>Child & Adolescent Psychiatry</option>
                                     <option value="Behavioral & Developmental Pediatrics" {{ old('specialty_select') == 'Behavioral & Developmental Pediatrics' ? 'selected' : '' }}>Behavioral & Developmental Pediatrics</option>
                                 </optgroup>
-                                
                                 <optgroup label="🦴 Surgical Specialties">
                                     <option value="General Surgery" {{ old('specialty_select') == 'General Surgery' ? 'selected' : '' }}>General Surgery</option>
                                     <option value="Orthopedic Surgery" {{ old('specialty_select') == 'Orthopedic Surgery' ? 'selected' : '' }}>Orthopedic Surgery (Bones & joints)</option>
@@ -383,7 +142,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <option value="Pediatric Surgery" {{ old('specialty_select') == 'Pediatric Surgery' ? 'selected' : '' }}>Pediatric Surgery</option>
                                     <option value="Hand Surgery" {{ old('specialty_select') == 'Hand Surgery' ? 'selected' : '' }}>Hand Surgery</option>
                                 </optgroup>
-                                
                                 <optgroup label="👶 Pediatrics & Women's Health">
                                     <option value="Pediatrics" {{ old('specialty_select') == 'Pediatrics' ? 'selected' : '' }}>Pediatrics</option>
                                     <option value="Neonatology" {{ old('specialty_select') == 'Neonatology' ? 'selected' : '' }}>Neonatology (Newborn care)</option>
@@ -393,7 +151,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <option value="Reproductive Endocrinology & Infertility" {{ old('specialty_select') == 'Reproductive Endocrinology & Infertility' ? 'selected' : '' }}>Reproductive Endocrinology & Infertility</option>
                                     <option value="Maternal–Fetal Medicine" {{ old('specialty_select') == 'Maternal–Fetal Medicine' ? 'selected' : '' }}>Maternal–Fetal Medicine</option>
                                 </optgroup>
-                                
                                 <optgroup label="🧬 Diagnostic & Support Specialties">
                                     <option value="Pathology" {{ old('specialty_select') == 'Pathology' ? 'selected' : '' }}>Pathology (Laboratory medicine)</option>
                                     <option value="Radiology" {{ old('specialty_select') == 'Radiology' ? 'selected' : '' }}>Radiology (Medical imaging)</option>
@@ -402,7 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <option value="Endoscopy" {{ old('specialty_select') == 'Endoscopy' ? 'selected' : '' }}>Endoscopy / GI Endoscopy</option>
                                     <option value="Electrodiagnostic Medicine" {{ old('specialty_select') == 'Electrodiagnostic Medicine' ? 'selected' : '' }}>Electrodiagnostic Medicine (EMG, EEG)</option>
                                 </optgroup>
-                                
                                 <optgroup label="🏥 Other Medical Specialties">
                                     <option value="Oncology" {{ old('specialty_select') == 'Oncology' ? 'selected' : '' }}>Oncology (Medical cancer care)</option>
                                     <option value="Hepatology" {{ old('specialty_select') == 'Hepatology' ? 'selected' : '' }}>Hepatology (Liver diseases)</option>
@@ -415,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <option value="Clinical Nutrition" {{ old('specialty_select') == 'Clinical Nutrition' ? 'selected' : '' }}>Clinical Nutrition / Dietetics</option>
                                     <option value="Neuro-rehabilitation" {{ old('specialty_select') == 'Neuro-rehabilitation' ? 'selected' : '' }}>Neuro-rehabilitation</option>
                                 </optgroup>
-                                
                                 <optgroup label="🧪 Specialized & Advanced Fields">
                                     <option value="Medical Genetics" {{ old('specialty_select') == 'Medical Genetics' ? 'selected' : '' }}>Medical Genetics</option>
                                     <option value="Hematologic Oncology" {{ old('specialty_select') == 'Hematologic Oncology' ? 'selected' : '' }}>Hematologic Oncology</option>
@@ -423,129 +178,22 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <option value="Tropical Medicine" {{ old('specialty_select') == 'Tropical Medicine' ? 'selected' : '' }}>Tropical Medicine</option>
                                     <option value="Pre-hospital Emergency" {{ old('specialty_select') == 'Pre-hospital Emergency' ? 'selected' : '' }}>Pre-hospital Emergency / EMS</option>
                                 </optgroup>
-                                
                                 <optgroup label="✏️ Custom">
                                     <option value="other">Other (Please specify)</option>
                                 </optgroup>
                             </select>
-                            
-                            <!-- Custom Specialty Input (Hidden by default) -->
                             <div id="custom_specialty_container_admin" style="display: none;" class="mt-2">
-                                <input 
-                                    type="text" 
-                                    name="custom_specialty" 
-                                    id="custom_specialty_admin" 
-                                    class="form-control"
-                                    placeholder="Please enter your medical specialty"
-                                >
+                                <input type="text" name="custom_specialty" id="custom_specialty_admin" class="form-control" placeholder="Please enter your medical specialty" style="border-radius:10px;border:1px solid #e2e8f0;height:38px;font-size:0.88rem">
                             </div>
-                            
-                            <!-- Hidden field to store the final specialty value -->
                             <input type="hidden" name="specialty" id="specialty_admin" value="{{ old('specialty') }}">
-                            
-                            @error('specialty')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            @error('specialty')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
 
-                        <!-- Subscription Pricing - Only for Doctors -->
-                        <div class="card mb-4" id="subscription-settings" style="display: {{ old('role') == 'doctor' ? 'block' : 'none' }}; border: 2px solid #e9ecef; border-radius: 10px;">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0 fw-bold">
-                                    <i class="bi bi-credit-card me-2"></i>Subscription Pricing
-                                </h6>
-                                <small class="text-muted">Update monthly and yearly subscription prices</small>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <label for="monthly_price" class="form-label fw-bold">Monthly Price ($)</label>
-                                        <input id="monthly_price" type="number" name="monthly_price"
-                                               value="{{ old('monthly_price', 99.00) }}"
-                                               step="0.01" min="0" max="99999.99"
-                                               class="form-control @error('monthly_price') is-invalid @enderror"
-                                               placeholder="99.00">
-                                        <small class="text-muted">Default: $99.00</small>
-                                        @error('monthly_price')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="yearly_price" class="form-label fw-bold">Yearly Price ($)</label>
-                                        <input id="yearly_price" type="number" name="yearly_price"
-                                               value="{{ old('yearly_price', 950.00) }}"
-                                               step="0.01" min="0" max="99999.99"
-                                               class="form-control @error('yearly_price') is-invalid @enderror"
-                                               placeholder="950.00">
-                                        <small class="text-muted">Default: $950.00</small>
-                                        @error('yearly_price')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
+                        <!-- SaaS fields removed — system is not SaaS -->
 
-                                <div class="row mt-3">
-                                    <div class="col-12">
-                                        <div class="alert alert-info">
-                                            <i class="bi bi-info-circle me-2"></i>
-                                            <strong>Note:</strong> These prices are specific to this user only and will not affect other users.
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row mt-3">
-                                    <div class="col-md-4">
-                                        <label for="grace_period_days" class="form-label fw-bold">Grace Period (Days)</label>
-                                        <input id="grace_period_days" type="number" name="grace_period_days"
-                                               value="{{ old('grace_period_days', 7) }}" min="1" max="30"
-                                               class="form-control @error('grace_period_days') is-invalid @enderror">
-                                        <small class="text-muted">Days after due date before restrictions</small>
-                                        @error('grace_period_days')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="reminder_frequency_days" class="form-label fw-bold">Reminder Frequency (Days)</label>
-                                        <input id="reminder_frequency_days" type="number" name="reminder_frequency_days"
-                                               value="{{ old('reminder_frequency_days', 3) }}" min="1" max="30"
-                                               class="form-control @error('reminder_frequency_days') is-invalid @enderror">
-                                        <small class="text-muted">Days between reminder notifications</small>
-                                        @error('reminder_frequency_days')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Monthly Cost Limit -->
-                        <div class="mb-4">
-                            <label for="monthly_cost_limit" class="form-label fw-bold">Monthly Cost Limit (USD)</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input id="monthly_cost_limit" type="number" name="monthly_cost_limit" 
-                                       value="{{ old('monthly_cost_limit', 0) }}" 
-                                       step="0.01" min="0"
-                                       class="form-control @error('monthly_cost_limit') is-invalid @enderror"
-                                       placeholder="0.00">
-                            </div>
-                            <small class="text-muted">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Set to 0 for no limit. Excess costs will be added to monthly invoices.
-                            </small>
-                            @error('monthly_cost_limit')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <!-- Buttons -->
-                        <div class="d-flex justify-content-end gap-3">
-                            <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-2"></i>Cancel
-                            </a>
-                            <button type="submit" class="btn btn-success">
-                                <i class="bi bi-person-plus me-2"></i>Create User
-                            </button>
+                        <div class="d-flex justify-content-end gap-2 mt-4 pt-3" style="border-top:1px solid #eef2f7">
+                            <a href="{{ route('admin.users.index') }}" class="btn btn-light border" style="border-radius:10px;font-weight:600;padding:0.55rem 1.1rem">Cancel</a>
+                            <button type="submit" class="btn text-white" style="background:#0f172a;border:none;border-radius:10px;font-weight:700;padding:0.55rem 1.2rem"><i class="fas fa-user-plus me-1"></i>Create User</button>
                         </div>
                     </form>
                 </div>
@@ -553,34 +201,12 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
-@endsection
-
-@push('styles')
-<style>
-/* Custom specialty input styling for admin create page */
-#custom_specialty_container_admin {
-    animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-#custom_specialty_admin {
-    border: 2px solid #e9ecef;
-    transition: border-color 0.3s ease;
-}
-
-#custom_specialty_admin:focus {
-    border-color: #DE6262;
-    box-shadow: 0 0 0 0.2rem rgba(222, 98, 98, 0.25);
-}
-</style>
+@push('scripts')
+<script>
+function toggleMedicalSpecialty(){const e=document.getElementById('role'),t=document.getElementById('subscription-settings'),s=document.getElementById('date-of-birth-field'),a=document.getElementById('gender-field'),o=document.getElementById('specialty-field');if(!e)return;const n=e.value;t&&(t.style.display=n==='doctor'?'block':'none'),o&&(o.style.display=n==='doctor'?'block':'none'),n==='patient'?(s&&(s.style.display='block'),a&&(a.style.display='block')):(s&&(s.style.display='none'),a&&(a.style.display='none'))}
+function toggleHospitalField(){const e=document.getElementById('role'),t=document.getElementById('hospital-admin-note');if(!e||!t)return;e.value==='hospital_admin'?t.style.display='block':t.style.display='none'}
+function toggleCustomSpecialtyAdmin(){const e=document.getElementById('specialty_select'),t=document.getElementById('custom_specialty_container_admin'),s=document.getElementById('custom_specialty_admin'),a=document.getElementById('specialty_admin');if(!e||!t)return;if(e.value==='other'){t.style.display='block',s&&(s.required=!0,s.focus()),a&&(a.value='')}else{t.style.display='none',s&&(s.required=!1,s.value=''),a&&(a.value=e.value)}}
+document.addEventListener('DOMContentLoaded',function(){toggleMedicalSpecialty();toggleHospitalField();const e=document.getElementById('role');e&&e.value&&toggleMedicalSpecialty();const t=document.getElementById('custom_specialty_admin'),s=document.getElementById('specialty_admin'),a=document.getElementById('specialty_select');if(a){t&&t.addEventListener('input',function(){a.value==='other'&&s&&(s.value=this.value)}),a.addEventListener('change',function(){toggleCustomSpecialtyAdmin()});const n=document.querySelector('form');n&&n.addEventListener('submit',function(n){if(a.value==='other'&&t){if(!t.value.trim()){n.preventDefault(),t.focus(),t.style.borderColor='#dc3545';return!1}s&&(s.value=t.value.trim())}else s&&(s.value=a.value,t&&(t.value=''))})}const o=document.getElementById('role');o&&o.addEventListener('change',function(){toggleMedicalSpecialty();toggleHospitalField()})});
+</script>
 @endpush
+@endsection

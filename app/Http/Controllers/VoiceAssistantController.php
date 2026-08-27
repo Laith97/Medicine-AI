@@ -1798,11 +1798,10 @@ INSTRUCTIONS:
                 ]);
             }
 
-            // Send notifications about appointment completion
+            // Send notifications about appointment completion - toast handled by unified notification system
             $this->sendAppointmentCompletionNotifications($appointment, $diagnosis);
 
-            return redirect()->route('doctor.appointments.completed', $appointment)
-                ->with('success', 'Appointment completed successfully with diagnosis linked. Review the completion summary below.');
+            return redirect()->route('doctor.appointments.completed', $appointment);
 
         } catch (\Exception $e) {
             \Log::error('Appointment completion failed: ' . $e->getMessage(), [
@@ -2013,11 +2012,10 @@ INSTRUCTIONS:
             // Send voice transcription completion notifications
             $this->sendVoiceTranscriptionNotifications($diagnosis, $request->transcription);
 
-            // If appointment was completed, redirect to completion page
+            // If appointment was completed, redirect to completion page - toast handled by unified notification system
             if ($request->completionType === 'complete_appointment' && $request->appointmentId) {
                 $appointment = \App\Models\Appointment::findOrFail($request->appointmentId);
-                return redirect()->route('doctor.appointments.completed', $appointment)
-                    ->with('success', $message . ' Review the completion summary below.');
+                return redirect()->route('doctor.appointments.completed', $appointment);
             }
 
             return response()->json([

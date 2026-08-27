@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('hep_program_id')->constrained('hep_programs')->onDelete('cascade');
             $table->foreignId('exercise_id')->constrained('exercises')->onDelete('cascade');
-            $table->integer('sets');
+            $table->integer('sets')->nullable();
             $table->integer('reps')->nullable();
             $table->integer('duration_seconds')->nullable();
-            $table->integer('rest_seconds');
-            $table->string('frequency');
+            $table->integer('rest_seconds')->nullable();
+            $table->string('frequency')->nullable();
             $table->text('progression_notes')->nullable();
             $table->integer('week_number');
             $table->integer('order');

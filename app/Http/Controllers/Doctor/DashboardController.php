@@ -280,12 +280,12 @@ class DashboardController extends Controller
         ]);
         $appointment->complete();
 
-        // Return success immediately
+        // Return success immediately - toast handled by unified notification system (appointment-completed)
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json(['success' => true, 'message' => 'Appointment completed successfully']);
         }
 
-        return back()->with('success', 'Appointment completed successfully.');
+        return back();
     }
 
     /**

@@ -2000,10 +2000,9 @@ function completeAppointment(appointmentId) {
         createTimeoutPromise(fetchPromise)
         .then(response => {
             if (response.ok) {
-                // Try to parse JSON response first
+                // Try to parse JSON response first - success toast handled by unified notification system (appointment-completed)
                 return response.json().then(data => {
                     if (data.success !== false) {
-                        showNotification('Appointment completed successfully!', 'success');
                         modal.hide();
                         setTimeout(() => window.location.reload(), 1000);
                     } else {
@@ -2011,7 +2010,6 @@ function completeAppointment(appointmentId) {
                     }
                 }).catch(() => {
                     // Fallback if response is not JSON
-                    showNotification('Appointment completed successfully!', 'success');
                     modal.hide();
                     setTimeout(() => window.location.reload(), 1000);
                 });

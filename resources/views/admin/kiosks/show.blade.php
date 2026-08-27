@@ -1,278 +1,114 @@
 @extends('layouts.admin')
-
-@section('title', 'Kiosk Details - ' . $kiosk->name)
-
+@section('title','Kiosk — '.$kiosk->name)
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <!-- Kiosk Header -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-desktop mr-2"></i>
-                        {{ $kiosk->name }}
-                        <span class="badge badge-{{ $kiosk->isActive() ? 'success' : 'secondary' }} ml-2">
-                            {{ $kiosk->status }}
-                        </span>
-                        @if($kiosk->isOnline())
-                            <span class="badge badge-success ml-2">Online</span>
-                        @else
-                            <span class="badge badge-danger ml-2">Offline</span>
-                        @endif
-                    </h3>
-                    <div class="card-tools">
-                        <a href="{{ route('kiosks.edit', $kiosk) }}" class="btn btn-warning btn-sm">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                        <button class="btn btn-info btn-sm" onclick="refreshKioskData()">
-                            <i class="fas fa-sync"></i> Refresh
-                        </button>
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4" style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border-radius:16px;padding:1.4rem 1.6rem;box-shadow:0 8px 24px rgba(15,23,42,0.12)">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center"><i class="fas fa-desktop" style="color:#fff;font-size:1.1rem"></i></div>
+            <div>
+                <h1 style="font-size:1.35rem;font-weight:800;color:#fff;letter-spacing:-0.02em;margin:0">{{ $kiosk->name }} <span class="badge" style="background:{{ $kiosk->isActive()?'#ecfdf5':'#f1f5f9' }};color:{{ $kiosk->isActive()?'#065f46':'#64748b' }};border:1px solid {{ $kiosk->isActive()?'#a7f3d0':'#e2e8f0' }};border-radius:20px;font-size:.68rem;vertical-align:middle">{{ ucfirst($kiosk->status) }}</span> @if($kiosk->isOnline())<span class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:20px;font-size:.68rem">Online</span>@else<span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:20px;font-size:.68rem">Offline</span>@endif</h1>
+                <p style="font-size:0.78rem;color:rgba(255,255,255,0.75);margin:2px 0 0">{{ $kiosk->serial_number }} · {{ $kiosk->location ?? 'No location' }} · Last ping {{ $kiosk->last_ping?->diffForHumans() ?? 'Never' }}</p>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.kiosks.edit', $kiosk) }}" class="btn btn-sm text-white" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.18);border-radius:10px;font-weight:700"><i class="fas fa-pen me-1"></i> Edit</a>
+            <a href="{{ route('admin.kiosks.index') }}" class="btn btn-sm" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:10px;font-weight:700"><i class="fas fa-arrow-left me-1"></i> Back</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:14px">
+                <div class="card-body p-4">
+                    <div style="font-size:.68rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Serial Number</div>
+                    <div style="font-weight:800;color:#0f172a;font-family:monospace">{{ $kiosk->serial_number }}</div>
+                    <div class="mt-3" style="font-size:.68rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Location</div>
+                    <div style="font-weight:600;color:#334155">{{ $kiosk->location ?? '—' }}</div>
+                    <div class="mt-3 d-flex gap-2">
+                        <span class="badge" style="background:{{ $kiosk->isActive()?'#ecfdf5':'#f1f5f9' }};color:{{ $kiosk->isActive()?'#065f46':'#64748b' }};border:1px solid {{ $kiosk->isActive()?'#a7f3d0':'#e2e8f0' }};border-radius:20px">{{ ucfirst($kiosk->status) }}</span>
+                        @if($kiosk->isOnline())<span class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:20px">Online</span>@else<span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:20px">Offline</span>@endif
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <dl class="row">
-                                <dt class="col-sm-4">Serial Number:</dt>
-                                <dd class="col-sm-8">{{ $kiosk->serial_number }}</dd>
-
-                                <dt class="col-sm-4">Location:</dt>
-                                <dd class="col-sm-8">{{ $kiosk->location ?? 'Not specified' }}</dd>
-
-                                <dt class="col-sm-4">Status:</dt>
-                                <dd class="col-sm-8">
-                                    <span class="badge badge-{{ $kiosk->isActive() ? 'success' : 'secondary' }}">
-                                        {{ $kiosk->status }}
-                                    </span>
-                                </dd>
-
-                                <dt class="col-sm-4">Last Ping:</dt>
-                                <dd class="col-sm-8">
-                                    @if($kiosk->last_ping)
-                                        {{ $kiosk->last_ping->format('M j, Y g:i A') }}
-                                        ({{ $kiosk->last_ping->diffForHumans() }})
-                                    @else
-                                        Never
-                                    @endif
-                                </dd>
-
-                                <dt class="col-sm-4">Created:</dt>
-                                <dd class="col-sm-8">{{ $kiosk->created_at->format('M j, Y g:i A') }}</dd>
-                            </dl>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>Configuration</h5>
-                            @if($kiosk->configuration)
-                                <pre class="bg-light p-2 rounded">{{ json_encode($kiosk->configuration, JSON_PRETTY_PRINT) }}</pre>
-                            @else
-                                <p class="text-muted">No configuration set</p>
-                            @endif
-                        </div>
-                    </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:14px">
+                <div class="card-body p-4">
+                    <div style="font-size:.68rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Last Ping</div>
+                    <div style="font-weight:700;color:#0f172a">{{ $kiosk->last_ping?->format('M j, Y g:i A') ?? 'Never' }}</div>
+                    <small class="text-muted" style="font-size:.74rem">{{ $kiosk->last_ping?->diffForHumans() ?? '' }}</small>
+                    <div class="mt-3" style="font-size:.68rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Created</div>
+                    <div style="font-size:.84rem;color:#334155">{{ $kiosk->created_at->format('M j, Y g:i A') }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100" style="border-radius:14px">
+                <div class="card-body p-4">
+                    <div style="font-size:.68rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Configuration</div>
+                    @if($kiosk->configuration)
+                        <pre style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;padding:10px;font-size:.76rem;max-height:120px;overflow:auto">{{ json_encode($kiosk->configuration, JSON_PRETTY_PRINT) }}</pre>
+                    @else
+                        <p class="text-muted small mb-0">No configuration</p>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="row">
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-info">
-                <div class="inner">
-                    <h3>{{ $stats['total_sessions'] }}</h3>
-                    <p>Total Sessions</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-success">
-                <div class="inner">
-                    <h3>{{ $stats['active_sessions'] }}</h3>
-                    <p>Active Sessions</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-play"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-warning">
-                <div class="inner">
-                    <h3>{{ $stats['total_checkins'] }}</h3>
-                    <p>Total Check-ins</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-user-check"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-danger">
-                <div class="inner">
-                    <h3>${{ number_format($stats['total_revenue'], 2) }}</h3>
-                    <p>Total Revenue</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-dollar-sign"></i>
-                </div>
-            </div>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm" style="border-radius:14px"><div class="card-body p-3 text-center"><div style="font-size:1.5rem;font-weight:800;color:#0f172a">{{ $stats['total_sessions'] }}</div><div style="font-size:.68rem;color:#64748b;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Total Sessions</div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm" style="border-radius:14px"><div class="card-body p-3 text-center"><div style="font-size:1.5rem;font-weight:800;color:#0f172a">{{ $stats['active_sessions'] }}</div><div style="font-size:.68rem;color:#64748b;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Active Sessions</div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm" style="border-radius:14px"><div class="card-body p-3 text-center"><div style="font-size:1.5rem;font-weight:800;color:#0f172a">{{ $stats['total_checkins'] }}</div><div style="font-size:.68rem;color:#64748b;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Total Check-ins</div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm" style="border-radius:14px"><div class="card-body p-3 text-center"><div style="font-size:1.5rem;font-weight:800;color:#059669">${{ number_format($stats['total_revenue'],2) }}</div><div style="font-size:.68rem;color:#64748b;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Total Revenue</div></div></div></div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;overflow:hidden">
+        <div class="card-header bg-white" style="padding:1rem 1.25rem;border-bottom:1px solid #eef2f7"><h6 class="mb-0" style="font-weight:800;color:#0f172a;font-size:.95rem"><i class="fas fa-clock me-2" style="color:#64748b"></i>Recent Sessions</h6></div>
+        <div class="table-responsive">
+            <table class="table mb-0" style="font-size:.84rem">
+                <thead><tr style="background:#f8fafc"><th style="padding:12px 16px;border:none;border-bottom:1px solid #e2e8f0;font-size:.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.05em">Session ID</th><th style="padding:12px 16px;border:none;border-bottom:1px solid #e2e8f0;font-size:.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.05em">Start</th><th style="padding:12px 16px;border:none;border-bottom:1px solid #e2e8f0;font-size:.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.05em">Duration</th><th style="padding:12px 16px;border:none;border-bottom:1px solid #e2e8f0;font-size:.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.05em">Status</th><th style="padding:12px 16px;border:none;border-bottom:1px solid #e2e8f0;font-size:.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.05em">Check-ins</th><th style="padding:12px 16px;border:none;border-bottom:1px solid #e2e8f0;font-size:.68rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.05em">Payments</th></tr></thead>
+                <tbody>
+                    @forelse($kiosk->sessions as $session)
+                        <tr>
+                            <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9"><code style="background:#f1f5f9;padding:2px 6px;border-radius:6px;font-size:.74rem">{{ Str::limit($session->session_id,16) }}</code></td>
+                            <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9"><span style="font-size:.82rem;color:#334155">{{ $session->start_time->format('M j, g:i A') }}</span></td>
+                            <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9"><span style="font-size:.82rem;color:#334155">{{ $session->getDurationInMinutes() }} min</span></td>
+                            <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9"><span class="badge" style="border-radius:20px;background:{{ $session->status==='active'?'#ecfdf5':'#f1f5f9' }};color:{{ $session->status==='active'?'#065f46':'#64748b' }};border:1px solid {{ $session->status==='active'?'#a7f3d0':'#e2e8f0' }}">{{ ucfirst($session->status) }}</span></td>
+                            <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9">{{ $session->checkins->count() }}</td>
+                            <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9">{{ $session->payments->count() }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="text-center py-4 text-muted">No sessions</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Recent Sessions -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Recent Sessions</h3>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Session ID</th>
-                                    <th>Start Time</th>
-                                    <th>Duration</th>
-                                    <th>Status</th>
-                                    <th>Check-ins</th>
-                                    <th>Payments</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($kiosk->sessions as $session)
-                                <tr>
-                                    <td>{{ $session->session_id }}</td>
-                                    <td>{{ $session->start_time->format('M j, Y g:i A') }}</td>
-                                    <td>{{ $session->getDurationInMinutes() }} min</td>
-                                    <td>
-                                        <span class="badge badge-{{ $session->status === 'active' ? 'success' : 'secondary' }}">
-                                            {{ $session->status }}
-                                        </span>
-                                    </td>
-                                    <td>{{ $session->checkins->count() }}</td>
-                                    <td>{{ $session->payments->count() }}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-info" onclick="viewSession('{{ $session->session_id }}')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="7" class="text-center">No sessions found</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden">
+        <div class="card-header bg-white" style="padding:1rem 1.25rem;border-bottom:1px solid #eef2f7"><h6 class="mb-0" style="font-weight:800;color:#0f172a;font-size:.95rem"><i class="fas fa-gamepad me-2" style="color:#7c3aed"></i>Kiosk Control</h6></div>
+        <div class="card-body p-4">
+            <div class="row g-2">
+                <div class="col-6 col-md-3"><button class="btn w-100" style="background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:12px;font-weight:700;padding:10px" onclick="sendCommand('restart')"><i class="fas fa-power-off me-1"></i> Restart</button></div>
+                <div class="col-6 col-md-3"><button class="btn w-100" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;font-weight:700;padding:10px" onclick="sendCommand('update')"><i class="fas fa-download me-1"></i> Update</button></div>
+                <div class="col-6 col-md-3"><button class="btn w-100" style="background:#eff6ff;border:1px solid #dbeafe;color:#2563eb;border-radius:12px;font-weight:700;padding:10px" onclick="sendCommand('diagnostics')"><i class="fas fa-stethoscope me-1"></i> Diagnostics</button></div>
+                <div class="col-6 col-md-3"><button class="btn w-100" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:12px;font-weight:700;padding:10px" onclick="sendCommand('shutdown')"><i class="fas fa-stop me-1"></i> Shutdown</button></div>
             </div>
-        </div>
-    </div>
-
-    <!-- Control Panel -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Kiosk Control Panel</h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <button class="btn btn-success btn-block" onclick="sendCommand('restart')">
-                                <i class="fas fa-power-off"></i> Restart Kiosk
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-warning btn-block" onclick="sendCommand('update')">
-                                <i class="fas fa-download"></i> Update Software
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-info btn-block" onclick="sendCommand('diagnostics')">
-                                <i class="fas fa-stethoscope"></i> Run Diagnostics
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-danger btn-block" onclick="sendCommand('shutdown')" id="shutdownBtn">
-                                <i class="fas fa-stop"></i> Shutdown
-                            </button>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <div id="commandStatus" class="alert" style="display: none;"></div>
-                    </div>
-                </div>
-            </div>
+            <div id="commandStatus" class="alert mt-3" style="display:none;border-radius:12px"></div>
         </div>
     </div>
 </div>
-
-<script>
-function refreshKioskData() {
-    location.reload();
-}
-
-function viewSession(sessionId) {
-    // Open session details in a modal or new page
-    window.open(`/admin/kiosk-sessions/${sessionId}`, '_blank');
-}
-
-function sendCommand(command) {
-    if (command === 'shutdown' && !confirm('Are you sure you want to shutdown this kiosk?')) {
-        return;
-    }
-
-    const statusDiv = document.getElementById('commandStatus');
-    statusDiv.style.display = 'block';
-    statusDiv.className = 'alert alert-info';
-    statusDiv.innerHTML = 'Sending command...';
-
-    fetch(`/api/kiosks/{{ $kiosk->id }}/command`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ command: command })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            statusDiv.className = 'alert alert-success';
-            statusDiv.innerHTML = `Command "${command}" sent successfully`;
-        } else {
-            statusDiv.className = 'alert alert-danger';
-            statusDiv.innerHTML = `Failed to send command: ${data.message}`;
-        }
-    })
-    .catch(error => {
-        statusDiv.className = 'alert alert-danger';
-        statusDiv.innerHTML = 'Error sending command';
-        console.error('Error:', error);
-    });
-}
-
-// Auto-refresh status every 30 seconds
-setInterval(() => {
-    // Update online/offline status
-    fetch(`/api/kiosks/{{ $kiosk->id }}/status`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const status = data.data.is_online ? 'Online' : 'Offline';
-                const badgeClass = data.data.is_online ? 'success' : 'danger';
-                // Update status badges if needed
-            }
-        })
-        .catch(console.error);
-}, 30000);
-</script>
 @endsection
+@push('scripts')
+<script>
+function sendCommand(cmd){
+    if(cmd==='shutdown' && !confirm('Shutdown this kiosk?')) return;
+    const el=document.getElementById('commandStatus'); el.style.display='block'; el.className='alert alert-info'; el.style.borderRadius='12px'; el.textContent='Sending '+cmd+'…';
+    fetch(`/api/kiosks/{{ $kiosk->id }}/command`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},body:JSON.stringify({command:cmd})})
+    .then(r=>r.json()).then(d=>{
+        el.className='alert '+(d.success?'alert-success':'alert-danger'); el.style.borderRadius='12px'; el.textContent=d.success?`Command "${cmd}" sent`:`Failed: ${d.message}`;
+    }).catch(()=>{ el.className='alert alert-danger'; el.textContent='Error sending command'; });
+}
+</script>
+@endpush

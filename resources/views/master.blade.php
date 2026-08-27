@@ -1640,168 +1640,133 @@ body .dropdown .dropdown-menu.show,
             @endif
         </div>
 
-        <!-- Flash Messages -->
-        @if (session('success') || session('error') || session('warning') || session('info'))
-            <div class="container-fluid px-0">
-                <div class="row">
-                    <div class="col-12">
-                        @if (session('success'))
-                            <div class="alert alert-success alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert" aria-live="assertive">
-                                <div class="container">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
-                                        <strong>Success!</strong> {{ session('success') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close success message"></button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-
-                        @if (session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert" aria-live="assertive">
-                                <div class="container">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-exclamation-circle me-2" aria-hidden="true"></i>
-                                        <strong>Error!</strong> {{ session('error') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close error message"></button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-
-                        @if (session('warning'))
-                            <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert" aria-live="assertive">
-                                <div class="container">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
-                                        <strong>Warning!</strong> {{ session('warning') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close warning message"></button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-
-                        @if (session('info'))
-                            <div class="alert alert-info alert-dismissible fade show m-0 rounded-0 border-0"
-                                role="alert" aria-live="assertive">
-                                <div class="container">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
-                                        <strong>Info!</strong> {{ session('info') }}
-                                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
-                                            aria-label="Close info message"></button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
+        {{-- Modern Toasts: replaces old full-width alerts (m-0 rounded-0) + bg-danger impersonation bar --}}
+        <style>
+            #modernToastContainer{position:fixed;top:14px;right:14px;z-index:1080;display:flex;flex-direction:column;gap:10px;max-width:440px;pointer-events:none}
+            .modern-toast{pointer-events:auto;background:#fff;border:1px solid #eef2f7;border-left:4px solid #e2e8f0;border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,0.12);padding:12px 14px;display:flex;align-items:flex-start;gap:12px;animation:toastIn 0.28s cubic-bezier(0.32,0.72,0,1);position:relative;overflow:hidden}
+            .modern-toast.success{border-left-color:#10b981}
+            .modern-toast.error{border-left-color:#ef4444}
+            .modern-toast.warning{border-left-color:#f59e0b}
+            .modern-toast.info{border-left-color:#0ea5e9}
+            .modern-toast.impersonation{border-left-color:#dc2626;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#fff;border-color:rgba(255,255,255,0.08);box-shadow:0 12px 32px rgba(15,23,42,0.24)}
+            .modern-toast.impersonation.chain{border-left-color:#0ea5e9}
+            .modern-toast.impersonation.hospital{border-left-color:#f59e0b;background:linear-gradient(135deg,#422006 0%,#92400e 100%)}
+            .modern-toast .toast-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.85rem}
+            .modern-toast.success .toast-icon{background:#ecfdf5;color:#059669;border:1px solid #a7f3d0}
+            .modern-toast.error .toast-icon{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+            .modern-toast.warning .toast-icon{background:#fffbeb;color:#d97706;border:1px solid #fde68a}
+            .modern-toast.info .toast-icon{background:#eff6ff;color:#2563eb;border:1px solid #dbeafe}
+            .modern-toast.impersonation .toast-icon{background:rgba(255,255,255,0.14);color:#fff;border-color:rgba(255,255,255,0.18)}
+            .modern-toast .toast-body{flex:1;min-width:0}
+            .modern-toast .toast-title{font-weight:800;font-size:0.84rem;line-height:1;color:#0f172a;letter-spacing:-0.01em}
+            .modern-toast.impersonation .toast-title{color:#fff}
+            .modern-toast .toast-msg{font-size:0.82rem;line-height:1.4;color:#475569;margin-top:3px;word-break:break-word}
+            .modern-toast.impersonation .toast-msg{color:rgba(255,255,255,0.82)}
+            .modern-toast .toast-close{width:28px;height:28px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#64748b;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer}
+            .modern-toast.impersonation .toast-close{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.18);color:#fff}
+            .modern-toast .toast-actions{display:flex;gap:6px;margin-top:8px}
+            .modern-toast .btn-toast{border-radius:10px;font-weight:700;font-size:0.76rem;padding:5px 10px;border:1px solid transparent}
+            @keyframes toastIn{from{opacity:0;transform:translateX(12px) translateY(-6px)}to{opacity:1;transform:none}}
+            @keyframes toastOut{to{opacity:0;transform:translateX(12px)}}
+        </style>
+        <div id="modernToastContainer" aria-live="polite" aria-atomic="true">
+            @if (session('success'))
+                <div class="modern-toast success" role="alert" data-autohide="6000">
+                    <div class="toast-icon"><i class="fas fa-check"></i></div>
+                    <div class="toast-body">
+                        <div class="toast-title">Success</div>
+                        <div class="toast-msg">{{ session('success') }}</div>
                     </div>
+                    <button type="button" class="toast-close" onclick="this.closest('.modern-toast').remove()" aria-label="Close"><i class="fas fa-times" style="font-size:0.7rem"></i></button>
                 </div>
-            </div>
-        @endif
-
-        @php
-            // DEBUG: Check session variables for banner display
-            $debugInfo = [
-                'admin_id' => session('impersonating_admin_id'),
-                'hospital_admin_id' => session('impersonating_hospital_admin_id'),
-                'admin_started' => session('admin_impersonation_started_at'),
-                'hospital_started' => session('hospital_admin_impersonation_started_at'),
-                'user_id' => session('impersonating_user_id'),
-                'user_role' => auth()->user()?->role,
-            ];
-        @endphp
-
-        <!-- Chain Impersonation: ONLY if hospital admin started time exists AND we have admin session -->
-        @if(session('impersonating_admin_id') && session('impersonating_hospital_admin_id') && session('hospital_admin_impersonation_started_at') && !empty(session('hospital_admin_impersonation_started_at')) && auth()->check() && auth()->user()->isDoctor())
-            <!-- Chain Impersonation Banner (Sky Blue) -->
-            <div class="bg-info py-2">
-                <div class="container">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-users me-2 text-white"></i>
-                            <small class="mb-0 text-white">
-                                <strong>Chain Impersonation:</strong>
-                                {{ session('impersonating_admin_name', 'Admin') }} → {{ session('impersonating_hospital_admin_name') }} → Dr. {{ auth()->user()->name }}
-                            </small>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <form method="POST" action="{{ route('return-to-hospital-admin') }}" style="display: inline;">
-                                @csrf
-                                <button type="submit" class="btn btn-outline-light btn-sm py-1 px-2">
-                                    <i class="fas fa-arrow-left me-1"></i>Return to Hospital Admin
-                                </button>
-                            </form>
-                            <form method="POST" action="{{ route('return-to-admin') }}" style="display: inline;">
-                                @csrf
-                                <button type="submit" class="btn btn-light btn-sm py-1 px-2">
-                                    <i class="fas fa-arrow-up me-1"></i>Return to Admin
-                                </button>
-                            </form>
-                        </div>
+            @endif
+            @if (session('error'))
+                <div class="modern-toast error" role="alert" data-autohide="8000">
+                    <div class="toast-icon"><i class="fas fa-exclamation-circle"></i></div>
+                    <div class="toast-body">
+                        <div class="toast-title">Error</div>
+                        <div class="toast-msg">{{ session('error') }}</div>
                     </div>
+                    <button type="button" class="toast-close" onclick="this.closest('.modern-toast').remove()" aria-label="Close"><i class="fas fa-times" style="font-size:0.7rem"></i></button>
                 </div>
-            </div>
-        @elseif(session('impersonating_hospital_admin_id') && empty(session('impersonating_admin_id')) && auth()->check() && auth()->user()->isDoctor())
-            <!-- Direct Hospital Admin Banner (Yellow) - Only when NO admin session -->
-            <div class="bg-warning py-2">
-                <div class="container">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-user-shield me-2"></i>
-                            <small class="mb-0">
-                                <strong>Hospital Admin Impersonation:</strong>
-                                {{ session('impersonating_hospital_admin_name') }} is viewing as Dr. {{ auth()->user()->name }}
-                            </small>
-                        </div>
-                        <form method="POST" action="{{ route('return-to-hospital-admin') }}" style="display: inline;">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-dark btn-sm py-1 px-2">
-                                <i class="fas fa-arrow-left me-1"></i>Return to Hospital Admin
-                            </button>
-                        </form>
+            @endif
+            @if (session('warning'))
+                <div class="modern-toast warning" role="alert" data-autohide="7000">
+                    <div class="toast-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="toast-body">
+                        <div class="toast-title">Warning</div>
+                        <div class="toast-msg">{{ session('warning') }}</div>
                     </div>
+                    <button type="button" class="toast-close" onclick="this.closest('.modern-toast').remove()" aria-label="Close"><i class="fas fa-times" style="font-size:0.7rem"></i></button>
                 </div>
-            </div>
-        @elseif(session('impersonating_admin_id') && session('impersonating_user_id') && session('admin_impersonation_started_at') && empty(session('hospital_admin_impersonation_started_at')))
-            <!-- Direct Admin Banner (Red) - Only when NO hospital admin session active -->
+            @endif
+            @if (session('info'))
+                <div class="modern-toast info" role="alert" data-autohide="6000">
+                    <div class="toast-icon"><i class="fas fa-info"></i></div>
+                    <div class="toast-body">
+                        <div class="toast-title">Info</div>
+                        <div class="toast-msg">{{ session('info') }}</div>
+                    </div>
+                    <button type="button" class="toast-close" onclick="this.closest('.modern-toast').remove()" aria-label="Close"><i class="fas fa-times" style="font-size:0.7rem"></i></button>
+                </div>
+            @endif
+
             @php
-                $impersonatedUser = auth()->user();
-                $impersonatedUserId = session('impersonating_user_id');
-
-                // Fallback: if auth()->user() is null, try to get user from session
-                if (!$impersonatedUser && $impersonatedUserId) {
-                    $impersonatedUser = \App\Models\User::find($impersonatedUserId);
+                $isChain = session('impersonating_admin_id') && session('impersonating_hospital_admin_id') && session('hospital_admin_impersonation_started_at') && !empty(session('hospital_admin_impersonation_started_at')) && auth()->check() && auth()->user()->isDoctor();
+                $isHospital = !$isChain && session('impersonating_hospital_admin_id') && empty(session('impersonating_admin_id')) && auth()->check() && auth()->user()->isDoctor();
+                $isAdmin = !$isChain && !$isHospital && session('impersonating_admin_id') && session('impersonating_user_id') && session('admin_impersonation_started_at') && empty(session('hospital_admin_impersonation_started_at'));
+                if($isAdmin){
+                    $impersonatedUser = auth()->user();
+                    $impersonatedUserId = session('impersonating_user_id');
+                    if (!$impersonatedUser && $impersonatedUserId) { $impersonatedUser = \App\Models\User::find($impersonatedUserId); }
+                    $userName = $impersonatedUser?->name ?? 'User';
+                    $userRole = $impersonatedUser?->role ?? 'unknown';
                 }
-
-                $userName = $impersonatedUser?->name ?? 'User';
-                $userRole = $impersonatedUser?->role ?? 'unknown';
             @endphp
-            <div class="bg-danger py-2">
-                <div class="container">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-user-shield me-2 text-white"></i>
-                            <small class="mb-0 text-white">
-                                <strong>Admin Impersonation:</strong>
-                                {{ session('impersonating_admin_name', 'Admin') }} is viewing as {{ $userName }} ({{ ucfirst(str_replace('_', ' ', $userRole)) }})
-                            </small>
+            @if($isChain)
+                <div class="modern-toast impersonation chain" role="alert" data-sticky="true">
+                    <div class="toast-icon"><i class="fas fa-users"></i></div>
+                    <div class="toast-body">
+                        <div class="toast-title">Chain Impersonation</div>
+                        <div class="toast-msg">{{ session('impersonating_admin_name', 'Admin') }} → {{ session('impersonating_hospital_admin_name') }} → Dr. {{ auth()->user()->name }}</div>
+                        <div class="toast-actions">
+                            <form method="POST" action="{{ route('return-to-hospital-admin') }}">@csrf<button type="submit" class="btn-toast" style="background:rgba(255,255,255,0.14);color:#fff;border-color:rgba(255,255,255,0.18)"><i class="fas fa-arrow-left me-1"></i>Return to Hospital Admin</button></form>
+                            <form method="POST" action="{{ route('return-to-admin') }}">@csrf<button type="submit" class="btn-toast" style="background:#fff;color:#0f172a"><i class="fas fa-arrow-up me-1"></i>Return to Admin</button></form>
                         </div>
-                        <form method="POST" action="{{ route('return-to-admin') }}" style="display: inline;">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-light btn-sm py-1 px-2">
-                                <i class="fas fa-arrow-left me-1"></i>Return to Admin
-                            </button>
-                        </form>
                     </div>
                 </div>
-            </div>
-        @endif
+            @elseif($isHospital)
+                <div class="modern-toast impersonation hospital" role="alert" data-sticky="true">
+                    <div class="toast-icon"><i class="fas fa-user-shield"></i></div>
+                    <div class="toast-body">
+                        <div class="toast-title">Hospital Admin View</div>
+                        <div class="toast-msg">{{ session('impersonating_hospital_admin_name') }} viewing as Dr. {{ auth()->user()->name }}</div>
+                        <div class="toast-actions">
+                            <form method="POST" action="{{ route('return-to-hospital-admin') }}">@csrf<button type="submit" class="btn-toast" style="background:#fff;color:#92400e"><i class="fas fa-arrow-left me-1"></i>Return to Hospital Admin</button></form>
+                        </div>
+                    </div>
+                </div>
+            @elseif($isAdmin)
+                <div class="modern-toast impersonation" role="alert" data-sticky="true">
+                    <div class="toast-icon"><i class="fas fa-user-shield"></i></div>
+                    <div class="toast-body">
+                        <div class="toast-title">Admin View</div>
+                        <div class="toast-msg">{{ session('impersonating_admin_name', 'Admin') }} viewing as {{ $userName }} ({{ ucfirst(str_replace('_', ' ', $userRole)) }})</div>
+                        <div class="toast-actions">
+                            <form method="POST" action="{{ route('return-to-admin') }}">@csrf<button type="submit" class="btn-toast" style="background:#fff;color:#dc2626"><i class="fas fa-arrow-left me-1"></i>Return to Admin</button></form>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function(){
+                document.querySelectorAll('#modernToastContainer .modern-toast[data-autohide]').forEach(function(el){
+                    var ms = parseInt(el.getAttribute('data-autohide'),10) || 6000;
+                    setTimeout(function(){ el.style.animation='toastOut 0.22s ease forwards'; setTimeout(function(){ el.remove(); },220); }, ms);
+                });
+            });
+        </script>
 
         <!-- AJAX Loading Indicator -->
         <div id="ajax-loading-overlay" class="ajax-loading-overlay">

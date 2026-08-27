@@ -22,7 +22,7 @@ return new class extends Migration
             $table->json('goals')->nullable();
             $table->json('precautions')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
 
             $table->index('category');
