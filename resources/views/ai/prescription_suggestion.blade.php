@@ -244,15 +244,22 @@ $('#aiSuggestBtn').click(function(e) {
     }
     console.log('Has Medications:', hasMedications, 'Value:', pastMeds);
 
-    // Precise fallback to voice layer when Diagnosis empty (your Khalid case: no known allergies -> None) — includes VT fallback (AiAssistantResult empty)
+    // Precise fallback to voice layer when Diagnosis empty — extract normalized "None" for safety (not truncated AI text)
     const _vtAll = voiceTranscription?.structured_chart?.medical_history || voiceTranscription?.extracted_data?.medical_history || voiceTranscription?.structured_chart?.medications || '';
     const _vtMed = voiceTranscription?.structured_chart?.medications || voiceTranscription?.extracted_data?.medications || voiceTranscription?.structured_chart?.medical_history || '';
     if (!hasAllergies && (voiceDiagnosis || voiceTranscription)) {
         const vAll = voiceDiagnosis?.patient_data?.allergies || voiceDiagnosis?.patient_data?.medical_history || voiceDiagnosis?.ai_analysis || _vtAll || voiceDiagnosis?.structured_chart?.medical_history || '';
-        if (vAll && String(vAll).trim().length > 0 && /no known|none|nkda|no allergies|allergy/i.test(String(vAll))) {
+        const vAllStr = String(vAll);
+        if (vAll && vAllStr.trim().length > 0 && /no known|none|nkda|no allergies/i.test(vAllStr)) {
             hasAllergies = true;
-            allergies = [String(vAll).substring(0,80)];
-            console.log('🔍 Voice fallback allergies:', vAll);
+            // Normalize to "None" for backend safety check (AIAssistant requires non-empty, "None" is valid)
+            const m = vAllStr.match(/no known drug allergies|no known allergies|no drug allergies|none|nkda/i);
+            allergies = [m ? 'None' : 'None'];
+            console.log('🔍 Voice fallback allergies: None (from:', vAllStr.substring(0,100) + ')');
+        } else if (vAll && /allergy/i.test(vAllStr) && vAllStr.trim().length > 0) {
+            hasAllergies = true;
+            allergies = [vAllStr.match(/allerg[^,\n]*/i)?.[0]?.trim().substring(0,80) || 'None'];
+            console.log('🔍 Voice fallback allergies (extracted):', allergies[0]);
         } else if ((voiceDiagnosis?.structured_chart?.medical_history && /no known|none|nkda/i.test(voiceDiagnosis.structured_chart.medical_history)) || (_vtAll && /no known|none|nkda/i.test(String(_vtAll)))) {
             hasAllergies = true; allergies = ['None'];
             console.log('🔍 VT fallback allergies: None');
@@ -260,13 +267,18 @@ $('#aiSuggestBtn').click(function(e) {
     }
     if (!hasMedications && (voiceDiagnosis || voiceTranscription)) {
         const vMed = voiceDiagnosis?.patient_data?.medications || voiceDiagnosis?.patient_data?.past_medications || voiceDiagnosis?.structured_chart?.medications || voiceDiagnosis?.ai_analysis || _vtMed || '';
-        if (vMed && String(vMed).trim().length > 0 && /none|no.*medications|no.*meds|no current/i.test(String(vMed).toLowerCase())) {
+        const vMedStr = String(vMed);
+        if (vMed && vMedStr.trim().length > 0 && /none|no.*medications|no.*meds|no current|no regular medications/i.test(vMedStr.toLowerCase())) {
             hasMedications = true;
-            pastMeds = [String(vMed).substring(0,80)];
-            console.log('🔍 Voice fallback meds:', vMed);
+            pastMeds = ['None'];
+            console.log('🔍 Voice fallback meds: None (from:', vMedStr.substring(0,100) + ')');
+        } else if (vMed && vMedStr.trim().length > 0) {
+            // Has meds info but not "None" — use actual value
+            hasMedications = true; pastMeds = [vMedStr.match(/Current Medications:\s*([^\n]+)/i)?.[1]?.trim() || vMedStr.substring(0,80)];
+            console.log('🔍 Voice fallback meds (extracted):', pastMeds[0]);
         } else if ((voiceDiagnosis?.structured_chart?.medications && String(voiceDiagnosis.structured_chart.medications).trim().length > 0) || (_vtMed && String(_vtMed).trim().length > 0)) {
             const medVal = voiceDiagnosis?.structured_chart?.medications || _vtMed;
-            hasMedications = true; pastMeds = [String(medVal).substring(0,80)];
+            hasMedications = true; pastMeds = [String(medVal).substring(0,80).toLowerCase().includes('none') ? 'None' : String(medVal).substring(0,80)];
         }
     }
     
@@ -805,8 +817,8 @@ function populateDataSourcesModal() {
     const patientData = currentDiagnosis ? currentDiagnosis.patient_data : null;
 
     // Precise fallback helpers: use voice layer when Diagnosis not yet saved (weight 82kg case) — includes VT structured_chart (Khalid fix)
-    const voiceAllergiesRaw = voiceDiagnosis?.patient_data?.allergies || voiceDiagnosis?.extracted_data?.allergies || voiceDiagnosis?.structured_chart?.medical_history || voiceTranscription?.structured_chart?.medical_history || voiceTranscription?.extracted_data?.medical_history || currentDiagnosis?.patient_data?.medical_history || voiceTranscription?.structured_chart?.medical_history || '';
-    const voiceMedsRaw = voiceDiagnosis?.patient_data?.medications || voiceDiagnosis?.patient_data?.past_medications || voiceDiagnosis?.extracted_data?.medications || voiceDiagnosis?.structured_chart?.medications || voiceTranscription?.structured_chart?.medications || voiceTranscription?.extracted_data?.medications || currentDiagnosis?.patient_data?.medications || '';
+    const voiceAllergiesRaw = voiceDiagnosis?.patient_data?.allergies || voiceDiagnosis?.extracted_data?.allergies || voiceDiagnosis?.structured_chart?.medical_history || voiceTranscription?.structured_chart?.medical_history || voiceTranscription?.extracted_data?.medical_history || currentDiagnosis?.patient_data?.medical_history || voiceDiagnosis?.ai_analysis || voiceTranscription?.ai_analysis || voiceTranscription?.raw_transcription || '';
+    const voiceMedsRaw = voiceDiagnosis?.patient_data?.medications || voiceDiagnosis?.patient_data?.past_medications || voiceDiagnosis?.extracted_data?.medications || voiceDiagnosis?.structured_chart?.medications || voiceTranscription?.structured_chart?.medications || voiceTranscription?.extracted_data?.medications || currentDiagnosis?.patient_data?.medications || voiceDiagnosis?.ai_analysis || voiceTranscription?.ai_analysis || '';
     const voiceDoctorNotesRaw = appointment.doctor_notes || currentDiagnosis?.diagnosis_text || voiceDiagnosis?.patient_data?.diagnosis || voiceDiagnosis?.ai_analysis || voiceTranscription?.structured_chart?.diagnosis || voiceTranscription?.extracted_data?.diagnosis || '';
     const hasAllergiesDirect = patientData && patientData.allergies && (Array.isArray(patientData.allergies) ? patientData.allergies.length > 0 : (typeof patientData.allergies === 'string' && patientData.allergies.trim().length > 0));
     const hasAllergiesFallback = !hasAllergiesDirect && voiceAllergiesRaw && String(voiceAllergiesRaw).trim().length > 0 && /no known|none|nkda|no allergies|allergy/i.test(String(voiceAllergiesRaw));
