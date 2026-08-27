@@ -1609,67 +1609,78 @@
     </div>
 </div>
 
-<!-- AI Data Sources Modal — Premium -->
+<!-- AI Data Sources — Professional Popup (Premium) -->
 <div class="modal fade modal-premium" id="aiDataSourcesModal" tabindex="-1" aria-labelledby="aiDataSourcesModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content" style="border:none;border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(15,23,42,0.18);">
+            <!-- Premium Header -->
+            <div class="modal-header" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border:none; padding:1.25rem 1.5rem; color:#fff;">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="head-icon" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color:#2563eb; border:1px solid #bfdbfe;">
-                        <i class="fas fa-database"></i>
+                    <div class="d-flex align-items-center justify-content-center" style="width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.18);backdrop-filter:blur(8px);">
+                        <i class="fas fa-database" style="font-size:1.1rem;color:#fff;"></i>
                     </div>
                     <div>
-                        <h5 class="modal-title mb-0" id="aiDataSourcesModalLabel" style="font-size:0.95rem; font-weight:800; color:#1e293b; letter-spacing:-0.01em;">AI Clinical Data Sources</h5>
-                        <div style="font-size:0.72rem; color:#94a3b8; font-weight:500;">What AI analyzes • Prioritized by importance</div>
+                        <h5 class="modal-title mb-0" id="aiDataSourcesModalLabel" style="font-size:1.05rem; font-weight:800; color:#fff; letter-spacing:-0.02em;">AI Clinical Data Sources</h5>
+                        <div style="font-size:0.76rem; color:rgba(255,255,255,0.72); font-weight:500; margin-top:2px;">What AI analyzes • Prioritized by importance • Verified sources</div>
                     </div>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="d-none d-md-inline-flex align-items-center gap-1" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.18);border-radius:20px;padding:0.3rem 0.7rem;font-size:0.7rem;font-weight:700;color:#fff;backdrop-filter:blur(8px);"><span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 0 4px rgba(34,197,94,0.2);"></span> Live Analysis</span>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity:0.8;"></button>
+                </div>
             </div>
-            <div class="modal-body">
-                <div class="ml-intro">
-                    <i class="fas fa-info-circle" style="color:#2563eb; margin-top:2px;"></i>
-                    <div><strong style="color:#1e293b;">Importance:</strong> <span style="color:#dc2626; font-weight:700;">CRITICAL</span> required (AI blocked if missing) · <span style="color:#d97706; font-weight:600;">Important</span> strongly recommended · <span style="color:#0e7490;">Helpful</span> / <span style="color:#64748b;">Context</span> adds background.</div>
+            <div class="modal-body" style="background:#f8fafc; padding:1.25rem 1.5rem;">
+                <!-- Importance Legend - Modern Pills -->
+                <div class="d-flex flex-wrap align-items-center gap-2 p-3" style="background:#fff;border:1px solid #eef2f7;border-radius:14px;box-shadow:0 2px 8px rgba(15,23,42,0.03);">
+                    <div class="d-flex align-items-center gap-2" style="font-size:0.76rem;font-weight:600;color:#334155;"><i class="fas fa-circle-info" style="color:#2563eb;"></i> Importance:</div>
+                    <span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:20px;padding:0.3rem 0.6rem;font-size:0.68rem;font-weight:700;"><i class="fas fa-shield-halved me-1"></i>CRITICAL</span><span style="font-size:0.72rem;color:#64748b;">required — AI blocked if missing</span>
+                    <span class="vr d-none d-md-block" style="height:18px;opacity:0.15;"></span>
+                    <span class="badge" style="background:#fef9c3;color:#854d0e;border:1px solid #fde68a;border-radius:20px;padding:0.3rem 0.6rem;font-size:0.68rem;font-weight:700;">Important</span><span style="font-size:0.72rem;color:#64748b;">strongly recommended</span>
+                    <span class="vr d-none d-md-block" style="height:18px;opacity:0.15;"></span>
+                    <span class="badge" style="background:#f0fdfa;color:#115e59;border:1px solid #99f6e4;border-radius:20px;padding:0.3rem 0.6rem;font-size:0.68rem;font-weight:700;">Helpful</span><span style="font-size:0.72rem;color:#64748b;">context</span>
                 </div>
 
-                <div class="ml-section-title"><i class="fas fa-table" style="color:#2563eb;"></i> Sources</div>
-                <div class="table-responsive" style="background:#fff; border:1px solid #eef2f7; border-radius:10px; overflow:hidden;">
-                    <table class="table table-sm mb-0" style="font-size:0.78rem;">
-                        <thead style="background:#f8fafc; border-bottom:1px solid #eef2f7;">
-                            <tr style="font-size:0.72rem; color:#64748b; text-transform:uppercase; letter-spacing:0.04em;">
-                                <th style="padding:0.65rem 0.75rem; border:none; font-weight:700;"><i class="fas fa-clipboard-list me-1"></i>Source</th>
-                                <th style="padding:0.65rem 0.75rem; border:none; font-weight:700;">Status</th>
-                                <th style="padding:0.65rem 0.75rem; border:none; font-weight:700;">Importance</th>
-                                <th style="padding:0.65rem 0.75rem; border:none; font-weight:700;">Value</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dataSourcesTableBody" style="color:#334155;">
-                            <!-- Dynamic content populated by JS -->
-                        </tbody>
-                    </table>
-                </div>
-
+                <!-- Modern Card Grid instead of table -->
                 <div class="mt-3">
-                    <div class="ml-section-title"><i class="fas fa-chart-line" style="color:#059669;"></i> Data Completeness</div>
-                    <div class="progress" style="height:10px; background:#f1f5f9; border-radius:99px; overflow:hidden;" id="dataCompletenessProgress">
-                        <div class="progress-bar" id="dataCompletenessBar" style="width:0%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); border-radius:99px;"> </div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="mb-0" style="font-weight:800;color:#0f172a;font-size:0.86rem;letter-spacing:-0.01em;"><i class="fas fa-layer-group me-2" style="color:#6366f1;"></i>Sources</h6>
+                        <span class="text-muted" style="font-size:0.7rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">9 sources • Sorted by importance</span>
                     </div>
-                    <small class="d-block mt-1" style="font-size:0.72rem; color:#64748b;" id="dataCompletenessText">Analyzing available clinical data...</small>
+                    <div id="dataSourcesGrid" class="row g-3">
+                        <!-- Dynamic modern cards populated by JS — table body kept hidden for backward compat -->
+                        <div id="dataSourcesTableBody" style="display:none;"></div>
+                    </div>
                 </div>
 
-                <div class="ml-note mt-3">
-                    <i class="fas fa-lightbulb" style="color:#d97706; margin-top:2px;"></i>
-                    <div><strong>To improve:</strong> Complete allergies, update meds, add symptoms at booking, create diagnosis. <ul class="mb-0 mt-1" style="font-size:0.74rem; color:#475569;" id="improvementSuggestions"><li>Complete patient allergy information</li><li>Update current medications</li><li>Add detailed symptoms</li><li>Create diagnosis records</li></ul></div>
+                <!-- Data Completeness - Premium -->
+                <div class="mt-3 p-3" style="background:#fff;border:1px solid #eef2f7;border-radius:14px;box-shadow:0 2px 8px rgba(15,23,42,0.03);">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2"><span class="d-flex align-items-center justify-content-center" style="width:28px;height:28px;border-radius:10px;background:#f0fdf4;border:1px solid #dcfce7;"><i class="fas fa-chart-line" style="color:#059669;font-size:0.78rem;"></i></span><span style="font-weight:800;color:#0f172a;font-size:0.86rem;">Data Completeness</span></div>
+                        <span class="badge" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:20px;font-size:0.68rem;" id="dataCompletenessBadge">Analyzing...</span>
+                    </div>
+                    <div class="progress" style="height:10px; background:#f1f5f9; border-radius:99px; overflow:hidden; border:1px solid #e2e8f0;" id="dataCompletenessProgress">
+                        <div class="progress-bar" id="dataCompletenessBar" style="width:0%; background: linear-gradient(90deg, #0ea5e9 0%, #6366f1 50%, #10b981 100%); border-radius:99px; transition:width 0.6s ease;"> </div>
+                    </div>
+                    <div class="d-flex align-items-start gap-2 mt-2 p-2" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px;font-size:0.78rem;color:#334155;" id="dataCompletenessText">Analyzing available clinical data...</div>
                 </div>
 
-                <div class="ml-note mt-3" style="background:#f8fafc; border-color:#e2e8f0;">
-                    <i class="fas fa-shield-alt" style="color:#2563eb; margin-top:2px;"></i>
-                    <div><strong>Privacy:</strong> Encrypted, HIPAA-compliant. Analysis is local — no patient data leaves your environment.</div>
+                <!-- Improvement Tips - Modern -->
+                <div class="mt-3 p-3 d-flex gap-3 align-items-start" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a; border-radius:14px;">
+                    <span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;border-radius:10px;background:#fff;border:1px solid #fde68a;"><i class="fas fa-lightbulb" style="color:#d97706;"></i></span>
+                    <div style="font-size:0.8rem;color:#78350f;"><strong style="color:#92400e;">To improve:</strong> Complete allergies, update meds, add symptoms at booking, create diagnosis.<div class="mt-1 d-flex flex-wrap gap-1" id="improvementChips"><span class="badge bg-white border" style="color:#92400e;border-color:#fde68a !important;border-radius:20px;font-size:0.68rem;">Allergies</span><span class="badge bg-white border" style="color:#92400e;border-color:#fde68a !important;border-radius:20px;font-size:0.68rem;">Medications</span><span class="badge bg-white border" style="color:#92400e;border-color:#fde68a !important;border-radius:20px;font-size:0.68rem;">Symptoms</span><span class="badge bg-white border" style="color:#92400e;border-color:#fde68a !important;border-radius:20px;font-size:0.68rem;">Diagnosis</span></div></div>
+                </div>
+
+                <!-- Privacy - Subtle -->
+                <div class="mt-3 d-flex gap-2 align-items-center p-2 px-3" style="background:#fff;border:1px solid #eef2f7;border-radius:12px;font-size:0.74rem;color:#64748b;">
+                    <span class="d-flex align-items-center justify-content-center" style="width:26px;height:26px;border-radius:9px;background:#eff6ff;border:1px solid #dbeafe;"><i class="fas fa-shield-halved" style="color:#2563eb;font-size:0.72rem;"></i></span>
+                    <span><strong style="color:#334155;">Privacy:</strong> Encrypted, HIPAA-compliant. Analysis is local — no patient data leaves your environment.</span>
+                    <span class="ms-auto d-none d-md-inline-flex align-items-center gap-1" style="font-size:0.68rem;color:#94a3b8;"><i class="fas fa-lock"></i> Local</span>
                 </div>
             </div>
-            <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding:0.9rem 1.25rem;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:8px;">Close</button>
-                <button type="button" class="btn btn-primary" onclick="refreshDataSources()" style="border-radius:8px; background:#2563eb; border-color:#2563eb;">
-                    <i class="fas fa-sync-alt me-1"></i>Refresh Data
+            <div class="modal-footer" style="background:#fff;border-top:1px solid #f1f5f9; padding:0.9rem 1.25rem; gap:0.5rem;">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal" style="border-radius:10px;font-weight:600;font-size:0.84rem;">Close</button>
+                <button type="button" class="btn text-white" onclick="refreshDataSources()" style="border-radius:10px;font-weight:700;font-size:0.84rem;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);border:none;box-shadow:0 4px 12px rgba(37,99,235,0.2);">
+                    <i class="fas fa-rotate me-1"></i>Refresh Data
                 </button>
             </div>
         </div>
