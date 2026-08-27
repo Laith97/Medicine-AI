@@ -402,10 +402,10 @@ function saveQuickDataToAppointment(allergies, medications, notes) {
 function showClinicalDataSummary(clinicalData) {
     if (!clinicalData || typeof clinicalData !== 'object' || Object.keys(clinicalData).length === 0) {
         $('#clinical-data-content').html('<div class="p-3"><div class="d-flex gap-2 align-items-start p-3" style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;"><span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;border-radius:10px;background:#fef3c7;"><i class="fas fa-triangle-exclamation" style="color:#d97706;font-size:0.82rem;"></i></span><div><strong style="font-size:0.84rem;color:#92400e;">No clinical documentation found.</strong><div style="font-size:0.76rem;color:#78350f;margin-top:2px;">AI analyzed general preventive care — add symptoms/diagnosis for accurate suggestions.</div></div></div></div>');
-        $('#clinical-data-summary').html('<div id="clinical-data-content">' + $('#clinical-data-content').html() + '</div>').show();
+        $('#clinical-data-summary').html('<div id="clinical-data-content">' + $('#clinical-data-content').html() + '</div>'); // keep hidden
         // Re-inject correctly
         const html = $('#clinical-data-content').html();
-        $('#clinical-data-summary').html('<div class="cds-header"><div class="cds-header-icon"><i class="fas fa-clipboard-check"></i></div><div><div class="cds-title">Clinical Data Used</div><div style="font-size:0.7rem;color:#64748b;font-weight:500;">Verified sources prioritized</div></div><span class="ms-auto badge bg-warning text-dark" style="border-radius:20px;font-size:0.65rem;">Limited</span></div>' + html);
+        $('#clinical-data-summary').html('<div class="cds-header"><div class="cds-header-icon"><i class="fas fa-clipboard-check"></i></div><div><div class="cds-title">Clinical Data Used</div><div style="font-size:0.7rem;color:#64748b;font-weight:500;">Verified sources prioritized</div></div><span class="ms-auto badge bg-warning text-dark" style="border-radius:20px;font-size:0.65rem;">Limited</span></div>' + html); // keep hidden
         return;
     }
     const norm = s => String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
@@ -433,7 +433,7 @@ function showClinicalDataSummary(clinicalData) {
     const header = `<div class="cds-header"><div class="cds-header-icon"><i class="fas fa-clipboard-check"></i></div><div><div class="cds-title">Clinical Data Used</div><div style="font-size:0.7rem;color:#64748b;font-weight:500;">Verified • ${Object.keys(clinicalData).filter(k=>clinicalData[k]).length} sources analyzed</div></div><span class="ms-auto badge bg-success" style="border-radius:20px;font-size:0.65rem;"><i class="fas fa-check me-1"></i>Verified</span></div>`;
     const grid = `<div class="cds-grid">${items || '<div class="cds-item"><div class="cds-item-value text-muted">No specific clinical data — preventive guidance only</div></div>'}</div>`;
     const footer = `<div class="cds-footer"><i class="fas fa-circle-check"></i> AI analyzed verified clinical data above to generate suggestions. Review required.</div>`;
-    $('#clinical-data-summary').html(header + grid + footer).show();
+    $('#clinical-data-summary').html(header + grid + footer); // keep hidden, use aiResponseInline
     // Also populate professional popup (compact, no footer)
     if ($('#aiResponseClinicalData').length) {
         $('#aiResponseClinicalData').html(`<div class="p-3" style="background:#fff;border:1px solid #eef2f7;border-radius:14px;">${grid}</div>`);
@@ -962,7 +962,7 @@ $('#aiSuggestBtn').click(function(e) {
                             </div>
                         </div>`;
                     });
-                    $('#ai-suggestions').html(suggestionsHtml).show();
+                    $('#ai-suggestions').html(suggestionsHtml); // keep hidden, use aiResponseInline
                     if ($('#aiResponseSuggestions').length) {
                         $('#aiResponseSuggestions').html(suggestionsHtml);
                     }
@@ -973,7 +973,7 @@ $('#aiSuggestBtn').click(function(e) {
                 }
             } else {
                 const emptyHtml = '<div class="modern-suggestion-card"><div class="p-3 d-flex gap-3 align-items-start"><span class="suggestion-med-icon" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;"><i class="fas fa-heart-pulse"></i></span><div><div class="suggestion-med-name">Preventive Care</div><div class="suggestion-med-reason">No specific medications indicated — focus on preventive measures for age/health status.</div></div></div></div>';
-                $('#ai-suggestions').html(emptyHtml).show();
+                $('#ai-suggestions').html(emptyHtml); // keep hidden
                 if ($('#aiResponseSuggestions').length) $('#aiResponseSuggestions').html(emptyHtml);
                     // Show inline professional (compact, no popup)
                     $('#aiResponseInline').slideDown(200);
@@ -1007,8 +1007,7 @@ $('#aiSuggestBtn').click(function(e) {
             };
             if (response.risk_flags && response.risk_flags.length > 0) {
                 const risksHtml = renderRisks(response.risk_flags, null);
-                $('#risks-content').html(risksHtml);
-                $('#ai-risks').show();
+                $('#risks-content').html(risksHtml); // keep hidden
                 if ($('#aiResponseRisksContent').length) {
                     $('#aiResponseRisksContent').html(risksHtml);
                     $('#aiResponseRisks').show();
@@ -1021,8 +1020,7 @@ $('#aiSuggestBtn').click(function(e) {
                     'Consider patient age, weight, and renal/hepatic function'
                 ];
                 const risksHtml = renderRisks(defaultWarnings, null);
-                $('#risks-content').html(risksHtml);
-                $('#ai-risks').show();
+                $('#risks-content').html(risksHtml); // keep hidden
                 if ($('#aiResponseRisksContent').length) {
                     $('#aiResponseRisksContent').html(risksHtml);
                     $('#aiResponseRisks').show();
