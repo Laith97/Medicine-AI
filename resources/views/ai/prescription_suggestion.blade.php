@@ -451,19 +451,31 @@ function showClinicalDataSummary(clinicalData) {
     if (clinicalData.past_diagnoses && clinicalData.past_diagnoses.length > 0) addItem('fas fa-clock-rotate-left', 'Past History', clinicalData.past_diagnoses.join('; ').substring(0,180), '#64748b');
     if (clinicalData.voice_diagnosis) {
         let v = String(clinicalData.voice_diagnosis);
-        // Clean ** markdown and extract structured fields, not truncated diagnosis_text
         v = v.replace(/\*\*/g, '').replace(/🟢|📋|🔍|🚨|💡|🔵|---/g, '').trim();
         const mSym = v.match(/Symptoms:\s*([^\n]+)/i);
         const mHist = v.match(/Medical History:\s*([^\n]+)/i);
-        if (mSym) {
-            let sym = mSym[1].trim().replace(/\s+/g,' ');
-            let hist = mHist ? mHist[1].trim().replace(/\s+/g,' ').substring(0,80) : '';
-            v = sym + (hist ? ' • ' + hist : '');
+        const mFind = v.match(/Physical Findings:\s*([^\n]+)/i);
+        // Deduplicate: Clinical Presentation already shows symptoms, so Ambient should show history + findings only
+        const symInClinical = sym && mSym && sym.toLowerCase().includes(mSym[1].trim().toLowerCase().substring(0,30));
+        let ambientVal = '';
+        if (symInClinical) {
+            // Show only Medical History + Physical Findings, not duplicate symptoms
+            let hist = mHist ? mHist[1].trim().replace(/\s+/g,' ') : '';
+            let find = mFind ? mFind[1].trim().replace(/\s+/g,' ') : '';
+            if (hist) ambientVal = hist;
+            if (find) ambientVal += (ambientVal ? ' • ' + find : find);
+            if (!ambientVal) ambientVal = 'Voice transcript analyzed';
         } else {
-            v = v.replace(/LEVEL 1:.*?CHIEF COMPLAINT:/is, '').trim().substring(0,180);
+            if (mSym) {
+                let sym2 = mSym[1].trim().replace(/\s+/g,' ');
+                let hist = mHist ? mHist[1].trim().replace(/\s+/g,' ').substring(0,80) : '';
+                ambientVal = sym2 + (hist ? ' • ' + hist : '');
+            } else {
+                ambientVal = v.replace(/LEVEL 1:.*?CHIEF COMPLAINT:/is, '').trim().substring(0,180);
+            }
         }
-        v = v.replace(/\*\*/g, '').trim();
-        addItem('fas fa-waveform-lines', 'Ambient Listening', v, '#6366f1');
+        ambientVal = ambientVal.replace(/\*\*/g, '').trim().substring(0,180);
+        if (ambientVal) addItem('fas fa-waveform-lines', 'Ambient Listening', ambientVal, '#6366f1');
     }
     const header = `<div class="cds-header"><div class="cds-header-icon"><i class="fas fa-clipboard-check"></i></div><div><div class="cds-title">Clinical Data Used</div><div style="font-size:0.7rem;color:#64748b;font-weight:500;">Verified • ${Object.keys(clinicalData).filter(k=>clinicalData[k]).length} sources analyzed</div></div><span class="ms-auto badge bg-success" style="border-radius:20px;font-size:0.65rem;"><i class="fas fa-check me-1"></i>Verified</span></div>`;
     const grid = `<div class="cds-grid">${items || '<div class="cds-item"><div class="cds-item-value text-muted">No specific clinical data — preventive guidance only</div></div>'}</div>`;
