@@ -346,18 +346,39 @@
     </div>
 </div>
 
-<!-- Clinical Data Summary — modern -->
-<div id="clinical-data-summary" class="mb-3" style="display:none;">
-    <div id="clinical-data-content"></div>
+<!-- Professional Popup for AI Response — compact, not inline -->
+<div class="modal fade modal-premium" id="aiResponseModal" tabindex="-1" aria-labelledby="aiResponseModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content" style="border:none;border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(15,23,42,0.18);">
+      <div class="modal-header" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border:none; padding:1.15rem 1.35rem; color:#fff;">
+        <div class="d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center justify-content-center" style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.18);"><i class="fas fa-wand-magic-sparkles" style="font-size:1rem;color:#fff;"></i></div>
+          <div>
+            <h5 class="modal-title mb-0" id="aiResponseModalLabel" style="font-size:1rem; font-weight:800; color:#fff; letter-spacing:-0.02em;">AI Clinical Support</h5>
+            <div style="font-size:0.72rem; color:rgba(255,255,255,0.72); font-weight:500; margin-top:1px;">Evidence-based suggestions • Review required • CDS</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity:0.85;"></button>
+      </div>
+      <div class="modal-body" style="background:#f8fafc; padding:1rem 1.25rem;">
+        <div id="aiResponseClinicalData"></div>
+        <div id="aiResponseSuggestions" class="mt-3"></div>
+        <div id="aiResponseRisks" class="mt-3" style="display:none;">
+          <div class="d-flex align-items-center gap-2 mb-2"><span class="d-flex align-items-center justify-content-center" style="width:26px;height:26px;border-radius:9px;background:#fee2e2;border:1px solid #fecaca;"><i class="fas fa-shield-alt" style="font-size:0.7rem;color:#dc2626;"></i></span><span style="font-weight:800;font-size:0.84rem;color:#991b1b;">Safety Warnings</span><span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:20px;font-size:0.65rem;">Review</span></div>
+          <div id="aiResponseRisksContent"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="background:#fff;border-top:1px solid #f1f5f9;padding:0.8rem 1.25rem;gap:0.5rem;">
+        <span class="me-auto d-flex align-items-center gap-1" style="font-size:0.7rem;color:#64748b;"><i class="fas fa-lock" style="color:#94a3b8;"></i> HIPAA • Local analysis</span>
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal" style="border-radius:10px;font-weight:600;font-size:0.84rem;">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
-
-<!-- AI Suggestions — modern stack -->
-<div id="ai-suggestions" class="mb-3" style="display:none;"></div>
-<div id="ai-risks" class="mb-3" style="display:none;">
-    <div class="risks-header"><span class="d-flex align-items-center justify-content-center" style="width:28px;height:28px;border-radius:9px;background:#fee2e2;border:1px solid #fecaca;"><i class="fas fa-shield-alt" style="font-size:0.78rem;color:#dc2626;"></i></span> Clinical Decision Support Warnings</div>
-    <div id="risks-content" class="p-3"></div>
-    <div class="px-3 pb-3"><div class="suggestion-disclaimer" style="margin-top:0;"><i class="fas fa-circle-info" style="color:#64748b;margin-top:2px;"></i><span><strong>IMPORTANT:</strong> AI-generated suggestions for decision support only. All medication decisions must be made by qualified clinicians after thorough evaluation and FDA validation check.</span></div></div>
-</div>
+<!-- Hidden inline containers kept for backward compat (populated but not shown) -->
+<div id="clinical-data-summary" style="display:none;"><div id="clinical-data-content"></div></div>
+<div id="ai-suggestions" style="display:none;"></div>
+<div id="ai-risks" style="display:none;"><div id="risks-content"></div></div>
 
 @push('scripts')
 <script>
@@ -433,6 +454,10 @@ function showClinicalDataSummary(clinicalData) {
     const grid = `<div class="cds-grid">${items || '<div class="cds-item"><div class="cds-item-value text-muted">No specific clinical data — preventive guidance only</div></div>'}</div>`;
     const footer = `<div class="cds-footer"><i class="fas fa-circle-check"></i> AI analyzed verified clinical data above to generate suggestions. Review required.</div>`;
     $('#clinical-data-summary').html(header + grid + footer).show();
+    // Also populate professional popup (compact, no footer)
+    if ($('#aiResponseClinicalData').length) {
+        $('#aiResponseClinicalData').html(`<div class="p-3" style="background:#fff;border:1px solid #eef2f7;border-radius:14px;">${grid}</div>`);
+    }
 }
 
 // Prescription AI Suggestion
@@ -951,24 +976,44 @@ $('#aiSuggestBtn').click(function(e) {
                                 ${interactionsHtml}
                             </div>
                             <div class="suggestion-footer">
-                                <button type="button" class="btn-accept-modern accept-suggestion" data-index="${i}"><i class="fas fa-check me-1"></i>Use Suggestion</button>
+                                <button type="button" class="btn-accept-modern accept-suggestion" data-index="${i}"><i class="fas fa-check me-1"></i>Use</button>
                                 <button type="button" class="btn-reject-modern reject-suggestion" data-index="${i}"><i class="fas fa-xmark me-1"></i>Dismiss</button>
-                                <span class="ms-auto d-none d-md-inline-flex align-items-center gap-1" style="font-size:0.7rem;color:#64748b;"><i class="fas fa-user-doctor" style="color:#334155;"></i> Requires clinician approval</span>
                             </div>
                         </div>`;
                     });
                     $('#ai-suggestions').html(suggestionsHtml).show();
+                    if ($('#aiResponseSuggestions').length) {
+                        $('#aiResponseSuggestions').html(suggestionsHtml);
+                    }
+                    if ($('#aiResponseModal').length) {
+                        const modal = new bootstrap.Modal(document.getElementById('aiResponseModal'));
+                        modal.show();
+                    }
                     $('#ai_suggestions').val(JSON.stringify(response.suggestions));
                 }
             } else {
-                $('#ai-suggestions').html('<div class="modern-suggestion-card"><div class="p-3 d-flex gap-3 align-items-start"><span class="suggestion-med-icon" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;"><i class="fas fa-heart-pulse"></i></span><div><div class="suggestion-med-name">Preventive Care</div><div class="suggestion-med-reason">No specific medications indicated — focus on preventive measures for age/health status.</div></div></div></div>').show();
+                const emptyHtml = '<div class="modern-suggestion-card"><div class="p-3 d-flex gap-3 align-items-start"><span class="suggestion-med-icon" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;"><i class="fas fa-heart-pulse"></i></span><div><div class="suggestion-med-name">Preventive Care</div><div class="suggestion-med-reason">No specific medications indicated — focus on preventive measures for age/health status.</div></div></div></div>';
+                $('#ai-suggestions').html(emptyHtml).show();
+                if ($('#aiResponseSuggestions').length) $('#aiResponseSuggestions').html(emptyHtml);
+                if ($('#aiResponseModal').length) {
+                    const modal = new bootstrap.Modal(document.getElementById('aiResponseModal'));
+                    modal.show();
+                }
                 $('#ai_suggestions').val('');
             }
 
             // Modern Risks — professional list with icons
             const renderRisks = (flags, disclaimer) => {
+                // Deduplicate and limit to 5 most relevant (remove redundant "CLINICAL DECISION SUPPORT ONLY" duplicates)
+                const seen = new Set();
+                const uniq = flags.filter(f => {
+                    const key = String(f).toLowerCase().replace(/[^a-z]/g,'').substring(0,30);
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                }).slice(0,5);
                 let html = '<div class="d-flex flex-column gap-2">';
-                $.each(flags, function(_, r){
+                $.each(uniq, function(_, r){
                     const txt = $('<div>').text(r).html();
                     const isCritical = /critical|blocked|allergy|fda/i.test(r);
                     const isWarning = /verify|check|consider|clinical/i.test(r);
@@ -979,22 +1024,30 @@ $('#aiSuggestBtn').click(function(e) {
                     html += `<div class="d-flex gap-2 align-items-start p-2" style="background:${bg};border:1px solid ${border};border-radius:12px;font-size:0.78rem;color:${color};line-height:1.5;"><span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:26px;height:26px;border-radius:9px;background:#fff;border:1px solid ${border};"><i class="fas ${icon}" style="font-size:0.72rem;"></i></span><span>${txt}</span></div>`;
                 });
                 html += '</div>';
-                if (disclaimer) html += `<div class="suggestion-disclaimer"><i class="fas fa-circle-info"></i><span><strong>Disclaimer:</strong> ${$('<div>').text(disclaimer).html()}</span></div>`;
                 return html;
             };
             if (response.risk_flags && response.risk_flags.length > 0) {
-                $('#risks-content').html(renderRisks(response.risk_flags, response.disclaimer));
+                const risksHtml = renderRisks(response.risk_flags, null);
+                $('#risks-content').html(risksHtml);
                 $('#ai-risks').show();
+                if ($('#aiResponseRisksContent').length) {
+                    $('#aiResponseRisksContent').html(risksHtml);
+                    $('#aiResponseRisks').show();
+                }
                 $('#ai_risk_flags').val(JSON.stringify(response.risk_flags));
             } else {
                 const defaultWarnings = [
-                    'CLINICAL DECISION SUPPORT ONLY — Professional medical judgment required',
                     'Verify patient allergies and contraindications',
                     'Check current medications for interactions',
                     'Consider patient age, weight, and renal/hepatic function'
                 ];
-                $('#risks-content').html(renderRisks(defaultWarnings, null));
+                const risksHtml = renderRisks(defaultWarnings, null);
+                $('#risks-content').html(risksHtml);
                 $('#ai-risks').show();
+                if ($('#aiResponseRisksContent').length) {
+                    $('#aiResponseRisksContent').html(risksHtml);
+                    $('#aiResponseRisks').show();
+                }
                 $('#ai_risk_flags').val(JSON.stringify(defaultWarnings));
             }
 
@@ -1250,14 +1303,13 @@ function populateDataSourcesModal() {
     ];
 
     let tableHtml = '';
-    let gridHtml = '';
     let availableCount = 0;
     let criticalMissing = [];
 
     dataSources.forEach(source => {
         const statusBadge = source.status === 'available'
-            ? '<span class="badge" style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:20px;padding:0.3rem 0.55rem;font-size:0.68rem;font-weight:700;"><i class="fas fa-check me-1"></i>Available</span>'
-            : '<span class="badge" style="background:#fef9c3;color:#854d0e;border:1px solid #fde68a;border-radius:20px;padding:0.3rem 0.55rem;font-size:0.68rem;font-weight:700;"><i class="fas fa-triangle-exclamation me-1"></i>Missing</span>';
+            ? '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Available</span>'
+            : '<span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>Missing</span>';
 
         if (source.status === 'available') availableCount++;
         if (source.status === 'missing' && source.importance === 'critical') {
@@ -1265,23 +1317,23 @@ function populateDataSourcesModal() {
         }
 
         const reliabilityBadge = source.reliability === 'Doctor-verified'
-            ? '<span class="badge" style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:20px;font-size:0.66rem;font-weight:600;"><i class="fas fa-user-doctor me-1"></i>Verified</span>'
+            ? '<span class="badge bg-success"><i class="fas fa-user-md me-1"></i>Doctor-verified</span>'
             : source.reliability === 'AI-assisted clinical'
-            ? '<span class="badge" style="background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:20px;font-size:0.66rem;font-weight:600;"><i class="fas fa-wand-magic-sparkles me-1"></i>AI</span>'
+            ? '<span class="badge bg-info"><i class="fas fa-brain me-1"></i>AI-assisted</span>'
             : source.reliability === 'Administrative'
-            ? '<span class="badge" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:20px;font-size:0.66rem;font-weight:600;"><i class="fas fa-gear me-1"></i>Admin</span>'
-            : '<span class="badge" style="background:#fef9c3;color:#854d0e;border:1px solid #fde68a;border-radius:20px;font-size:0.66rem;font-weight:600;"><i class="fas fa-user me-1"></i>Reported</span>';
+            ? '<span class="badge bg-secondary"><i class="fas fa-cog me-1"></i>Administrative</span>'
+            : '<span class="badge bg-warning text-dark"><i class="fas fa-user me-1"></i>Patient-reported</span>';
 
         const importanceBadge = source.importance === 'critical'
-            ? '<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:20px;font-size:0.66rem;font-weight:700;"><i class="fas fa-shield-halved me-1"></i>CRITICAL</span>'
+            ? '<span class="badge bg-danger"><i class="fas fa-exclamation-circle me-1"></i>CRITICAL</span>'
             : source.importance === 'important'
-            ? '<span class="badge" style="background:#fef9c3;color:#854d0e;border:1px solid #fde68a;border-radius:20px;font-size:0.66rem;font-weight:600;"><i class="fas fa-star me-1"></i>Important</span>'
+            ? '<span class="badge bg-warning text-dark"><i class="fas fa-star me-1"></i>Important</span>'
             : source.importance === 'helpful'
-            ? '<span class="badge" style="background:#f0fdfa;color:#115e59;border:1px solid #99f6e4;border-radius:20px;font-size:0.66rem;font-weight:600;"><i class="fas fa-circle-info me-1"></i>Helpful</span>'
-            : '<span class="badge" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:20px;font-size:0.66rem;font-weight:600;">Context</span>';
+            ? '<span class="badge bg-info"><i class="fas fa-info-circle me-1"></i>Helpful</span>'
+            : '<span class="badge bg-secondary"><i class="fas fa-tag me-1"></i>Context</span>';
 
         const canEdit = source.status === 'missing' && source.reliability === 'Doctor-verified' && ['Patient Allergies','Current Medications','Doctor Notes','Patient Weight','Current Diagnosis'].includes(source.name);
-        const editBtn = canEdit ? `<button class="btn btn-sm mt-2 quick-edit-btn" data-source="${source.name}" style="background:#fff;border:1px solid #e2e8f0;color:#2563eb;border-radius:10px;font-size:0.72rem;font-weight:600;padding:0.35rem 0.6rem;"><i class="fas fa-pen me-1"></i>Fix → Available</button>` : '';
+        const editBtn = canEdit ? `<button class="btn btn-sm mt-1 quick-edit-btn" data-source="${source.name}" style="background:#eff6ff;border:1px solid #dbeafe;color:#2563eb;border-radius:8px;font-size:0.72rem;font-weight:600"><i class="fas fa-pen me-1"></i>Fix → Available</button>` : '';
         tableHtml += `
             <tr class="${source.status === 'missing' ? 'table-light' : ''}" data-row="${source.name}">
                 <td>
@@ -1294,40 +1346,9 @@ function populateDataSourcesModal() {
                 <td class="small text-muted" data-cell="${source.name}">${source.example}<br>${editBtn}</td>
             </tr>
         `;
-        // Modern card for grid
-        const cardBorder = source.status === 'available' ? '#e2e8f0' : '#fde68a';
-        const cardBg = source.status === 'available' ? '#fff' : '#fffbeb';
-        const iconBg = source.status === 'available' ? 'linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%)' : 'linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%)';
-        const iconColor = source.status === 'available' ? '#059669' : '#d97706';
-        const iconBorder = source.status === 'available' ? '#bbf7d0' : '#fde68a';
-        gridHtml += `
-            <div class="col-md-6">
-                <div class="h-100 p-3" style="background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;box-shadow:0 2px 8px rgba(15,23,42,0.03);transition:all 0.15s ease;">
-                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;border-radius:10px;background:${iconBg};border:1px solid ${iconBorder};color:${iconColor};"><i class="${source.icon}" style="font-size:0.82rem;"></i></span>
-                            <div>
-                                <div style="font-weight:800;color:#0f172a;font-size:0.84rem;letter-spacing:-0.01em;">${source.name}</div>
-                                <div style="font-size:0.68rem;color:#64748b;font-weight:500;">${source.location}</div>
-                            </div>
-                        </div>
-                        ${statusBadge}
-                    </div>
-                    <div class="d-flex flex-wrap gap-1 mb-2">${importanceBadge} ${reliabilityBadge}</div>
-                    <div style="font-size:0.76rem;color:#475569;line-height:1.5;background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px;padding:0.5rem 0.65rem;">
-                        <div style="font-size:0.7rem;font-weight:700;color:#64748b;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:2px;">Value</div>
-                        <div data-cell="${source.name}" style="color:#334155;">${source.example}</div>
-                        ${editBtn}
-                    </div>
-                    <div style="font-size:0.7rem;color:#94a3b8;margin-top:0.5rem;line-height:1.4;"><i class="${source.icon} me-1" style="color:#cbd5e1;"></i>${source.reason}</div>
-                </div>
-            </div>
-        `;
     });
 
     document.getElementById('dataSourcesTableBody').innerHTML = tableHtml;
-    const gridEl = document.getElementById('dataSourcesGrid');
-    if (gridEl) gridEl.innerHTML = gridHtml;
 
     // Calculate completeness
     const completenessPercentage = Math.round((availableCount / dataSources.length) * 100);
@@ -1337,36 +1358,20 @@ function populateDataSourcesModal() {
     completenessBar.style.width = completenessPercentage + '%';
     completenessBar.textContent = completenessPercentage + '% Complete';
 
-    // Modern completeness — premium badge + gradient
-    const badgeEl = document.getElementById('dataCompletenessBadge');
-    completenessBar.style.width = completenessPercentage + '%';
-    completenessBar.textContent = completenessPercentage + '%';
-    completenessBar.style.background = criticalMissing.length > 0 ? 'linear-gradient(90deg,#ef4444 0%,#dc2626 100%)' : completenessPercentage >= 80 ? 'linear-gradient(90deg,#10b981 0%,#059669 100%)' : completenessPercentage >= 60 ? 'linear-gradient(90deg,#f59e0b 0%,#d97706 100%)' : 'linear-gradient(90deg,#ef4444 0%,#dc2626 100%)';
-    if (badgeEl) {
-        badgeEl.textContent = completenessPercentage + '% Complete';
-        badgeEl.style.background = criticalMissing.length > 0 ? '#fee2e2' : completenessPercentage >= 80 ? '#dcfce7' : completenessPercentage >= 60 ? '#fef9c3' : '#fee2e2';
-        badgeEl.style.color = criticalMissing.length > 0 ? '#991b1b' : completenessPercentage >= 80 ? '#166534' : completenessPercentage >= 60 ? '#854d0e' : '#991b1b';
-        badgeEl.style.borderColor = criticalMissing.length > 0 ? '#fecaca' : completenessPercentage >= 80 ? '#bbf7d0' : completenessPercentage >= 60 ? '#fde68a' : '#fecaca';
-    }
+    // Check if critical data is missing
     if (criticalMissing.length > 0) {
-        completenessText.innerHTML = `<span class="d-flex align-items-center gap-2"><span class="d-flex align-items-center justify-content-center" style="width:24px;height:24px;border-radius:8px;background:#fee2e2;border:1px solid #fecaca;"><i class="fas fa-triangle-exclamation" style="color:#dc2626;font-size:0.7rem;"></i></span><span><strong style="color:#991b1b;">BLOCKED:</strong> Missing ${criticalMissing.join(', ')} — AI requires allergies & meds. Click Fix → Available.</span></span>`;
-        completenessText.style.background = '#fef2f2';
-        completenessText.style.border = '1px solid #fecaca';
+        completenessBar.className = 'progress-bar bg-danger';
+        completenessText.innerHTML = `<strong class="text-danger">⚠️ CRITICAL DATA MISSING:</strong> AI medication suggestions are <strong>BLOCKED</strong> for patient safety. Missing: ${criticalMissing.join(', ')}`;
     } else if (completenessPercentage >= 80) {
-        completenessText.innerHTML = `<span class="d-flex align-items-center gap-2"><span class="d-flex align-items-center justify-content-center" style="width:24px;height:24px;border-radius:8px;background:#dcfce7;border:1px solid #bbf7d0;"><i class="fas fa-check" style="color:#15803d;font-size:0.7rem;"></i></span><span style="color:#166534;"><strong>Excellent</strong> — highly accurate suggestions.</span></span>`;
-        completenessText.style.background = '#f0fdf4';
-        completenessText.style.border = '1px solid #dcfce7';
+        completenessBar.className = 'progress-bar bg-success';
+        completenessText.textContent = '✅ Excellent data completeness! AI suggestions will be highly accurate.';
     } else if (completenessPercentage >= 60) {
-        completenessText.innerHTML = `<span class="d-flex align-items-center gap-2"><span class="d-flex align-items-center justify-content-center" style="width:24px;height:24px;border-radius:8px;background:#fef9c3;border:1px solid #fde68a;"><i class="fas fa-chart-simple" style="color:#92400e;font-size:0.7rem;"></i></span><span style="color:#854d0e;"><strong>Good</strong> — moderately accurate. Add missing for best results.</span></span>`;
-        completenessText.style.background = '#fffbeb';
-        completenessText.style.border = '1px solid #fde68a';
+        completenessBar.className = 'progress-bar bg-warning';
+        completenessText.textContent = '⚠️ Good data completeness. AI suggestions will be moderately accurate.';
     } else {
-        completenessText.innerHTML = `<span class="d-flex align-items-center gap-2"><span class="d-flex align-items-center justify-content-center" style="width:24px;height:24px;border-radius:8px;background:#fee2e2;border:1px solid #fecaca;"><i class="fas fa-circle-info" style="color:#dc2626;font-size:0.7rem;"></i></span><span style="color:#991b1b;">Limited — add clinical data for better suggestions.</span></span>`;
-        completenessText.style.background = '#fef2f2';
-        completenessText.style.border = '1px solid #fecaca';
+        completenessBar.className = 'progress-bar bg-danger';
+        completenessText.textContent = '❌ Limited data available. Consider adding more clinical information for better AI suggestions.';
     }
-    completenessText.style.borderRadius = '12px';
-    completenessText.style.padding = '0.6rem 0.75rem';
 
     // Update improvement suggestions based on missing data
     const missingSources = dataSources.filter(s => s.status === 'missing').map(s => s.name.toLowerCase());
