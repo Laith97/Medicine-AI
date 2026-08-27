@@ -349,15 +349,7 @@
 <!-- Professional Popup for AI Response — premium, compact, scrollable -->
 <!-- Stable custom popup — no Bootstrap fade loop, no page destroy -->
 <div id="aiResponseOverlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:1060;"></div>
-<div id="aiResponsePopup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:92%; max-width:880px; max-height:88vh; background:#fff; border-radius:20px; box-shadow:0 24px 64px rgba(15,23,42,0.22); border:1px solid #e2e8f0; z-index:1061; overflow:hidden; display:none; flex-direction:column;">
-  <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding:1rem 1.25rem; color:#fff; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-shrink:0;">
-    <div class="d-flex align-items-center gap-3">
-      <div class="d-flex align-items-center justify-content-center" style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.18);"><i class="fas fa-wand-magic-sparkles" style="font-size:0.95rem;color:#fff;"></i></div>
-      <div>
-        <div style="font-size:0.98rem; font-weight:800; color:#fff; letter-spacing:-0.02em;">AI Clinical Support</div>
-        <div style="font-size:0.7rem; color:rgba(255,255,255,0.72);">Evidence-based • 3 suggestions • Review required</div>
-      </div>
-    </div>
+
     <button type="button" id="aiPopupCloseX" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-xmark"></i></button>
   </div>
   <div style="background:#f8fafc; padding:1rem 1.25rem; overflow-y:auto; flex:1; max-height:62vh;">
@@ -373,7 +365,15 @@
     <button type="button" id="aiPopupCloseBtn" class="btn btn-light border" style="border-radius:10px;font-weight:600;font-size:0.84rem;">Close</button>
   </div>
 </div>
-<div id="aiResponseInline" style="display:none;"></div>
+<!-- Professional inline — compact, no popup -->
+<div id="aiResponseInline" style="display:none;">
+  <div id="aiResponseClinicalData" class="mb-3"></div>
+  <div id="aiResponseSuggestions" class="mb-3"></div>
+  <div id="aiResponseRisks" style="display:none;" class="mb-3 p-3" style="background:#fff;border:1px solid #fee2e2;border-radius:14px;">
+    <div class="d-flex align-items-center gap-2 mb-2"><span class="d-flex align-items-center justify-content-center" style="width:26px;height:26px;border-radius:9px;background:#fee2e2;border:1px solid #fecaca;"><i class="fas fa-shield-alt" style="font-size:0.7rem;color:#dc2626;"></i></span><span style="font-weight:800;font-size:0.84rem;color:#991b1b;">Safety Warnings</span></div>
+    <div id="aiResponseRisksContent"></div>
+  </div>
+</div>
 <!-- Hidden inline containers kept for backward compat (populated but not shown) -->
 <div id="clinical-data-summary" style="display:none;"><div id="clinical-data-content"></div></div>
 <div id="ai-suggestions" style="display:none;"></div>
@@ -987,9 +987,8 @@ $('#aiSuggestBtn').click(function(e) {
                     }
                     // Show professional popup (premium, centered, scrollable)
                     // Custom popup show — stable, no loop, pauses when tab hidden
-                    $('#aiResponsePopupOverlay').show();
-                    $('#aiResponsePopup').css('display','flex');
-                    $('body').css('overflow','hidden');
+                    $('#aiResponseInline').slideDown(200);
+                    $('html, body').animate({scrollTop: $('#aiResponseInline').offset().top - 80}, 300);
                     $('#ai_suggestions').val(JSON.stringify(response.suggestions));
                 }
             } else {
@@ -998,9 +997,8 @@ $('#aiSuggestBtn').click(function(e) {
                 if ($('#aiResponseSuggestions').length) $('#aiResponseSuggestions').html(emptyHtml);
                     // Show professional popup (premium, centered, scrollable)
                     // Custom popup show — stable, no loop, pauses when tab hidden
-                    $('#aiResponsePopupOverlay').show();
-                    $('#aiResponsePopup').css('display','flex');
-                    $('body').css('overflow','hidden');
+                    $('#aiResponseInline').slideDown(200);
+                    $('html, body').animate({scrollTop: $('#aiResponseInline').offset().top - 80}, 300);
                 $('#ai_suggestions').val('');
             }
 
