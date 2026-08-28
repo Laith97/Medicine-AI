@@ -27,7 +27,7 @@ class HEPGenerationTest extends TestCase
         // Create test users
         $this->doctor = User::factory()->create(['role' => 'doctor']);
         $this->patient = User::factory()->create(['role' => 'patient']);
-        $this->patient->assigned_doctor_id = $this->doctor->id;
+        $this->patient->primary_doctor_id = $this->doctor->id;
         $this->patient->save();
 
         // Create test diagnosis

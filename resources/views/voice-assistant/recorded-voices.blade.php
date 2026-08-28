@@ -100,7 +100,9 @@
                                             @endswitch
                                         </td>
                                         <td class="text-center">
-                                            @if($transcription->session_started_at && $transcription->session_ended_at)
+                                            @if($transcription->audio_duration)
+                                                <span class="doctor-badge doctor-badge-secondary" title="{{ number_format($transcription->audio_duration,1) }} sec">{{ gmdate('i:s', (int) $transcription->audio_duration) }}</span>
+                                            @elseif($transcription->session_started_at && $transcription->session_ended_at)
                                                 <span class="doctor-badge doctor-badge-secondary">{{ $transcription->session_started_at->diffInSeconds($transcription->session_ended_at) }}s</span>
                                             @else<span class="text-muted">—</span>@endif
                                         </td>

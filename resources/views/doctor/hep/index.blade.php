@@ -2,79 +2,98 @@
 
 @section('title', 'Physical Therapy - HEP Programs')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/doctor-design-system.css') }}">
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
+<style>
+/* Fix: table headers should scroll with content, not stick below toolbar (as cases-overview) */
+#programsTable thead th {
+    position: static !important;
+    top: auto !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #f1f5f9 100%) !important;
+    color: #64748b !important;
+}
+</style>
+@endpush
+
 @section('content')
-<div class="container-fluid" style="background-color: #f8f9fa;">
-    <div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="dashboard-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2><i class="fas fa-dumbbell me-2"></i>Physical Therapy (Home Exercise Programs)</h2>
-                        <p class="text-muted mb-0">Create and manage HEP programs for your patients</p>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('doctor.hep.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Create HEP Program
-                        </a>
-                    </div>
+<div class="container-fluid" style="background-color: var(--bg-secondary, #f8f9fa);">
+    <div class="container py-4">
+
+        <!-- Page Header -->
+        <div class="dashboard-header cases-header-compact">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2><i class="fas fa-dumbbell me-2"></i>Physical Therapy (Home Exercise Programs)</h2>
+                    <p>Create and manage HEP programs for your patients</p>
                 </div>
+                <a href="{{ route('doctor.hep.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Create HEP Program
+                </a>
             </div>
         </div>
-    </div>
-    </div>
-</div>
 
-<!-- Stats Cards -->
-        <div class="row mt-4">
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <!-- Stats Cards - compact horizontal -->
+        <div class="row g-2 mb-3 cases-stats-compact">
+            <div class="col-lg-3 col-md-6 col-6">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                         <i class="fas fa-clipboard-list"></i>
                     </div>
-                    <p class="stats-number">{{ $stats['total_programs'] }}</p>
-                    <p class="stats-label">Total Programs</p>
+                    <div class="stats-text">
+                        <p class="stats-number">{{ $stats['total_programs'] }}</p>
+                        <p class="stats-label">Total Programs</p>
+                    </div>
                 </div>
             </div>
-
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="col-lg-3 col-md-6 col-6">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                         <i class="fas fa-play-circle"></i>
                     </div>
-                    <p class="stats-number">{{ $stats['active_programs'] }}</p>
-                    <p class="stats-label">Active Programs</p>
+                    <div class="stats-text">
+                        <p class="stats-number">{{ $stats['active_programs'] }}</p>
+                        <p class="stats-label">Active Programs</p>
+                    </div>
                 </div>
             </div>
-
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="col-lg-3 col-md-6 col-6">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                         <i class="fas fa-user-check"></i>
                     </div>
-                    <p class="stats-number">{{ $stats['assigned_programs'] }}</p>
-                    <p class="stats-label">Assigned to Patients</p>
+                    <div class="stats-text">
+                        <p class="stats-number">{{ $stats['assigned_programs'] }}</p>
+                        <p class="stats-label">Assigned to Patients</p>
+                    </div>
                 </div>
             </div>
-
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stats-card">
-                    <div class="stats-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="col-lg-3 col-md-6 col-6">
+                <div class="stats-card stats-card--compact">
+                    <div class="stats-icon stats-icon--sm" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
                         <i class="fas fa-check-circle"></i>
                     </div>
-                    <p class="stats-number">{{ $stats['completed_programs'] }}</p>
-                    <p class="stats-label">Completed Programs</p>
+                    <div class="stats-text">
+                        <p class="stats-number">{{ $stats['completed_programs'] }}</p>
+                        <p class="stats-label">Completed Programs</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Programs Table -->
-        <div class="table-card">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h6><i class="fas fa-dumbbell me-2"></i>Your HEP Programs</h6>
-                <div class="d-flex gap-2">
-                    <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search programs..." style="width: 200px;">
-                    <select id="statusFilter" class="form-select form-select-sm" style="width: 150px;">
+        <!-- Programs Panel -->
+        <div class="card border-0 shadow-sm cases-panel">
+            <div class="cases-toolbar">
+                <div class="cases-toolbar__title">
+                    <h5 class="mb-0 fw-semibold"><i class="fas fa-dumbbell me-2 text-primary"></i>Your HEP Programs</h5>
+                    <span class="cases-toolbar__meta">— {{ $programs->total() ?? $programs->count() }} programs</span>
+                </div>
+                <div class="cases-toolbar__controls">
+                    <div class="input-group input-group-sm cases-search">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search by name, diagnosis, status..." autocomplete="off">
+                        </div>
+                    <select id="statusFilter" class="form-select form-select-sm cases-sort" title="Filter by status">
                         <option value="">All Status</option>
                         <option value="draft">Draft</option>
                         <option value="active">Active</option>
@@ -84,107 +103,118 @@
                 </div>
             </div>
 
-            <div class="table-responsive">
-                <table class="table table-hover" id="programsTable">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Program</th>
-                            <th>Patient</th>
-                            <th>Diagnosis</th>
-                            <th>Status</th>
-                            <th>Duration</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($programs as $program)
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-grow-1">
-                                            <h6 class="mb-0">{{ $program->title }}</h6>
-                                            <small class="text-muted">{{ Str::limit($program->description, 50) }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    @if($program->patient)
-                                        <div>
-                                            <strong>{{ $program->patient->name }}</strong>
-                                            @if($program->hepAssignments->count() > 0)
-                                                <br><small class="text-success"><i class="fas fa-check-circle me-1"></i>Assigned</small>
+            <div class="card-body p-0">
+                <div class="doctor-table-container">
+                    <div class="table-responsive">
+                        <table class="doctor-table table-hover mb-0" id="programsTable" style="width:100%">
+                            <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #f1f5f9 100%);">
+                                <tr>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;white-space:nowrap"><i class="fas fa-clipboard-list me-1 opacity-60"></i> Program</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;white-space:nowrap"><i class="fas fa-user me-1 opacity-60"></i> Patient</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:center;width:130px">Diagnosis</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:center;width:100px">Status</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:center;width:110px">Duration</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;white-space:nowrap"><i class="far fa-calendar me-1 opacity-60"></i> Created</th>
+                                    <th style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;padding:0.9rem 1rem;border-bottom:2px solid #e2e8f0;text-align:right;width:140px">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($programs as $program)
+                                    <tr data-program-title="{{ strtolower($program->title) }}" data-patient-name="{{ strtolower($program->patient->name ?? '') }}" data-status="{{ strtolower($program->status) }}" class="hep-row">
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f8fafc 0%,#f1f5f9 100%);border:1px solid #e2e8f0;color:#64748b;"><i class="fas fa-clipboard-list" style="font-size:0.78rem;"></i></span>
+                                                <div class="flex-grow-1 min-w-0">
+                                                    <h6 class="mb-0 text-truncate" style="font-size:0.875rem;max-width:220px;" title="{{ $program->title }}">{{ $program->title }}</h6>
+                                                    <small class="text-muted">{{ Str::limit($program->description, 50) }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if($program->patient)
+                                                <div>
+                                                    <strong style="font-size:0.875rem;">{{ $program->patient->name }}</strong>
+                                                    @if($program->hepAssignments->count() > 0)
+                                                        <br><small class="text-success"><i class="fas fa-check-circle me-1"></i>Assigned</small>
+                                                    @else
+                                                        <br><small class="text-muted"><i class="fas fa-clock me-1"></i>Not Assigned</small>
+                                                    @endif
+                                                </div>
                                             @else
-                                                <br><small class="text-muted"><i class="fas fa-clock me-1"></i>Not Assigned</small>
+                                                <span class="text-muted">No patient</span>
                                             @endif
-                                        </div>
-                                    @else
-                                        <span class="text-muted">No patient</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($program->diagnosis)
-                                        <span class="badge bg-info">{{ $program->diagnosis->diagnosis_name }}</span>
-                                    @else
-                                        <span class="text-muted">-</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{ $program->status === 'active' ? 'success' : ($program->status === 'draft' ? 'warning' : ($program->status === 'completed' ? 'primary' : 'secondary')) }}">
-                                        {{ ucfirst($program->status) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <small>{{ $program->duration_weeks }} weeks</small>
-                                    <br>
-                                    <small class="text-muted">{{ $program->hepExercises->count() }} exercises</small>
-                                </td>
-                                <td>
-                                    <small>{{ $program->created_at->format('M j, Y') }}</small>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="{{ route('doctor.hep.show', $program) }}" class="btn btn-sm btn-outline-primary" title="View">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{{ route('doctor.hep.edit', $program) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        @if($program->hepAssignments->isEmpty())
-                                            <button type="button" class="btn btn-sm btn-outline-success assign-program-btn"
-                                                    data-program-id="{{ $program->id }}"
-                                                    data-program-title="{{ $program->title }}"
-                                                    title="Assign to Patient">
-                                                <i class="fas fa-user-plus"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="text-center py-5">
-                                    <i class="fas fa-dumbbell fa-3x text-muted mb-3"></i>
-                                    <h5 class="text-muted">No HEP programs found</h5>
-                                    <p class="text-muted mb-3">Get started by creating your first HEP program for a patient.</p>
-                                    <a href="{{ route('doctor.hep.create') }}" class="btn btn-primary">
-                                        <i class="fas fa-plus me-2"></i>Create Your First HEP Program
-                                    </a>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            @if($programs->hasPages())
-                <div class="d-flex justify-content-center mt-4">
-                    {{ $programs->appends(request()->query())->links() }}
+                                        </td>
+                                        <td>
+                                            @if($program->diagnosis)
+                                                <span class="badge bg-info">{{ $program->diagnosis->diagnosis_name }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ $program->status === 'active' ? 'success' : ($program->status === 'draft' ? 'warning' : ($program->status === 'completed' ? 'primary' : 'secondary')) }}">
+                                                {{ ucfirst($program->status) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small>{{ $program->duration_weeks }} weeks</small>
+                                            <br>
+                                            <small class="text-muted">{{ $program->hepExercises->count() }} exercises</small>
+                                        </td>
+                                        <td>
+                                            <small>{{ $program->created_at->format('M j, Y') }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ route('doctor.hep.show', $program) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ route('doctor.hep.edit', $program) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                @if($program->hepAssignments->isEmpty())
+                                                    <button type="button" class="btn btn-sm btn-outline-success assign-program-btn"
+                                                            data-program-id="{{ $program->id }}"
+                                                            data-program-title="{{ $program->title }}"
+                                                            title="Assign to Patient">
+                                                        <i class="fas fa-user-plus"></i>
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center py-5">
+                                            <i class="fas fa-dumbbell fa-3x text-muted mb-3 d-block"></i>
+                                            <h5 class="text-muted">No HEP programs found</h5>
+                                            <p class="text-muted mb-3">Get started by creating your first HEP program for a patient.</p>
+                                            <a href="{{ route('doctor.hep.create') }}" class="btn btn-primary">
+                                                <i class="fas fa-plus me-2"></i>Create Your First HEP Program
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    @if($programs->count() > 0)
+                    <div class="table-footer">
+                        <span><i class="fas fa-info-circle me-1"></i> Showing {{ $programs->count() }} of {{ $programs->total() }} programs</span>
+                        <span class="d-none d-sm-inline">Use search to filter</span>
+                    </div>
+                    @endif
                 </div>
-            @endif
+                @if($programs->hasPages())
+                    <div class="d-flex justify-content-center p-3" style="background:#f8fafc;border-top:1px solid #f1f5f9">
+                        {{ $programs->appends(request()->query())->links('pagination::bootstrap-5') }}
+                    </div>
+                @endif
+            </div>
         </div>
-@endsection
+
+    </div>
+</div>
 
 <!-- Assign Program Modal -->
 <div class="modal fade" id="assignProgramModal" tabindex="-1">
@@ -201,7 +231,6 @@
                         <label for="assign_patient_id" class="form-label">Select Patient</label>
                         <select class="form-select" id="assign_patient_id" name="patient_id" required>
                             <option value="">Choose a patient...</option>
-                            <!-- Patients will be loaded via AJAX -->
                         </select>
                     </div>
                     <div class="mb-3">
@@ -217,62 +246,7 @@
         </div>
     </div>
 </div>
-
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
-<style>
-.stats-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    border: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.stats-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.stats-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.2rem;
-    margin-bottom: 1rem;
-}
-
-.stats-number {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #2d3748;
-    margin: 0;
-}
-
-.stats-label {
-    color: #718096;
-    font-size: 0.9rem;
-    margin: 0;
-}
-
-.table-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    margin-top: 2rem;
-}
-
-.badge {
-    font-size: 0.75rem;
-}
-</style>
-@endpush
+@endsection
 
 @push('scripts')
 <script>
@@ -281,32 +255,77 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusFilter = document.getElementById('statusFilter');
     const programsTable = document.getElementById('programsTable');
 
-    // Search functionality
-    searchInput.addEventListener('input', filterPrograms);
-    statusFilter.addEventListener('change', filterPrograms);
-
     function filterPrograms() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const statusValue = statusFilter.value.toLowerCase();
+        const searchTerm = (searchInput.value || '').toLowerCase().trim();
+        const statusValue = (statusFilter.value || '').toLowerCase().trim();
+        // Use same selector as cases-overview: all patient-row style, but for HEP use hep-row + fallback to all rows
         const rows = programsTable.querySelectorAll('tbody tr');
-
+        let visibleCount = 0;
         rows.forEach(row => {
-            if (row.cells.length === 1) return; // Skip empty state row
-
-            const programTitle = row.cells[0].textContent.toLowerCase();
-            const patientName = row.cells[1].textContent.toLowerCase();
-            const status = row.cells[3].textContent.toLowerCase();
-
-            const matchesSearch = programTitle.includes(searchTerm) || patientName.includes(searchTerm);
-            const matchesStatus = !statusValue || status.includes(statusValue);
-
-            row.style.display = matchesSearch && matchesStatus ? '' : 'none';
+            // Skip empty state row (colspan 7)
+            if (row.cells.length === 1 && row.querySelector('td[colspan]')) return;
+            // Like cases-overview: check full row text + data attributes
+            const title = (row.getAttribute('data-program-title') || '').toLowerCase();
+            const patient = (row.getAttribute('data-patient-name') || '').toLowerCase();
+            const status = (row.getAttribute('data-status') || '').toLowerCase();
+            const rowText = row.textContent.toLowerCase();
+            const matchesSearch = !searchTerm || rowText.includes(searchTerm) || title.includes(searchTerm) || patient.includes(searchTerm);
+            const matchesStatus = !statusValue || status.includes(statusValue) || rowText.includes(statusValue);
+            const show = matchesSearch && matchesStatus;
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
         });
+        // Handle empty state like cases-overview: toggle table vs empty message
+        const hasHepRows = programsTable.querySelectorAll('tbody tr.hep-row').length > 0;
+        let emptyState = programsTable.parentElement.querySelector('.search-empty-state');
+        const isSearching = !!searchTerm || !!statusValue;
+        if (visibleCount === 0 && hasHepRows && isSearching) {
+            if (!emptyState) {
+                emptyState = document.createElement('div');
+                emptyState.className = 'search-empty-state text-center py-4 px-3';
+                emptyState.innerHTML = `<i class="fas fa-search text-muted d-block" style="font-size:2rem;margin-bottom:0.75rem;"></i><h6 class="text-muted mb-1">No programs found</h6><p class="text-muted small mb-0">Try adjusting search or filter</p>`;
+                programsTable.parentElement.appendChild(emptyState);
+            }
+            emptyState.style.display = 'block';
+            programsTable.style.display = 'none';
+        } else {
+            if (emptyState) emptyState.style.display = 'none';
+            programsTable.style.display = '';
+            // Hide the "No HEP programs found" empty row when we have data but filtered to 0, show it only when truly 0 total
+            const emptyRow = programsTable.querySelector('tbody tr:not(.hep-row)');
+            if (emptyRow) emptyRow.style.display = (hasHepRows ? 'none' : '');
+        }
+        updateFooterCounts();
+        // Also update table-footer counts like cases-overview
+        const footer = document.querySelector('.doctor-table-container .table-footer');
+        if (footer) {
+            const firstSpan = footer.querySelector('span:first-child');
+            if (firstSpan) {
+                const total = programsTable.querySelectorAll('tbody tr.hep-row').length;
+                if (visibleCount !== total && isSearching) firstSpan.textContent = `Showing ${visibleCount} of ${total} programs`;
+                else if (total) firstSpan.innerHTML = `<i class="fas fa-info-circle me-1"></i> Showing ${total} programs`;
+            }
+        }
     }
+
+    function updateFooterCounts() {
+        const container = document.querySelector('.doctor-table-container');
+        const footer = container ? container.querySelector('.table-footer span:first-child') : null;
+        if (!footer || !programsTable) return;
+        const visible = Array.from(programsTable.querySelectorAll('tbody tr')).filter(r => r.cells.length > 1 && r.style.display !== 'none').length;
+        const total = Array.from(programsTable.querySelectorAll('tbody tr')).filter(r => r.cells.length > 1).length;
+        if (visible !== total) footer.textContent = `Showing ${visible} of ${total} programs`;
+        else if (total) footer.innerHTML = `<i class="fas fa-info-circle me-1"></i> Showing ${total} programs`;
+    }
+
+    if (searchInput) searchInput.addEventListener('input', filterPrograms);
+    if (statusFilter) statusFilter.addEventListener('change', filterPrograms);
+
 
     // Assign program functionality
     const assignButtons = document.querySelectorAll('.assign-program-btn');
-    const assignModal = new bootstrap.Modal(document.getElementById('assignProgramModal'));
+    const assignModalEl = document.getElementById('assignProgramModal');
+    const assignModal = assignModalEl ? new bootstrap.Modal(assignModalEl) : null;
     const assignForm = document.getElementById('assignProgramForm');
 
     assignButtons.forEach(button => {
@@ -314,17 +333,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const programId = this.dataset.programId;
             const programTitle = this.dataset.programTitle;
 
-            // Update modal title
             document.querySelector('#assignProgramModal .modal-title').textContent =
                 `Assign "${programTitle}" to Patient`;
 
-            // Update form action
             assignForm.action = `/doctor/hep/${programId}/assign`;
 
-            // Load patients (you might want to cache this)
             loadPatientsForAssignment();
 
-            assignModal.show();
+            if (assignModal) assignModal.show();
         });
     });
 
@@ -351,41 +367,42 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Handle form submission
-    assignForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+    if (assignForm) {
+        assignForm.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-        const formData = new FormData(this);
-        const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-        const csrfToken = csrfTokenMeta ? csrfTokenMeta.content : '';
+            const formData = new FormData(this);
+            const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfTokenMeta ? csrfTokenMeta.content : '';
 
-        if (!csrfToken) {
-            alert('Security token missing. Please refresh the page.');
-            return;
-        }
-
-        fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
+            if (!csrfToken) {
+                alert('Security token missing. Please refresh the page.');
+                return;
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                assignModal.hide();
-                location.reload(); // Refresh to show updated status
-            } else {
-                alert('Error: ' + (data.message || 'Failed to assign program'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while assigning the program');
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (assignModal) assignModal.hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to assign program'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while assigning the program');
+            });
         });
-    });
+    }
 });
 </script>
 @endpush

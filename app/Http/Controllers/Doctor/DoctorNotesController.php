@@ -61,13 +61,8 @@ class DoctorNotesController extends Controller
 
         $notes = $query->paginate(15);
 
-        // Get patients for filter dropdown
-        $patients = User::where('role', 'patient')
-            ->whereHas('appointments', function($q) use ($doctor) {
-                $q->where('doctor_id', $doctor->id);
-            })
-            ->orderBy('name')
-            ->get();
+        // Get patients for filter dropdown – use unified method (assigned OR appointments)
+        $patients = Auth::user()->getDoctorPatients();
 
         return view('doctor.notes.index', compact('notes', 'patients'));
     }
@@ -79,13 +74,8 @@ class DoctorNotesController extends Controller
     {
         $doctor = $this->getEffectiveDoctor();
 
-        // Get patients who have appointments with this doctor
-        $patients = User::where('role', 'patient')
-            ->whereHas('appointments', function($q) use ($doctor) {
-                $q->where('doctor_id', $doctor->id);
-            })
-            ->orderBy('name')
-            ->get();
+        // Unified patient list: assigned (primary_doctor_id) OR has appointment with this doctor
+        $patients = Auth::user()->getDoctorPatients();
 
         // Get recent appointments for this doctor
         $appointments = Appointment::where('doctor_id', $doctor->id)
@@ -225,13 +215,8 @@ class DoctorNotesController extends Controller
 
         $doctor = $this->getEffectiveDoctor();
 
-        // Get patients who have appointments with this doctor
-        $patients = User::where('role', 'patient')
-            ->whereHas('appointments', function($q) use ($doctor) {
-                $q->where('doctor_id', $doctor->id);
-            })
-            ->orderBy('name')
-            ->get();
+        // Unified patient list: assigned (primary_doctor_id) OR has appointment with this doctor
+        $patients = Auth::user()->getDoctorPatients();
 
         // Get recent appointments for this doctor
         $appointments = Appointment::where('doctor_id', $doctor->id)
@@ -498,12 +483,7 @@ class DoctorNotesController extends Controller
      */
     public function getPatients(Request $request)
     {
-        $doctor = $this->getEffectiveDoctor();
-
-        $query = User::where('role', 'patient')
-            ->whereHas('appointments', function($q) use ($doctor) {
-                $q->where('doctor_id', $doctor->id);
-            });
+        $query = Auth::user()->doctorPatientsQuery()->with([]);
 
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');

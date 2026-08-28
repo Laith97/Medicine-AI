@@ -456,7 +456,7 @@ function showClinicalDataSummary(clinicalData) {
         const mHist = v.match(/Medical History:\s*([^\n]+)/i);
         const mFind = v.match(/Physical Findings:\s*([^\n]+)/i);
         // Deduplicate: Clinical Presentation already shows symptoms, so Ambient should show history + findings only
-        const symInClinical = sym && mSym && sym.toLowerCase().includes(mSym[1].trim().toLowerCase().substring(0,30));
+        const symInClinical = realSym && mSym && realSym.toLowerCase().includes(mSym[1].trim().toLowerCase().substring(0,30));
         let ambientVal = '';
         if (symInClinical) {
             // Show only Medical History + Physical Findings, not duplicate symptoms
@@ -475,7 +475,14 @@ function showClinicalDataSummary(clinicalData) {
             }
         }
         ambientVal = ambientVal.replace(/\*\*/g, '').trim().substring(0,180);
-        if (ambientVal) addItem('fas fa-waveform-lines', 'Ambient Listening', ambientVal, '#6366f1');
+        // Only show Ambient Listening if it's not duplicate of Clinical Presentation and not empty
+        const isAmbientDuplicate = ambientVal && realSym && ambientVal.toLowerCase().includes(realSym.toLowerCase().substring(0,30));
+        if (ambientVal && !isAmbientDuplicate) addItem('fas fa-waveform-lines', 'Ambient Listening', ambientVal, '#6366f1');
+        else if (ambientVal && isAmbientDuplicate && ambientVal.length > realSym.length + 20) {
+            // If Ambient has extra history beyond symptoms, show only the extra part
+            const extra = ambientVal.replace(realSym, '').replace(/^\s*•\s*/, '').trim();
+            if (extra) addItem('fas fa-waveform-lines', 'Ambient Listening', extra, '#6366f1');
+        }
     }
     const header = `<div class="cds-header"><div class="cds-header-icon"><i class="fas fa-clipboard-check"></i></div><div><div class="cds-title">Clinical Data Used</div><div style="font-size:0.7rem;color:#64748b;font-weight:500;">Verified • ${Object.keys(clinicalData).filter(k=>clinicalData[k]).length} sources analyzed</div></div><span class="ms-auto badge bg-success" style="border-radius:20px;font-size:0.65rem;"><i class="fas fa-check me-1"></i>Verified</span></div>`;
     const grid = `<div class="cds-grid">${items || '<div class="cds-item"><div class="cds-item-value text-muted">No specific clinical data — preventive guidance only</div></div>'}</div>`;

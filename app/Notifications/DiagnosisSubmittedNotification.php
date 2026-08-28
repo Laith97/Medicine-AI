@@ -159,7 +159,7 @@ class DiagnosisSubmittedNotification extends Notification implements ShouldBroad
                 'message' => "Dr. {$this->diagnosis->doctor->name} has submitted a new diagnosis for your case.",
                 'body' => "Dr. {$this->diagnosis->doctor->name} has submitted a new diagnosis for your case.",
                 'icon' => 'file-medical',
-                'link' => route('diagnosis.patient-view', $this->diagnosis->id),
+                'link' => route('diagnosis.patient.view', $this->diagnosis->id),
                 'link_text' => 'View Diagnosis',
                 'data' => [
                     'diagnosis_id' => $this->diagnosis->id,

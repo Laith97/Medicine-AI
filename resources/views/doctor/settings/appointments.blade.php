@@ -3,314 +3,129 @@
 @section('title', 'Appointment Settings')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/doctor-design-system.css') }}">
 <link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
-<link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
-
+<link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
 <style>
-/* Professional Dashboard Header Styling */
-.dashboard-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    border-radius: 15px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(222, 98, 98, 0.2);
-    position: relative;
-    overflow: hidden;
-}
-
-.dashboard-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(135deg, #DE6262 0%, #2c3e50 100%);
-}
-
-.dashboard-header h2 {
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.dashboard-header h2::before {
-    content: '⚙️';
-    font-size: 2rem;
-}
-
-.dashboard-header p {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1.1rem;
-    font-weight: 500;
-    margin-bottom: 0;
-}
-
-/* Button styles within header */
-.dashboard-header .btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    transition: all 0.3s ease;
-}
-
-.dashboard-header .btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.5);
-    color: white;
-    transform: translateY(-1px);
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .dashboard-header {
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .dashboard-header h2 {
-        font-size: 2rem;
-    }
-
-    .dashboard-header p {
-        font-size: 1rem;
-    }
-}
+.dashboard-header{background:linear-gradient(135deg,#2c5aa0 0%,#1e3a8a 100%)!important;border-radius:12px!important;padding:2.5rem!important;margin-bottom:2rem!important;box-shadow:0 4px 15px rgba(44,90,160,0.15)!important;position:relative;overflow:hidden}
+.dashboard-header::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#10b981 0%,#059669 100%)}
+.dashboard-header h2{color:#fff!important;font-weight:600!important;font-size:2rem!important;margin-bottom:0.4rem!important}
+.dashboard-header p{color:rgba(255,255,255,0.9)!important;font-size:0.92rem!important;margin:0!important}
+.table-card{background:#fff;border:1px solid #eef2f7;border-radius:12px;padding:1.3rem;box-shadow:0 1px 4px rgba(15,23,42,0.04);margin-bottom:1.25rem}
+.section-head-modern{display:flex;align-items:center;gap:0.75rem;margin:-1.3rem -1.3rem 1.1rem -1.3rem;padding:1rem 1.3rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;border-radius:12px 12px 0 0}
+.section-head-modern .head-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:0.95rem;flex-shrink:0;background:#1e293b!important;color:#fff!important;border:1px solid #1e293b!important}
+.section-head-modern h5{color:#0f172a!important;font-weight:800!important;letter-spacing:-0.01em;margin:0;font-size:1rem}
+.section-head-modern p{color:#475569!important;font-size:0.78rem;margin:2px 0 0;font-weight:500}
+.appointment-type-card{border:1px solid #e2e8f0;border-radius:12px;background:#fff;transition:all .15s;cursor:pointer}
+.appointment-type-card.enabled{border-color:#10b981;background:#f0fdf4;box-shadow:0 2px 8px rgba(16,185,129,0.08)}
+.appointment-type-card.disabled{border-color:#eef2f7;background:#f8fafc;opacity:0.95}
+.appointment-type-card:hover{border-color:#cbd5e1;box-shadow:0 4px 12px rgba(15,23,42,0.06);transform:translateY(-1px)}
+.appointment-type-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.form-switch .form-check-input{width:2.2rem;height:1.15rem;cursor:pointer}
+.form-switch .form-check-input:checked{background-color:#10b981;border-color:#10b981}
 </style>
 @endpush
 
 @section('content')
-<style>
-.app-main {
-    background-color: #f8f9fa;
-}
-.dashboard-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
-    border-radius: 12px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
-}
-</style>
-<div class="container-fluid" style="background-color: #f8f9fa;">
-    <div class="container">
-        <div class="dashboard-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <a href="{{ route('doctor.dashboard') }}" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; margin-right: 1rem;">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-                    </a>
+<div class="container-fluid" style="background-color: var(--bg-secondary, #f8f9fa);">
+    <div class="container py-4">
+        <div class="dashboard-header cases-header-compact">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{{ route('doctor.dashboard') }}" class="btn" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.32);color:#fff;border-radius:10px;padding:0.5rem 1rem;font-weight:600;font-size:0.83rem"><i class="fas fa-arrow-left me-2"></i>Dashboard</a>
                     <div>
-                        <h2 class="h1 mb-1">Appointment Settings</h2>
-                        <p class="text-muted mb-0">Manage your appointment type preferences</p>
+                        <h2 class="h1 mb-1" style="font-size:1.8rem">Appointment Settings</h2>
+                        <p>Manage your appointment type preferences</p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="container-fluid" style="background-color: #f8f9fa;">
-    <div class="container">
-
-        <div class="row">
+        <div class="row g-4">
             <div class="col-lg-8">
-                <!-- Appointment Types Settings -->
-                <div class="table-card mb-4">
-                    <div class="p-4">
-                        <h5 class="mb-4">
-                            <i class="fas fa-calendar-check text-primary me-2"></i>
-                            Appointment Types
-                        </h5>
-                        <p class="text-muted mb-4">
-                            Choose which appointment types you want to offer to your patients.
-                            Only enabled types will appear as options when patients book appointments.
-                        </p>
+                <div class="table-card">
+                    <div class="section-head-modern"><div class="d-flex align-items-center gap-3"><div class="head-icon"><i class="fas fa-calendar-check"></i></div><div><h5>Appointment Types</h5><p>Enable the types patients can book</p></div></div></div>
+                    <p style="color:#64748b;font-size:0.84rem;background:#f8fafc;border:1px solid #eef2f7;border-radius:8px;padding:0.7rem 0.9rem"><i class="fas fa-circle-info me-1"></i>Only enabled types appear when patients book appointments.</p>
 
-                        @if ($errors->any())
-                            <div class="alert alert-danger">
-                                <ul class="mb-0">
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
+                    @if ($errors->any())
+                        <div class="alert alert-danger" style="border-radius:10px"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+                    @endif
+                    @if (session('success'))
+                        <div class="alert alert-success d-flex align-items-center gap-2" style="border-radius:10px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46"><i class="fas fa-check-circle"></i><div>{{ session('success') }}</div></div>
+                    @endif
 
-                        @if (session('success'))
-                            <div class="alert alert-success">
-                                {{ session('success') }}
-                            </div>
-                        @endif
-
-                        <form method="POST" action="{{ route('doctor.settings.appointments.update') }}">
-                            @csrf
-                            @method('PUT')
-
-                            <div class="row">
-                                @foreach($appointmentTypes as $type => $label)
-                                    <div class="col-md-6 mb-4">
-                                        <div class="card h-100 appointment-type-card {{ $doctor->isAppointmentTypeEnabled($type) ? 'enabled' : 'disabled' }}">
-                                            <div class="card-body d-flex align-items-center">
-                                                <div class="me-3">
-                                                    <div class="appointment-type-icon">
-                                                        @if($type === 'in_person')
-                                                            <i class="fas fa-hospital text-primary"></i>
-                                                        @elseif($type === 'video_call')
-                                                            <i class="fas fa-video text-success"></i>
-                                                        @else
-                                                            <i class="fas fa-phone text-info"></i>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-1">{{ $label }}</h6>
-                                                    <small class="text-muted">
-                                                        @if($type === 'in_person')
-                                                            Face-to-face consultations at your clinic
-                                                        @elseif($type === 'video_call')
-                                                            Online video consultations
-                                                        @else
-                                                            Phone call consultations
-                                                        @endif
-                                                    </small>
-                                                </div>
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input"
-                                                           type="checkbox"
-                                                           name="appointment_types[]"
-                                                           value="{{ $type }}"
-                                                           id="type_{{ $type }}"
-                                                           {{ $doctor->isAppointmentTypeEnabled($type) ? 'checked' : '' }}>
-                                                    <label class="form-check-label" for="type_{{ $type }}">
-                                                        {{ $doctor->isAppointmentTypeEnabled($type) ? 'Enabled' : 'Disabled' }}
-                                                    </label>
-                                                </div>
-                                            </div>
+                    <form method="POST" action="{{ route('doctor.settings.appointments.update') }}">
+                        @csrf @method('PUT')
+                        <div class="row g-3">
+                            @foreach($appointmentTypes as $type => $label)
+                                <div class="col-md-6">
+                                    <label class="appointment-type-card p-3 d-flex align-items-center gap-3 {{ $doctor->isAppointmentTypeEnabled($type) ? 'enabled' : 'disabled' }}" for="type_{{ $type }}" style="cursor:pointer;margin:0">
+                                        <div class="appointment-type-icon" style="background:{{ $type === 'in_person' ? '#eff6ff;color:#2563eb;border:1px solid #dbeafe' : ($type === 'video_call' ? '#f0fdf4;color:#059669;border:1px solid #a7f3d0' : '#eff6ff;color:#0ea5e9;border:1px solid #bae6fd') }}">
+                                            @if($type === 'in_person')<i class="fas fa-hospital"></i>
+                                            @elseif($type === 'video_call')<i class="fas fa-video"></i>
+                                            @else <i class="fas fa-phone"></i>@endif
                                         </div>
-                                    </div>
-                                @endforeach
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center mt-4">
-                                <div class="text-muted">
-                                    <small>
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        At least one appointment type must be enabled
-                                    </small>
+                                        <div class="flex-grow-1 min-w-0">
+                                            <div style="font-weight:800;color:#0f172a;font-size:0.92rem">{{ $label }}</div>
+                                            <small style="color:#64748b;font-size:0.76rem;display:block">
+                                                @if($type === 'in_person') Face-to-face at your clinic
+                                                @elseif($type === 'video_call') Online video consultations
+                                                @else Phone call consultations @endif
+                                            </small>
+                                        </div>
+                                        <div class="form-check form-switch m-0">
+                                            <input class="form-check-input" type="checkbox" name="appointment_types[]" value="{{ $type }}" id="type_{{ $type }}" {{ $doctor->isAppointmentTypeEnabled($type) ? 'checked' : '' }}>
+                                        </div>
+                                    </label>
                                 </div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-2"></i>Save Changes
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                            @endforeach
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top" style="border-color:#eef2f7!important">
+                            <small style="color:#64748b"><i class="fas fa-info-circle me-1"></i>At least one type must be enabled</small>
+                            <button type="submit" class="doctor-btn doctor-btn-primary"><i class="fas fa-save me-2"></i>Save Changes</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
-            <!-- Sidebar -->
             <div class="col-lg-4">
-                <!-- Current Status -->
-                <div class="table-card mb-4">
-                    <div class="p-4">
-                        <h5 class="mb-3">
-                            <i class="fas fa-chart-bar text-success me-2"></i>
-                            Current Status
-                        </h5>
-
-                        @php
-                            $enabledTypes = $doctor->getEnabledAppointmentTypes();
-                            $totalTypes = count($appointmentTypes);
-                            $enabledCount = count($enabledTypes);
-                        @endphp
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <small class="text-muted">Enabled Types</small>
-                                <small class="text-muted">{{ $enabledCount }}/{{ $totalTypes }}</small>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-success"
-                                     style="width: {{ ($enabledCount / $totalTypes) * 100 }}%"></div>
-                            </div>
-                        </div>
-
-                        <div class="enabled-types-list">
-                            @if(count($enabledTypes) > 0)
-                                <h6 class="mb-2">Enabled Types:</h6>
+                @php $enabledTypes = $doctor->getEnabledAppointmentTypes(); $totalTypes = count($appointmentTypes); $enabledCount = count($enabledTypes); @endphp
+                <div class="table-card">
+                    <div class="section-head-modern"><div class="d-flex align-items-center gap-3"><div class="head-icon" style="background:#f0fdf4!important;color:#059669!important;border-color:#a7f3d0!important"><i class="fas fa-chart-bar"></i></div><div><h5>Current Status</h5><p>{{ $enabledCount }}/{{ $totalTypes }} enabled</p></div></div></div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1"><small style="font-size:0.70rem;font-weight:700;letter-spacing:0.06em;color:#64748b">ENABLED TYPES</small><small style="font-weight:700;color:#0f172a">{{ $enabledCount }}/{{ $totalTypes }}</small></div>
+                        <div class="progress" style="height:8px;background:#f1f5f9;border-radius:99px"><div class="progress-bar" style="width: {{ ($enabledCount / $totalTypes) * 100 }}%;background:linear-gradient(90deg,#10b981,#059669);border-radius:99px"></div></div>
+                    </div>
+                    <div>
+                        @if(count($enabledTypes) > 0)
+                            <small style="font-size:0.70rem;font-weight:700;letter-spacing:0.06em;color:#64748b">ENABLED:</small>
+                            <div class="d-flex flex-column gap-2 mt-2">
                                 @foreach($enabledTypes as $type)
-                                    <div class="d-flex align-items-center mb-2">
-                                        <div class="me-2">
-                                            @if($type === 'in_person')
-                                                <i class="fas fa-hospital text-primary"></i>
-                                            @elseif($type === 'video_call')
-                                                <i class="fas fa-video text-success"></i>
-                                            @else
-                                                <i class="fas fa-phone text-info"></i>
-                                            @endif
-                                        </div>
-                                        <small>{{ $appointmentTypes[$type] }}</small>
+                                    <div class="d-flex align-items-center gap-2 p-2" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:8px">
+                                        @if($type === 'in_person')<i class="fas fa-hospital" style="color:#2563eb"></i>
+                                        @elseif($type === 'video_call')<i class="fas fa-video" style="color:#059669"></i>
+                                        @else <i class="fas fa-phone" style="color:#0ea5e9"></i>@endif
+                                        <small style="font-weight:600;color:#334155">{{ $appointmentTypes[$type] }}</small>
+                                        <span class="ms-auto badge" style="background:#d1fae5;color:#065f46;border:1px solid #a7f3d0;border-radius:99px;font-size:0.65rem">Enabled</span>
                                     </div>
                                 @endforeach
-                            @else
-                                <div class="text-center text-muted">
-                                    <i class="fas fa-exclamation-triangle mb-2"></i>
-                                    <p class="mb-0">No appointment types enabled</p>
-                                </div>
-                            @endif
-                        </div>
+                            </div>
+                        @else
+                            <div class="text-center py-4" style="background:#fffbeb;border:1px dashed #fde68a;border-radius:10px">
+                                <i class="fas fa-triangle-exclamation mb-2" style="color:#d97706"></i>
+                                <p class="mb-0" style="font-weight:600;color:#92400e;font-size:0.88rem">No types enabled</p>
+                                <small style="color:#b45309">Enable at least one to allow bookings</small>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
-                <!-- Help & Tips -->
                 <div class="table-card">
-                    <div class="p-4">
-                        <h5 class="mb-3">
-                            <i class="fas fa-lightbulb text-warning me-2"></i>
-                            Tips
-                        </h5>
-                        <div class="tips-list">
-                            <div class="tip-item mb-3">
-                                <div class="d-flex">
-                                    <div class="me-2">
-                                        <i class="fas fa-check-circle text-success"></i>
-                                    </div>
-                                    <div>
-                                        <small class="text-muted">
-                                            Enable multiple appointment types to give patients more flexibility
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="tip-item mb-3">
-                                <div class="d-flex">
-                                    <div class="me-2">
-                                        <i class="fas fa-check-circle text-success"></i>
-                                    </div>
-                                    <div>
-                                        <small class="text-muted">
-                                            Video calls can help you reach patients who can't visit in person
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="tip-item">
-                                <div class="d-flex">
-                                    <div class="me-2">
-                                        <i class="fas fa-check-circle text-success"></i>
-                                    </div>
-                                    <div>
-                                        <small class="text-muted">
-                                            You can change these settings anytime based on your availability
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="section-head-modern"><div class="d-flex align-items-center gap-3"><div class="head-icon" style="background:#fffbeb!important;color:#d97706!important;border-color:#fde68a!important"><i class="fas fa-lightbulb"></i></div><div><h5>Tips</h5><p>Best practices</p></div></div></div>
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex gap-2"><div class="d-flex align-items-center justify-content-center" style="width:28px;height:28px;background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;color:#059669;flex-shrink:0"><i class="fas fa-check" style="font-size:0.7rem"></i></div><small style="color:#475569">Enable multiple types to give patients more flexibility</small></div>
+                        <div class="d-flex gap-2"><div class="d-flex align-items-center justify-content-center" style="width:28px;height:28px;background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;color:#059669;flex-shrink:0"><i class="fas fa-check" style="font-size:0.7rem"></i></div><small style="color:#475569">Video calls help reach patients who can't visit in person</small></div>
+                        <div class="d-flex gap-2"><div class="d-flex align-items-center justify-content-center" style="width:28px;height:28px;background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;color:#059669;flex-shrink:0"><i class="fas fa-check" style="font-size:0.7rem"></i></div><small style="color:#475569">You can change these settings anytime based on availability</small></div>
                     </div>
                 </div>
             </div>
@@ -321,81 +136,16 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle appointment type card styling
-    const checkboxes = document.querySelectorAll('input[name="appointment_types[]"]');
-
-    checkboxes.forEach(function(checkbox) {
-        const card = checkbox.closest('.appointment-type-card');
-        const label = checkbox.nextElementSibling;
-
-        function updateCardState() {
-            if (checkbox.checked) {
-                card.classList.remove('disabled');
-                card.classList.add('enabled');
-                label.textContent = 'Enabled';
-            } else {
-                card.classList.remove('enabled');
-                card.classList.add('disabled');
-                label.textContent = 'Disabled';
-            }
-        }
-
-        // Initial state
-        updateCardState();
-
-        // Handle changes
-        checkbox.addEventListener('change', updateCardState);
-    });
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('input[name="appointment_types[]"]').forEach(function(cb){
+    const card = cb.closest('.appointment-type-card');
+    function upd(){
+      if(cb.checked){ card.classList.add('enabled'); card.classList.remove('disabled'); }
+      else { card.classList.remove('enabled'); card.classList.add('disabled'); }
+    }
+    upd(); cb.addEventListener('change', upd);
+    card.addEventListener('click', function(e){ if(e.target!==cb) cb.click(); });
+  });
 });
 </script>
-@endpush
-
-@push('styles')
-<style>
-.appointment-type-card {
-    border: 2px solid #e9ecef;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.appointment-type-card.enabled {
-    border-color: #28a745;
-    background-color: #f8fff9;
-}
-
-.appointment-type-card.disabled {
-    border-color: #e9ecef;
-    background-color: #f8f9fa;
-}
-
-.appointment-type-card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.appointment-type-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: rgba(0,123,255,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-}
-
-.form-check-input:checked {
-    background-color: #28a745;
-    border-color: #28a745;
-}
-
-.tip-item {
-    padding: 8px 0;
-    border-bottom: 1px solid #f1f3f4;
-}
-
-.tip-item:last-child {
-    border-bottom: none;
-}
-</style>
 @endpush

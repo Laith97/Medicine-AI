@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             SpecialtySeeder::class,
             PatientCasesTestSeeder::class,
             AnalyticsSeeder::class,
+            // HepDemoSeeder is idempotent and safe to run with db:seed; also callable via --class=HepDemoSeeder
+            HepDemoSeeder::class,
         ]);
     }
 }

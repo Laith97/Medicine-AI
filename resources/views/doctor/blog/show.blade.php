@@ -2,326 +2,132 @@
 
 @section('title', $post->title)
 
-@section('content')
-<style>
-.app-main {
-    background-color: #f8f9fa;
-}
-.dashboard-header {
-    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
-    border-radius: 12px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
-}
-</style>
-<div class="container-fluid" style="background-color: #f8f9fa;">
-    <div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="dashboard-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2><i class="fas fa-blog me-2"></i>{{ $post->title }}</h2>
-                        <p class="text-muted mb-0">View and manage your blog post</p>
-                    </div>
-                    <div class="header-actions">
-                        <a href="{{ route('doctor.blog.edit', $post) }}" class="btn btn-primary me-2">
-                            <i class="fas fa-edit"></i> Edit Post
-                        </a>
-                        <a href="{{ route('doctor.blog.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Blog
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    </div>
-</div>
-
-<div class="container-fluid">
-                <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-body">
-                            <!-- Post Meta -->
-                            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-                                <div>
-                                    <span class="badge bg-{{ $post->is_published ? 'success' : 'secondary' }} me-2">
-                                        {{ $post->is_published ? 'Published' : 'Draft' }}
-                                    </span>
-                                    @if($post->published_at)
-                                        <small class="text-muted">
-                                            Published on {{ $post->published_at->format('F j, Y \a\t g:i A') }}
-                                        </small>
-                                    @else
-                                        <small class="text-muted">
-                                            Created on {{ $post->created_at->format('F j, Y \a\t g:i A') }}
-                                        </small>
-                                    @endif
-                                </div>
-                                <div class="text-end">
-                                    <div class="text-muted small">
-                                        <i class="fas fa-eye me-1"></i> {{ $post->views_count }} views
-                                    </div>
-                                    <div class="text-muted small">
-                                        <i class="fas fa-clock me-1"></i> {{ $post->reading_time }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Featured Image -->
-                            @if($post->featured_image)
-                                <div class="mb-4">
-                                    <img src="{{ Storage::url($post->featured_image) }}" 
-                                         alt="{{ $post->title }}" 
-                                         class="img-fluid rounded">
-                                </div>
-                            @endif
-
-                            <!-- Short Description -->
-                            <div class="mb-4">
-                                <h5 class="text-muted">Summary</h5>
-                                <p class="lead">{{ $post->short_description }}</p>
-                            </div>
-
-                            <!-- Content -->
-                            <div class="blog-content">
-                                {!! nl2br(e($post->content)) !!}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-4">
-                    <!-- Post Actions -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Post Actions</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <a href="{{ route('doctor.blog.edit', $post) }}" class="btn btn-primary">
-                                    <i class="fas fa-edit"></i> Edit Post
-                                </a>
-                                
-                                <button type="button" 
-                                        class="btn btn-{{ $post->is_published ? 'warning' : 'success' }} toggle-publish-btn"
-                                        data-post-id="{{ $post->id }}"
-                                        data-current-status="{{ $post->is_published ? 'published' : 'draft' }}">
-                                    <i class="fas fa-{{ $post->is_published ? 'eye-slash' : 'globe' }}"></i>
-                                    {{ $post->is_published ? 'Unpublish' : 'Publish' }}
-                                </button>
-
-                                @if($post->is_published && auth()->user()->getEffectiveDoctor()?->landingPage)
-                                    <a href="{{ route('doctor.blog.post', [auth()->user()->getEffectiveDoctor()->landingPage->username, $post->slug]) }}"
-                                       class="btn btn-info"
-                                       target="_blank">
-                                        <i class="fas fa-external-link-alt"></i> View Live Post
-                                    </a>
-                                @endif
-
-                                <form action="{{ route('doctor.blog.destroy', $post) }}" 
-                                      method="POST" 
-                                      onsubmit="return confirm('Are you sure you want to delete this blog post?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger w-100">
-                                        <i class="fas fa-trash"></i> Delete Post
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Post Statistics -->
-                    <div class="card mt-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Statistics</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row text-center">
-                                <div class="col-6">
-                                    <h4 class="text-primary">{{ $post->views_count }}</h4>
-                                    <small class="text-muted">Total Views</small>
-                                </div>
-                                <div class="col-6">
-                                    <h4 class="text-info">{{ $post->reading_time }}</h4>
-                                    <small class="text-muted">Reading Time</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SEO Information -->
-                    @if($post->seo_meta)
-                        <div class="card mt-4">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">SEO Information</h5>
-                            </div>
-                            <div class="card-body">
-                                @if(isset($post->seo_meta['title']))
-                                    <div class="mb-3">
-                                        <strong>SEO Title:</strong>
-                                        <p class="text-muted small mb-0">{{ $post->seo_meta['title'] }}</p>
-                                    </div>
-                                @endif
-                                
-                                @if(isset($post->seo_meta['description']))
-                                    <div class="mb-3">
-                                        <strong>SEO Description:</strong>
-                                        <p class="text-muted small mb-0">{{ $post->seo_meta['description'] }}</p>
-                                    </div>
-                                @endif
-                                
-                                @if(isset($post->seo_meta['keywords']))
-                                    <div class="mb-3">
-                                        <strong>Keywords:</strong>
-                                        <p class="text-muted small mb-0">{{ $post->seo_meta['keywords'] }}</p>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    @endif
-
-                    <!-- Post Details -->
-                    <div class="card mt-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Post Details</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-2">
-                                <strong>Slug:</strong>
-                                <code class="small">{{ $post->slug }}</code>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Created:</strong>
-                                <small class="text-muted">{{ $post->created_at->format('M j, Y g:i A') }}</small>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Last Updated:</strong>
-                                <small class="text-muted">{{ $post->updated_at->format('M j, Y g:i A') }}</small>
-                            </div>
-                            @if($post->published_at)
-                                <div class="mb-2">
-                                    <strong>Published:</strong>
-                                    <small class="text-muted">{{ $post->published_at->format('M j, Y g:i A') }}</small>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-    </div></div>
-@endsection
-
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/doctor-design-system.css') }}">
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
 <style>
-.blog-content {
-    font-size: 1.1rem;
-    line-height: 1.7;
-    color: #333;
-}
-
-.blog-content p {
-    margin-bottom: 1.5rem;
-}
-
-.blog-content h1,
-.blog-content h2,
-.blog-content h3,
-.blog-content h4,
-.blog-content h5,
-.blog-content h6 {
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    font-weight: 600;
-}
-
-.blog-content ul,
-.blog-content ol {
-    margin-bottom: 1.5rem;
-    padding-left: 2rem;
-}
-
-.blog-content blockquote {
-    border-left: 4px solid #DE6262;
-    padding-left: 1rem;
-    margin: 1.5rem 0;
-    font-style: italic;
-    color: #666;
-}
+.dashboard-header{background:linear-gradient(135deg,#2c5aa0 0%,#1e3a8a 100%)!important;border-radius:12px!important;padding:2.5rem!important;margin-bottom:2rem!important;box-shadow:0 4px 15px rgba(44,90,160,0.15)!important;position:relative;overflow:hidden}
+.dashboard-header::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#10b981 0%,#059669 100%)}
+.dashboard-header h2{color:#fff!important;font-weight:600!important;font-size:1.9rem!important;margin-bottom:0.4rem!important;line-height:1.2}
+.dashboard-header p{color:rgba(255,255,255,0.85)!important;font-size:0.92rem!important;margin:0!important}
+.table-card{background:#fff;border:1px solid #eef2f7;border-radius:12px;padding:1.3rem;box-shadow:0 1px 4px rgba(15,23,42,0.04);margin-bottom:1.25rem}
+.section-head-modern{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin:-1.3rem -1.3rem 1.1rem -1.3rem;padding:1rem 1.3rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;border-radius:12px 12px 0 0;flex-wrap:wrap}
+.section-head-modern .head-left{display:flex;align-items:center;gap:0.75rem}
+.section-head-modern .head-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:0.95rem;flex-shrink:0;background:#1e293b!important;color:#fff!important;border:1px solid #1e293b!important}
+.section-head-modern h5{color:#0f172a!important;font-weight:800!important;letter-spacing:-0.01em;margin:0;font-size:1rem}
+.section-head-modern p{color:#475569!important;font-size:0.78rem;margin:2px 0 0;font-weight:500}
+.blog-content{font-size:1rem;line-height:1.75;color:#1e293b}
+.blog-content p{margin-bottom:1.2rem}
+.blog-content h1,.blog-content h2,.blog-content h3{margin-top:1.6rem;margin-bottom:0.8rem;font-weight:800;color:#0f172a}
+.blog-content ul,.blog-content ol{margin-bottom:1.2rem;padding-left:1.5rem}
+.blog-content blockquote{border-left:3px solid #3b82f6;background:#eff6ff;padding:0.8rem 1rem;border-radius:0 8px 8px 0;margin:1.2rem 0;color:#1e40af}
+.badge-soft{padding:0.35rem 0.6rem;border-radius:99px;font-size:0.70rem;font-weight:700;border:1px solid transparent}
+.status-badge{padding:0.38rem 0.75rem;border-radius:99px;font-size:0.72rem;font-weight:700;border:1px solid transparent}
 </style>
 @endpush
 
+@section('content')
+<div class="container-fluid" style="background-color: var(--bg-secondary, #f8f9fa);">
+    <div class="container py-4">
+        <!-- Header like appointments/show -->
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div style="max-width:680px">
+                    <h2><i class="fas fa-blog me-2"></i>{{ Str::limit($post->title, 70) }}</h2>
+                    <p class="d-flex align-items-center gap-2 flex-wrap">
+                        @if($post->is_published)<span class="status-badge" style="background:#d1fae5;color:#065f46;border-color:#a7f3d0">Published</span> @else <span class="status-badge" style="background:#f1f5f9;color:#475569;border-color:#e2e8f0">Draft</span> @endif
+                        @if($post->published_at)<span><i class="far fa-calendar me-1"></i>{{ $post->published_at->format('M j, Y g:i A') }}</span>@else <span>Created {{ $post->created_at->format('M j, Y') }}</span>@endif
+                        <span><i class="fas fa-eye me-1"></i>{{ $post->views_count }} views</span>
+                        <span><i class="far fa-clock me-1"></i>{{ $post->reading_time }}</span>
+                    </p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ route('doctor.blog.edit', $post) }}" class="btn" style="background:#fff;color:#1e293b;border:1px solid #fff;border-radius:10px;padding:0.5rem 1rem;font-weight:700;font-size:0.83rem"><i class="fas fa-pen me-2"></i>Edit</a>
+                    <a href="{{ route('doctor.blog.index') }}" class="btn" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.32);color:#fff;border-radius:10px;padding:0.5rem 1rem;font-weight:600;font-size:0.83rem"><i class="fas fa-arrow-left me-2"></i>Back</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Main -->
+            <div class="col-lg-8">
+                <div class="table-card">
+                    <div class="section-head-modern"><div class="head-left"><div class="head-icon"><i class="fas fa-file-lines"></i></div><div><h5>{{ $post->title }}</h5><p>{{ $post->is_published ? 'Published post' : 'Draft' }} · {{ $post->reading_time }}</p></div></div>
+                    <span class="badge-soft" style="background:{{ $post->is_published ? '#d1fae5;color:#065f46;border-color:#a7f3d0' : '#f1f5f9;color:#475569;border-color:#e2e8f0' }}">{{ $post->is_published ? 'Published' : 'Draft' }}</span></div>
+
+                    @if($post->featured_image)
+                        <div class="mb-4"><img src="{{ Storage::url($post->featured_image) }}" alt="{{ $post->title }}" class="img-fluid" style="width:100%;max-height:420px;object-fit:cover;border-radius:10px;border:1px solid #eef2f7"></div>
+                    @endif
+                    <div class="mb-4 p-3" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px">
+                        <small style="font-size:0.70rem;font-weight:700;letter-spacing:0.06em;color:#64748b">SUMMARY</small>
+                        <p class="mb-0 mt-1" style="font-size:0.95rem;color:#334155;line-height:1.6">{{ $post->short_description }}</p>
+                    </div>
+                    <div class="blog-content">
+                        {!! nl2br(e($post->content)) !!}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <div class="table-card">
+                    <div class="section-head-modern"><div class="head-left"><div class="head-icon"><i class="fas fa-bolt"></i></div><div><h5>Actions</h5><p>Manage post</p></div></div></div>
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('doctor.blog.edit', $post) }}" class="doctor-btn doctor-btn-primary" style="justify-content:center"><i class="fas fa-pen me-2"></i>Edit Post</a>
+                        <button type="button" class="doctor-btn {{ $post->is_published ? 'doctor-btn-outline' : 'doctor-btn-success' }} toggle-publish-btn" style="justify-content:center" data-post-id="{{ $post->id }}" data-current-status="{{ $post->is_published ? 'published' : 'draft' }}"><i class="fas fa-{{ $post->is_published ? 'eye-slash' : 'globe' }} me-2"></i>{{ $post->is_published ? 'Unpublish' : 'Publish' }}</button>
+                        @if($post->is_published && auth()->user()->getEffectiveDoctor()?->landingPage)
+                            <a href="{{ route('doctor.blog.post', [auth()->user()->getEffectiveDoctor()->landingPage->username, $post->slug]) }}" class="doctor-btn doctor-btn-outline" style="justify-content:center" target="_blank"><i class="fas fa-external-link-alt me-2"></i>View Live Post</a>
+                        @endif
+                        <form action="{{ route('doctor.blog.destroy', $post) }}" method="POST" onsubmit="return confirm('Delete this blog post?')">@csrf @method('DELETE')<button type="submit" class="doctor-btn doctor-btn-danger" style="width:100%;justify-content:center"><i class="fas fa-trash me-2"></i>Delete Post</button></form>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="section-head-modern"><div class="head-left"><div class="head-icon" style="background:#eff6ff!important;color:#2563eb!important;border-color:#dbeafe!important"><i class="fas fa-chart-simple"></i></div><div><h5>Statistics</h5><p>Views · reading time</p></div></div></div>
+                    <div class="row text-center g-3">
+                        <div class="col-6"><div class="p-3" style="background:#f8fafc;border:1px solid #eef2f7;border-radius:10px"><div style="font-weight:800;color:#2563eb;font-size:1.4rem">{{ $post->views_count }}</div><small style="color:#64748b;font-weight:600;font-size:0.72rem;letter-spacing:0.04em;text-transform:uppercase">Total Views</small></div></div>
+                        <div class="col-6"><div class="p-3" style="background:#eff6ff;border:1px solid #dbeafe;border-radius:10px"><div style="font-weight:800;color:#0ea5e9;font-size:1.4rem">{{ $post->reading_time }}</div><small style="color:#64748b;font-weight:600;font-size:0.72rem;letter-spacing:0.04em;text-transform:uppercase">Reading Time</small></div></div>
+                    </div>
+                </div>
+
+                @if($post->seo_meta)
+                <div class="table-card">
+                    <div class="section-head-modern"><div class="head-left"><div class="head-icon" style="background:#f0fdf4!important;color:#059669!important;border-color:#a7f3d0!important"><i class="fas fa-magnifying-glass"></i></div><div><h5>SEO</h5><p>Meta information</p></div></div></div>
+                    @if(isset($post->seo_meta['title']))<div class="mb-3"><small style="font-size:0.70rem;font-weight:700;letter-spacing:0.06em;color:#64748b">SEO TITLE</small><p class="mb-0" style="font-size:0.88rem;color:#334155">{{ $post->seo_meta['title'] }}</p></div>@endif
+                    @if(isset($post->seo_meta['description']))<div class="mb-3"><small style="font-size:0.70rem;font-weight:700;letter-spacing:0.06em;color:#64748b">DESCRIPTION</small><p class="mb-0" style="font-size:0.88rem;color:#334155">{{ $post->seo_meta['description'] }}</p></div>@endif
+                    @if(isset($post->seo_meta['keywords']))<div class="mb-0"><small style="font-size:0.70rem;font-weight:700;letter-spacing:0.06em;color:#64748b">KEYWORDS</small><p class="mb-0" style="font-size:0.88rem;color:#334155">{{ $post->seo_meta['keywords'] }}</p></div>@endif
+                </div>
+                @endif
+
+                <div class="table-card">
+                    <div class="section-head-modern"><div class="head-left"><div class="head-icon" style="background:#fff!important;color:#64748b!important;border:1px solid #e2e8f0!important"><i class="fas fa-circle-info"></i></div><div><h5>Details</h5><p>Slug · dates</p></div></div></div>
+                    <div style="font-size:0.84rem">
+                        <div class="d-flex justify-content-between py-2 border-bottom" style="border-color:#f1f5f9!important"><span style="color:#64748b;font-weight:600">Slug</span><code style="font-size:0.76rem;background:#f8fafc;padding:0.2rem 0.4rem;border-radius:6px">{{ $post->slug }}</code></div>
+                        <div class="d-flex justify-content-between py-2 border-bottom" style="border-color:#f1f5f9!important"><span style="color:#64748b;font-weight:600">Created</span><small style="color:#334155">{{ $post->created_at->format('M j, Y g:i A') }}</small></div>
+                        <div class="d-flex justify-content-between py-2 border-bottom" style="border-color:#f1f5f9!important"><span style="color:#64748b;font-weight:600">Updated</span><small style="color:#334155">{{ $post->updated_at->format('M j, Y g:i A') }}</small></div>
+                        @if($post->published_at)<div class="d-flex justify-content-between py-2"><span style="color:#64748b;font-weight:600">Published</span><small style="color:#334155">{{ $post->published_at->format('M j, Y g:i A') }}</small></div>@endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
 @push('scripts')
 <script>
-$(document).ready(function() {
-    // Toggle publish status
-    $('.toggle-publish-btn').click(function() {
-        const btn = $(this);
-        const postId = btn.data('post-id');
-        const currentStatus = btn.data('current-status');
-
-        $.ajax({
-            url: `/doctor/blog/${postId}/toggle-publish`,
-            method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}'
-            },
-            beforeSend: function() {
-                btn.prop('disabled', true);
-            },
-            success: function(response) {
-                if (response.success) {
-                    // Update button appearance
-                    if (response.is_published) {
-                        btn.removeClass('btn-success')
-                           .addClass('btn-warning')
-                           .html('<i class="fas fa-eye-slash"></i> Unpublish')
-                           .data('current-status', 'published');
-
-                        // Update status badge
-                        $('.badge').removeClass('bg-secondary').addClass('bg-success').text('Published');
-                    } else {
-                        btn.removeClass('btn-warning')
-                           .addClass('btn-success')
-                           .html('<i class="fas fa-globe"></i> Publish')
-                           .data('current-status', 'draft');
-
-                        // Update status badge
-                        $('.badge').removeClass('bg-success').addClass('bg-secondary').text('Draft');
-                    }
-
-                    // Show success message
-                    showAlert('success', response.message);
-                }
-            },
-            error: function() {
-                showAlert('danger', 'An error occurred while updating the post status.');
-            },
-            complete: function() {
-                btn.prop('disabled', false);
-            }
-        });
-    });
-
-    function showAlert(type, message) {
-        const alert = `
-            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        $('.container-fluid').prepend(alert);
-
-        // Auto dismiss after 3 seconds
-        setTimeout(function() {
-            $('.alert').alert('close');
-        }, 3000);
-    }
+$(function(){
+  $('.toggle-publish-btn').click(function(){
+    const btn=$(this), postId=btn.data('post-id');
+    $.ajax({url:`/doctor/blog/${postId}/toggle-publish`,method:'POST',data:{_token:'{{ csrf_token() }}'},beforeSend:()=>btn.prop('disabled',true),success:function(res){
+      if(res.success){
+        if(res.is_published){ btn.html('<i class="fas fa-eye-slash me-2"></i>Unpublish').removeClass('doctor-btn-success').addClass('doctor-btn-outline').data('current-status','published'); }
+        else { btn.html('<i class="fas fa-globe me-2"></i>Publish').removeClass('doctor-btn-outline').addClass('doctor-btn-success').data('current-status','draft'); }
+        location.reload();
+      }
+    },error:()=>alert('Error updating status'),complete:()=>btn.prop('disabled',false)});
+  });
 });
 </script>
 @endpush

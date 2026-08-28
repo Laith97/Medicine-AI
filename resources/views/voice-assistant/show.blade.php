@@ -17,6 +17,32 @@
 .info-row:last-child{border-bottom:none}
 .info-row-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f8fafc;border:1px solid #eef2f7;color:#64748b;font-size:0.8rem;flex-shrink:0}
 .badge-soft{padding:0.35rem 0.6rem;border-radius:99px;font-size:0.70rem;font-weight:700;border:1px solid transparent}
+/* Transcript bubbles */
+.transcript-segment{display:flex;gap:0.75rem;margin-bottom:0.9rem}
+.transcript-segment:last-child{margin-bottom:0}
+.transcript-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;color:#fff}
+.avatar-doctor{background:linear-gradient(135deg,#2563eb 0%,#1e40af 100%)}
+.avatar-patient{background:linear-gradient(135deg,#059669 0%,#047857 100%)}
+.avatar-unknown{background:#94a3b8}
+.transcript-bubble{flex:1;background:#f8fafc;border:1px solid #f1f5f9;border-radius:12px;padding:0.75rem 1rem;position:relative}
+.transcript-bubble.doctor{background:#eff6ff;border-color:#dbeafe}
+.transcript-bubble.patient{background:#f0fdf4;border-color:#dcfce7}
+.transcript-label{font-size:0.68rem;font-weight:800;letter-spacing:0.06em;margin-bottom:0.25rem}
+.transcript-label.doctor{color:#1e40af}
+.transcript-label.patient{color:#065f46}
+.transcript-text{font-size:0.92rem;color:#1e293b;line-height:1.6;margin:0}
+/* AI analysis prose */
+.ai-analysis-content{font-size:0.92rem;color:#1e293b;line-height:1.65}
+.ai-analysis-content h1,.ai-analysis-content h2,.ai-analysis-content h3{font-weight:800;color:#0f172a;margin:1.1rem 0 0.6rem}
+.ai-analysis-content h1{font-size:1.05rem}
+.ai-analysis-content h2{font-size:1rem}
+.ai-analysis-content h3{font-size:0.95rem}
+.ai-analysis-content p{margin:0.6rem 0}
+.ai-analysis-content ul,.ai-analysis-content ol{margin:0.5rem 0 0.5rem 1.2rem}
+.ai-analysis-content li{margin:0.25rem 0}
+.ai-analysis-content strong{color:#0f172a;font-weight:700}
+.ai-analysis-content hr{border:none;border-top:1px solid #e2e8f0;margin:1.2rem 0}
+.ai-analysis-content blockquote{border-left:3px solid #e2e8f0;padding-left:0.9rem;color:#475569;margin:0.8rem 0}
 </style>
 @endpush
 
@@ -27,7 +53,7 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                     <h2><i class="fas fa-file-medical me-2"></i>Ambient Listening Session</h2>
-                    <p>{{ $transcription->patient ? e($transcription->patient->name) : 'Unknown Patient' }} · {{ $transcription->session_started_at ? $transcription->session_started_at->format('M d, Y g:i A') : 'Date not available' }} @if($transcription->session_id) · <span style="font-family:ui-monospace;font-size:0.78rem;opacity:0.85">{{ $transcription->session_id }}</span>@endif</p>
+                    <p>{{ $transcription->patient ? e($transcription->patient->name) : 'Unknown Patient' }} · {{ $transcription->session_started_at ? $transcription->session_started_at->format('M d, Y g:i A') : 'Date not available' }}</p>
                 </div>
                 @php $prev = url()->previous(); $isRecorded = str_contains($prev, 'recorded-voices'); $backUrl = $prev !== url()->current() && (str_contains($prev, '/ai/ambient') || str_contains($prev, '/doctor/')) ? $prev : route('ai.ambient-listening.history'); $backLabel = $isRecorded ? 'Back to Recorded Voices' : 'Back to History'; @endphp
                 <div class="d-flex gap-2">
@@ -68,13 +94,13 @@
             <div class="section-head-modern"><div class="d-flex align-items-center gap-3"><div class="head-icon"><i class="fas fa-volume-up"></i></div><div><h5>Session Audio</h5><p>Recording · format · download</p></div></div></div>
             @if($transcription->audio_file)
                 <div class="row g-3 align-items-center">
-                    <div class="col-lg-8"><audio controls class="w-100" style="border-radius:8px"><source src="{{ asset('storage/'.$transcription->audio_file) }}" type="audio/{{ $transcription->audio_format ?? 'webm' }}">Your browser does not support audio.</audio></div>
+                    <div class="col-lg-8"><audio controls preload="metadata" class="w-100" style="border-radius:8px"><source src="{{ $transcription->audio_url }}" type="audio/{{ $transcription->audio_format ?? 'webm' }}">Your browser does not support audio.</audio></div>
                     <div class="col-lg-4">
                         <div class="row g-2" style="font-size:0.82rem">
                             <div class="col-6"><small style="font-weight:700;letter-spacing:0.06em;color:#64748b">FORMAT</small><div><span class="badge-soft" style="background:#f1f5f9;color:#475569">{{ strtoupper($transcription->audio_format ?? 'WEBM') }}</span></div></div>
                             <div class="col-6"><small style="font-weight:700;letter-spacing:0.06em;color:#64748b">SIZE</small><div style="font-weight:600;color:#0f172a">{{ $transcription->audio_file_size ? number_format($transcription->audio_file_size/1024,1).' KB' : 'Unknown' }}</div></div>
                             @if($transcription->audio_duration)<div class="col-6"><small style="font-weight:700;letter-spacing:0.06em;color:#64748b">DURATION</small><div style="font-weight:600;color:#0f172a">{{ number_format($transcription->audio_duration,1) }} sec</div></div>@endif
-                            <div class="col-6"><small style="font-weight:700;letter-spacing:0.06em;color:#64748b">DOWNLOAD</small><div><a href="{{ asset('storage/'.$transcription->audio_file) }}" download class="btn btn-sm" style="background:#fff;border:1px solid #e2e8f0;color:#2563eb;border-radius:8px;font-size:0.78rem;font-weight:600"><i class="fas fa-download me-1"></i>Download</a></div></div>
+                            <div class="col-6"><small style="font-weight:700;letter-spacing:0.06em;color:#64748b">DOWNLOAD</small><div><a href="{{ $transcription->audio_url }}" download class="btn btn-sm" style="background:#fff;border:1px solid #e2e8f0;color:#2563eb;border-radius:8px;font-size:0.78rem;font-weight:600"><i class="fas fa-download me-1"></i>Download</a></div></div>
                         </div>
                     </div>
                 </div>
@@ -85,8 +111,49 @@
 
         @if($transcription->raw_transcription)
             <div class="table-card">
-                <div class="section-head-modern"><div class="d-flex align-items-center gap-3"><div class="head-icon"><i class="fas fa-microphone-alt"></i></div><div><h5>Raw Transcription</h5><p>{{ str_word_count($transcription->raw_transcription) }} words · scrollable</p></div></div></div>
-                <div class="p-3" style="max-height:300px;overflow-y:auto;background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px"><p style="white-space:pre-wrap;margin:0;font-size:0.92rem;color:#1e293b;line-height:1.6">{{ $transcription->raw_transcription }}</p></div>
+                <div class="section-head-modern">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="head-icon"><i class="fas fa-microphone-alt"></i></div>
+                        <div><h5>Raw Transcription</h5><p>{{ str_word_count($transcription->raw_transcription) }} words · diarized · scrollable</p></div>
+                    </div>
+                    <button type="button" class="btn btn-sm ms-auto" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#fff;border-radius:8px;font-size:0.75rem;font-weight:600" onclick="navigator.clipboard.writeText(document.getElementById('rawTranscriptText').innerText); this.innerText='Copied!'; setTimeout(()=>this.innerHTML='<i class=\'fas fa-copy me-1\'></i>Copy',1500)"><i class="fas fa-copy me-1"></i>Copy</button>
+                </div>
+                @php
+                    $raw = $transcription->raw_transcription;
+                    $segments = [];
+                    if (preg_match_all('/\[Speaker\s*(\d+)\]:\s*(.*?)(?=\[Speaker\s*\d+\]:|$)/s', $raw, $m, PREG_SET_ORDER)) {
+                        foreach ($m as $match) {
+                            $segments[] = ['speaker' => (int)$match[1], 'text' => trim($match[2])];
+                        }
+                    } else {
+                        $segments[] = ['speaker' => null, 'text' => $raw];
+                    }
+                    $doctorName = $transcription->doctor ? $transcription->doctor->name : 'Doctor';
+                    $patientName = $transcription->patient ? $transcription->patient->name : 'Patient';
+                @endphp
+                <div id="rawTranscriptText" class="p-3" style="max-height:360px;overflow-y:auto;background:#fff;border:1px solid #f1f5f9;border-radius:10px">
+                    @foreach($segments as $seg)
+                        @php
+                            $isDoctor = $seg['speaker'] === 1;
+                            $isPatient = $seg['speaker'] === 2;
+                            $bubbleClass = $isDoctor ? 'doctor' : ($isPatient ? 'patient' : '');
+                            $avatarClass = $isDoctor ? 'avatar-doctor' : ($isPatient ? 'avatar-patient' : 'avatar-unknown');
+                            $labelClass = $isDoctor ? 'doctor' : ($isPatient ? 'patient' : '');
+                            $labelName = $isDoctor ? 'Doctor — ' . e($doctorName) : ($isPatient ? 'Patient — ' . e($patientName) : 'Speaker ' . ($seg['speaker'] ?? ''));
+                            $initial = $isDoctor ? 'Dr' : ($isPatient ? 'Pt' : 'S' . ($seg['speaker'] ?? '?'));
+                        @endphp
+                        <div class="transcript-segment">
+                            <div class="transcript-avatar {{ $avatarClass }}">{{ $initial }}</div>
+                            <div class="transcript-bubble {{ $bubbleClass }}">
+                                <div class="transcript-label {{ $labelClass }}">{{ $labelName }}</div>
+                                <p class="transcript-text">{{ $seg['text'] }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                @if(str_contains(strtolower($transcription->raw_transcription), 'cognition') || str_contains(strtolower($transcription->raw_transcription), 'tequila') || str_contains(strtolower($transcription->raw_transcription), 'autosensitizer'))
+                    <div class="mt-2 d-flex align-items-start gap-2" style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:0.6rem 0.8rem;font-size:0.78rem;color:#92400e"><i class="fas fa-exclamation-triangle mt-1"></i><div><strong>STT notice:</strong> Some phrases look like recognition errors (e.g., “nasal cognition” → nasal <em>congestion</em>, “tequila discharge” → <em>thick yellow</em> discharge, “autosensitizer” → antibiotic). Consider re-running server STT or editing before saving diagnosis.</div></div>
+                @endif
             </div>
         @endif
 
@@ -112,8 +179,24 @@
 
         @if($transcription->ai_analysis)
             <div class="table-card">
-                <div class="section-head-modern"><div class="d-flex align-items-center gap-3"><div class="head-icon"><i class="fas fa-robot"></i></div><div><h5>AI Clinical Analysis</h5><p>Generated analysis · scrollable</p></div></div></div>
-                <div class="p-3" style="max-height:600px;overflow-y:auto;background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px"><div style="white-space:pre-wrap;font-size:0.92rem;color:#1e293b;line-height:1.6">{{ $transcription->ai_analysis }}</div></div>
+                <div class="section-head-modern">
+                    <div class="d-flex align-items-center gap-3"><div class="head-icon"><i class="fas fa-robot"></i></div><div><h5>AI Clinical Analysis</h5><p>Generated analysis · markdown rendered · Levels 1 & 2</p></div></div></div>
+                @php
+                    $aiRaw = $transcription->ai_analysis;
+                    // Split Level 1 and Level 2 for collapsible rendering
+                    $parts = preg_split('/\n---\n/', $aiRaw, 2);
+                    $level1 = $parts[0] ?? $aiRaw;
+                    $level2 = $parts[1] ?? null;
+                @endphp
+                <div class="p-3" style="max-height:640px;overflow-y:auto;background:#fff;border:1px solid #f1f5f9;border-radius:10px">
+                    <div class="ai-analysis-content">{!! \Illuminate\Support\Str::markdown($level1) !!}</div>
+                    @if($level2)
+                        <details class="mt-3" open>
+                            <summary style="cursor:pointer;font-weight:800;color:#1e293b;font-size:0.92rem;list-style:none;display:flex;align-items:center;gap:0.5rem"><i class="fas fa-chevron-down" style="font-size:0.7rem;transition:transform .2s"></i> 🔵 LEVEL 2: Detailed Clinical Analysis</summary>
+                            <div class="ai-analysis-content mt-3" style="border-top:1px solid #e2e8f0;padding-top:1rem">{!! \Illuminate\Support\Str::markdown($level2) !!}</div>
+                        </details>
+                    @endif
+                </div>
             </div>
         @endif
 

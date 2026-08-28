@@ -3,6 +3,9 @@
 @section('title', 'Doctor Profile')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/doctor-design-system.css') }}">
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/cases-overview.css') }}">
 <style>
 .dashboard-header{background:linear-gradient(135deg,#2c5aa0 0%,#1e3a8a 100%)!important;border-radius:12px!important;padding:2.5rem!important;margin-bottom:2rem!important;box-shadow:0 4px 15px rgba(44,90,160,0.15)!important;position:relative;overflow:hidden}
 .dashboard-header::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#10b981 0%,#059669 100%)}
@@ -13,8 +16,9 @@
 .section-head-modern .head-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:0.95rem;flex-shrink:0;background:#1e293b!important;color:#fff!important;border:1px solid #1e293b!important}
 .section-head-modern h5{color:#0f172a!important;font-weight:800!important;letter-spacing:-0.01em;margin:0;font-size:1rem}
 .section-head-modern p{color:#64748b!important;font-size:0.78rem;margin:2px 0 0;font-weight:500}
-.form-label{font-size:0.82rem;font-weight:600;color:#1e293b}
-.form-control,.form-select{border-radius:10px!important;border:1px solid #e2e8f0!important;font-size:0.88rem!important}
+.form-label{font-size:0.70rem;font-weight:700;letter-spacing:0.06em;color:#64748b;margin-bottom:0.35rem;text-transform:uppercase}
+.form-control,.form-select{border-radius:10px!important;border:1px solid #e2e8f0!important;font-size:0.88rem!important;background:#f8fafc!important}
+.form-control:focus,.form-select:focus{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,0.12)!important;background:#fff!important}
 .appointment-type-preference-card{border:1px solid #e2e8f0!important;border-radius:12px!important;transition:all 0.2s ease;cursor:pointer;background:#fff}
 .appointment-type-preference-card.enabled{border-color:#a7f3d0!important;background:#ecfdf5!important}
 .appointment-type-preference-card.disabled{border-color:#e2e8f0!important;background:#fff!important}
@@ -23,9 +27,9 @@
 @endpush
 
 @section('content')
-<div class="dashboard-container">
-    <div class="container">
-        <div class="dashboard-header">
+<div class="container-fluid" style="background-color: var(--bg-secondary, #f8f9fa);">
+    <div class="container py-4">
+        <div class="dashboard-header cases-header-compact">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                     <h2><i class="fas fa-user-md me-2"></i>Doctor Profile</h2>
@@ -37,7 +41,8 @@
     </div>
 </div>
 
-<div class="container">
+<div class="container-fluid" style="background-color: var(--bg-secondary, #f8f9fa);">
+    <div class="container pb-4">
     @if(session('success'))
         <div class="alert d-flex align-items-center" style="background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:10px;padding:0.85rem 1rem"><i class="fas fa-check-circle me-2"></i>{{ session('success') }}</div>
     @endif
@@ -168,6 +173,7 @@
             @if($doctor->bio)<p style="font-size:0.88rem;color:#334155">{{ $doctor->bio }}</p>@endif
             <div class="row g-2" style="font-size:0.82rem;color:#475569"><div class="col-md-6"><strong>Duration:</strong> {{ $doctor->appointment_duration }} min</div>@if($doctor->languages)<div class="col-12"><strong>Languages:</strong> {{ implode(', ', $doctor->languages) }}</div>@endif</div>
         </div>
+    </div>
     </div>
 </div>
 @endsection

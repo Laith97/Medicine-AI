@@ -3292,13 +3292,22 @@ INSTRUCTIONS:
                     return false;
                 }
 
-                // If it's a relative path from storage, get the absolute path
+                // Preserve the original relative path for DB storage
+                $relativePath = $audioPath;
+                // If it's already an absolute path (legacy), extract the relative part
+                if (is_string($audioPath) && strpos($audioPath, storage_path('app/public/')) === 0) {
+                    $relativePath = substr($audioPath, strlen(storage_path('app/public/')));
+                    $relativePath = ltrim($relativePath, '/');
+                }
+
+                // For validation, resolve to absolute path
+                $absolutePathForValidation = $audioPath;
                 if (is_string($audioPath) && strpos($audioPath, 'audio/') === 0) {
-                    $audioPath = storage_path('app/public/' . $audioPath);
+                    $absolutePathForValidation = storage_path('app/public/' . $audioPath);
                 }
 
                 // Validate the audio path to prevent path traversal attacks
-                $resolvedAudioPath = realpath($audioPath); // Resolve any relative paths
+                $resolvedAudioPath = realpath($absolutePathForValidation); // Resolve any relative paths
                 $storagePath = realpath(storage_path('app')); // Base path for validation
                 
                 // On Windows, realpath might return different separators, so we normalize
@@ -3318,7 +3327,8 @@ INSTRUCTIONS:
                     throw new \Exception('Invalid audio file path');
                 }
 
-                $audioPath = $resolvedAudioPath;
+                // Use the relative path for DB storage (not absolute)
+                $audioPath = $relativePath;
 
                 $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)->first();
 
@@ -4448,16 +4458,41 @@ If a category has no information, return empty string "" for that key.'
             $fileSize = $file->getSize();
             $extension = strtolower($file->getClientOriginalExtension());
 
-            // Rough estimation based on common audio formats and bitrates
-            // These are approximations for typical medical consultation recordings
+            // Try to get real duration via ffprobe if available (more accurate than size estimate)
+            try {
+                $tmpPath = $file->getPathname();
+                if (file_exists($tmpPath)) {
+                    $cmd = 'ffprobe -v quiet -print_format json -show_format -show_streams ' . escapeshellarg($tmpPath) . ' 2>/dev/null';
+                    $json = @shell_exec($cmd);
+                    if ($json) {
+                        $data = json_decode($json, true);
+                        if (!empty($data['format']['duration']) && is_numeric($data['format']['duration'])) {
+                            return round((float) $data['format']['duration'], 2);
+                        }
+                        if (!empty($data['streams'])) {
+                            foreach ($data['streams'] as $s) {
+                                if (!empty($s['duration']) && is_numeric($s['duration'])) {
+                                    return round((float) $s['duration'], 2);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fall through to size estimate
+            }
+
+            // Fallback: size-based estimation (corrected for MediaRecorder Opus)
             $estimates = [
                 'wav' => 176400,  // ~176 kB/s for 16-bit 44.1kHz mono WAV
                 'mp3' => 128000 / 8, // 128 kbps MP3
-                'webm' => 64000 / 8,  // ~64 kbps WebM/Opus
+                'webm' => 128000 / 8,  // ~128 kbps WebM/Opus (MediaRecorder default, was 64k -> 2x over-estimate)
                 'mp4' => 128000 / 8,  // 128 kbps AAC
+                'ogg' => 128000 / 8,
+                'm4a' => 128000 / 8,
             ];
 
-            $bytesPerSecond = $estimates[$extension] ?? 100000; // Fallback estimate
+            $bytesPerSecond = $estimates[$extension] ?? 16000;
 
             if ($bytesPerSecond > 0) {
                 return round($fileSize / $bytesPerSecond, 2);

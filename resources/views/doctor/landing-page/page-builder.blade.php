@@ -3,51 +3,56 @@
 @section('title', 'Page Builder - Landing Page')
 
 @section('content')
-<div class="page-builder-container">
-    <!-- Header -->
-    <div class="page-builder-header">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <h1 class="h4 mb-0">
-                        <i class="fas fa-magic text-primary"></i>
-                        Page Builder
-                    </h1>
-                    <small class="text-muted">Design your perfect landing page</small>
+<div class="dashboard-container">
+    <div class="container-fluid" style="max-width:100%; padding-left:1.5rem; padding-right:1.5rem;">
+        <!-- Header — IDENTICAL to system headers (landing-page/index, hep/show, analytics) -->
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2><i class="fas fa-magic me-2"></i>Page Builder</h2>
+                    <p>Design your perfect landing page — drag, edit, preview</p>
                 </div>
-                <div class="col-md-6 text-end">
-                    <div class="btn-group me-2">
-                        <button type="button" class="btn btn-outline-secondary" id="undoBtn" disabled>
-                            <i class="fas fa-undo"></i> Undo
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" id="redoBtn" disabled>
-                            <i class="fas fa-redo"></i> Redo
-                        </button>
-                    </div>
-                    <div class="btn-group me-2">
-                        <button type="button" class="btn btn-outline-primary" id="previewBtn">
-                            <i class="fas fa-eye"></i> Preview
-                        </button>
-                        <button type="button" class="btn btn-outline-info" id="responsiveToggle">
-                            <i class="fas fa-mobile-alt"></i> Mobile View
-                        </button>
-                    </div>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-success" id="saveBtn">
-                            <i class="fas fa-save"></i> Save
-                        </button>
-                        <button type="button" class="btn {{ $landingPage->is_published ? 'btn-warning' : 'btn-primary' }}" id="publishBtn">
-                            <i class="fas {{ $landingPage->is_published ? 'fa-eye-slash' : 'fa-globe' }}"></i>
-                            {{ $landingPage->is_published ? 'Unpublish' : 'Publish' }}
-                        </button>
-                    </div>
+                <div class="header-actions-wrap">
+                    <span class="status-badge {{ $landingPage->is_published ? 'published' : 'draft' }}" style="background:#fff !important; color:#1e293b !important; border:1px solid #e2e8f0 !important; box-shadow:0 1px 3px rgba(0,0,0,0.08) !important; border-radius:99px !important; padding:0.38rem 0.85rem !important; font-size:0.73rem !important; font-weight:700 !important;">
+                        <span class="live-dot me-1" style="width:8px;height:8px;border-radius:50%;background:{{ $landingPage->is_published ? '#10b981' : '#f59e0b' }};display:inline-block;"></span>
+                        {{ $landingPage->is_published ? 'Published' : 'Draft' }}
+                    </span>
+                    <a href="{{ route('doctor.landing-page.index') }}" class="btn btn-back">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </a>
+                    <button type="button" class="btn action-btn" style="background:#fff !important; color:#1e293b !important; border:1px solid #fff !important; border-radius:10px !important; padding:0.48rem 0.85rem !important; font-size:0.80rem !important; font-weight:700 !important;" id="previewBtn">
+                        <i class="fas fa-eye me-1"></i> Preview
+                    </button>
+                    <button type="button" class="btn action-btn" style="background:#fff !important; color:#1e293b !important; border:1px solid #fff !important; border-radius:10px !important; padding:0.48rem 0.85rem !important; font-size:0.80rem !important; font-weight:700 !important;" id="responsiveToggle">
+                        <i class="fas fa-mobile-alt me-1"></i> Mobile View
+                    </button>
+                    <button type="button" class="btn action-btn" style="background:#fff !important; color:#1e293b !important; border:1px solid #fff !important; border-radius:10px !important; padding:0.48rem 0.85rem !important; font-size:0.80rem !important; font-weight:700 !important;" id="saveBtn">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <button type="button" class="btn action-btn" style="{{ $landingPage->is_published ? 'background:#fff !important; color:#1e293b !important; border:1px solid #fff !important;' : 'background:#10b981 !important; color:#fff !important; border:1px solid #10b981 !important;' }} border-radius:10px !important; padding:0.48rem 0.85rem !important; font-size:0.80rem !important; font-weight:700 !important;" id="publishBtn">
+                        <i class="fas {{ $landingPage->is_published ? 'fa-eye-slash' : 'fa-rocket' }}"></i>
+                        {{ $landingPage->is_published ? 'Unpublish' : 'Publish' }}
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
+        <div class="page-builder-container" style="margin:0; border-radius:12px; overflow:hidden; border:1px solid #eef2f7; box-shadow:0 6px 20px rgba(44,62,80,.05);">
 
     <!-- Main Content -->
     <div class="page-builder-content">
+        <!-- Editor toolbar — Undo/Redo moved out of header to avoid empty buttons & crowding -->
+        <div class="d-flex align-items-center gap-2 px-3 py-2" style="background:#ffffff; border-bottom:1px solid #eef2f7;">
+            <span class="small text-muted fw-semibold" style="font-size:0.72rem; letter-spacing:0.04em; text-transform:uppercase;"><i class="fas fa-history me-1"></i>History</span>
+            <div class="btn-group btn-group-sm">
+                <button type="button" class="btn" style="background:#fff;border:1px solid #e2e8f0;color:#475569;border-radius:8px;font-weight:600;font-size:0.78rem;" id="undoBtn" disabled>
+                    <i class="fas fa-undo me-1"></i> Undo
+                </button>
+                <button type="button" class="btn" style="background:#fff;border:1px solid #e2e8f0;color:#475569;border-radius:8px;font-weight:600;font-size:0.78rem;" id="redoBtn" disabled>
+                    <i class="fas fa-redo me-1"></i> Redo
+                </button>
+            </div>
+            <span class="small text-muted ms-2" style="font-size:0.76rem;">Changes autosaved on Save</span>
+        </div>
         <div class="row g-0">
             <!-- Sidebar - Section Library -->
             <div class="col-md-3 page-builder-sidebar">
@@ -276,6 +281,8 @@
                 </div>
             </div>
         </div>
+        </div>
+    </div>
     </div>
 </div>
 
@@ -314,20 +321,58 @@
 @push('styles')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.css">
+<link rel="stylesheet" href="{{ asset('css/doctor-dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
 <style>
+/* System header — identical to hep/show & landing-page/index */
+.dashboard-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%) !important;
+    border-radius: 12px !important;
+    padding: 2.5rem !important;
+    margin-bottom: 2rem !important;
+    box-shadow: 0 4px 15px rgba(44, 90, 160, 0.15) !important;
+    position: relative; overflow: hidden;
+}
+.dashboard-header::before {
+    content:''; position:absolute; top:0;left:0;right:0;height:3px;
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+.dashboard-header h2{ color:#fff !important; font-weight:600 !important; font-size:2.2rem !important; margin-bottom:0.5rem !important; }
+.dashboard-header p{ color:rgba(255,255,255,0.9) !important; font-size:1rem !important; margin-bottom:0 !important; }
+.header-actions-wrap{ display:flex; align-items:center; gap:0.65rem; flex-wrap:wrap; justify-content:flex-end; }
+.btn-back{ background:rgba(255,255,255,0.15) !important; border:1px solid rgba(255,255,255,0.32) !important; color:#fff !important; border-radius:10px !important; padding:0.5rem 1rem !important; font-weight:600 !important; font-size:0.83rem !important; }
+.btn-back:hover{ background:#fff !important; color:#1e3a8a !important; border-color:#fff !important; }
+.action-btn{ border-radius:10px !important; padding:0.48rem 0.85rem !important; font-size:0.80rem !important; font-weight:700 !important; display:inline-flex !important; align-items:center !important; gap:0.35rem !important; border:1px solid transparent !important; box-shadow:0 1px 3px rgba(0,0,0,0.10) !important; transition:all .18s ease !important; }
+.action-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,0.14) !important; }
+.dashboard-container{ background: var(--bg-secondary, #f8f9fa); min-height: calc(100vh - 52px); padding-bottom:2rem; }
 .page-builder-container {
-    height: 100vh;
     display: flex;
     flex-direction: column;
-    background: #f8fafc;
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #eef2f7;
+    box-shadow: 0 6px 20px rgba(44,62,80,.05), 0 1px 6px rgba(44,62,80,.04);
+    min-height: 560px;
 }
-
-.page-builder-header {
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 1rem 0;
-    z-index: 1000;
+.btn-back {
+    background: rgba(255,255,255,0.15) !important; border:1px solid rgba(255,255,255,0.32) !important;
+    color:#fff !important; border-radius:10px !important; padding:0.45rem 0.85rem !important;
+    font-weight:600 !important; font-size:0.80rem !important; transition:all .18s ease !important;
 }
+.btn-back:hover { background:#fff !important; color:#1e3a8a !important; border-color:#fff !important; }
+.action-btn {
+    border-radius:10px !important; padding:0.48rem 0.85rem !important; font-size:0.80rem !important;
+    font-weight:700 !important; display:inline-flex !important; align-items:center !important; gap:0.35rem !important;
+    border:1px solid transparent !important; box-shadow:0 1px 3px rgba(0,0,0,0.10) !important; transition:all .18s ease !important;
+}
+.action-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 10px rgba(0,0,0,0.14) !important; }
+.action-btn-soft { background:rgba(255,255,255,0.15) !important; color:#fff !important; border-color:rgba(255,255,255,0.32) !important; }
+.action-btn-soft:hover{ background:#fff !important; color:#1e3a8a !important; }
+.action-btn-white{ background:#fff !important; color:#1e293b !important; border-color:#fff !important; }
+.action-btn-white:hover{ background:#f1f5f9 !important; }
+.action-btn-success{ background:#10b981 !important; color:#fff !important; border-color:#10b981 !important; }
+.action-btn-success:hover{ background:#059669 !important; }
 
 .page-builder-content {
     flex: 1;
@@ -335,52 +380,60 @@
 }
 
 .page-builder-sidebar {
-    background: white;
-    border-right: 1px solid #e2e8f0;
-    height: calc(100vh - 80px);
+    background: #ffffff;
+    border-right: 1px solid #eef2f7;
+    height: calc(100vh - 52px - 68px);
+    min-height: 560px;
     overflow-y: auto;
+    border-radius: 12px 0 0 12px;
 }
 
 .sidebar-content {
     height: 100%;
 }
 
-.nav-tabs {
+.page-builder-sidebar .nav-tabs {
     border-bottom: 1px solid #e2e8f0;
     background: #ffffff;
+    padding: 0.5rem;
+    gap: 0.25rem;
 }
-
-.nav-tabs .nav-link {
-    border: none;
-    color: #475569 !important;
-    background: #ffffff !important;
-    padding: 0.75rem 1rem;
-    font-weight: 500;
+.page-builder-sidebar .nav-tabs .nav-link {
+    border: 1px solid transparent !important;
+    color: #64748b !important;
+    background: transparent !important;
+    padding: 0.55rem 0.75rem;
+    font-weight: 700;
+    font-size: 0.78rem;
+    border-radius: 8px !important;
+    display: flex; align-items: center; gap: 0.35rem; justify-content: center;
 }
-
-.nav-tabs .nav-link:hover {
-    color: #3b82f6 !important;
+.page-builder-sidebar .nav-tabs .nav-link:hover {
+    color: #1e293b !important;
     background: #f8fafc !important;
+    border-color:#e2e8f0 !important;
 }
-
-.nav-tabs .nav-link.active {
-    background: #f1f5f9 !important;
-    color: #3b82f6 !important;
-    border-bottom: 2px solid #3b82f6;
+.page-builder-sidebar .nav-tabs .nav-link.active {
+    background: #1e293b !important;
+    color: #fff !important;
+    border-color:#1e293b !important;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.12);
 }
 
 .section-template-card {
-    margin-bottom: 1rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    margin-bottom: 0.85rem;
+    border: 1px solid #eef2f7;
+    border-radius: 10px;
     overflow: hidden;
     transition: all 0.2s;
     cursor: pointer;
+    background: #fff;
 }
 
 .section-template-card:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    border-color: #cbd5e1;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
 }
 
 .template-preview {
@@ -431,10 +484,12 @@
 }
 
 .page-builder-canvas {
-    background: #f1f5f9;
-    height: calc(100vh - 80px);
+    background: #f8fafc;
+    height: calc(100vh - 52px - 68px);
+    min-height: 560px;
     overflow: auto;
-    padding: 2rem;
+    padding: 1.5rem;
+    border-left: 1px solid #eef2f7;
 }
 
 .canvas-container {
@@ -444,9 +499,10 @@
 }
 
 .device-frame {
-    background: white;
+    background: #ffffff;
     border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid #eef2f7;
+    box-shadow: 0 6px 20px rgba(44,62,80,.05), 0 1px 6px rgba(44,62,80,.04);
     overflow: hidden;
     transition: all 0.3s;
 }
@@ -519,19 +575,22 @@
 }
 
 .control-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     padding: 1rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #eef2f7;
+    margin: 0 0.75rem 0.75rem 0.75rem;
 }
-
-.control-group:last-child {
-    border-bottom: none;
-}
-
+.control-group:last-child { border-bottom: 1px solid #eef2f7; }
 .control-group h6 {
-    font-weight: 600;
+    font-weight: 800;
     margin-bottom: 0.75rem;
-    color: #374151;
+    color: #0f172a;
+    font-size: 0.84rem;
+    letter-spacing: -0.01em;
+    display:flex; align-items:center; gap:0.4rem;
 }
 
 .color-palette {

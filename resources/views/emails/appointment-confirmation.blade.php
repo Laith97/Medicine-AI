@@ -1,127 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Appointment Confirmed - {{ config('app.name') }}</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-        }
-        .content {
-            background: #f9f9f9;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-        }
-        .appointment-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border-left: 4px solid #28a745;
-        }
-        .doctor-info {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-        }
-        .success-icon {
-            font-size: 48px;
-            color: #28a745;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            color: #666;
-            font-size: 14px;
-        }
-        .action-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-            margin: 10px 5px;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>✅ Appointment Confirmed</h1>
-        <p>{{ config('app.name') }} - Healthcare Appointment System</p>
-    </div>
+@extends('emails.layouts.master')
 
-    <div class="content">
-        <div class="success-icon">✓</div>
+@section('title', 'Appointment Confirmed - ' . config('app.name'))
+@section('email-title', '✅ Appointment Confirmed')
+@section('email-subtitle', 'Your appointment with Dr. ' . $doctor->user->name . ' is confirmed')
+@section('preview', 'Your appointment on ' . $appointment->appointment_date->format('M j, Y g:i A') . ' is confirmed')
 
-        <p>Hello {{ $patient->name ?? $appointment->patient_name }},</p>
+@section('content')
+<div class="greeting">Hello {{ $patient->name ?? $appointment->patient_name }},</div>
 
-        <p>Great news! Your appointment has been confirmed by Dr. {{ $doctor->user->name }}. Here are the details:</p>
+<div class="alert alert-success">
+    <strong>Great news!</strong> Your appointment has been confirmed. Please arrive 15 minutes early.
+</div>
 
-        <div class="appointment-card">
-            <h3>📅 Appointment Details</h3>
-            <p><strong>Date & Time:</strong> {{ $appointment->appointment_date->format('l, F j, Y \a\t g:i A') }}</p>
-            <p><strong>Duration:</strong> {{ $appointment->appointment_duration ?? 30 }} minutes</p>
-            <p><strong>Type:</strong> {{ ucfirst(str_replace('_', ' ', $appointment->appointment_type ?? 'general')) }}</p>
-            <p><strong>Reason:</strong> {{ $appointment->reason ?? 'General consultation' }}</p>
-        </div>
+<p class="content-text">Here are your appointment details:</p>
 
-        <div class="doctor-info">
-            <h4>👨‍⚕️ Your Doctor</h4>
-            <p><strong>Dr. {{ $doctor->user->name }}</strong></p>
-            @if($doctor->specialty)
-            <p><strong>Specialty:</strong> {{ $doctor->specialty->name }}</p>
-            @endif
-            @if($doctor->phone)
-            <p><strong>Phone:</strong> {{ $doctor->phone }}</p>
-            @endif
-        </div>
+<div class="info-card">
+    <div class="info-card-header"><span class="info-card-icon">📅</span> Appointment Details</div>
+    <table class="data-table">
+        <tr><td><strong>Date &amp; Time</strong></td><td>{{ $appointment->appointment_date->format('l, F j, Y \a\t g:i A') }}</td></tr>
+        <tr><td><strong>Duration</strong></td><td>{{ $appointment->appointment_duration ?? 30 }} minutes</td></tr>
+        <tr><td><strong>Type</strong></td><td><span class="badge badge-info">{{ ucfirst(str_replace('_',' ', $appointment->appointment_type ?? 'general')) }}</span></td></tr>
+        @if($appointment->reason)<tr><td><strong>Reason</strong></td><td>{{ $appointment->reason }}</td></tr>@endif
+    </table>
+</div>
 
-        <h4>📋 What to Expect:</h4>
-        <ul>
-            <li>Please arrive 15 minutes early for check-in</li>
-            <li>Bring any relevant medical records or test results</li>
-            <li>Have your insurance information ready if applicable</li>
-            <li>Prepare any questions you have for your doctor</li>
-        </ul>
+<div class="info-card">
+    <div class="info-card-header"><span class="info-card-icon">👨‍⚕️</span> Your Doctor</div>
+    <p style="margin:0 0 6px"><strong>Dr. {{ $doctor->user->name }}</strong>@if($doctor->specialty) — {{ $doctor->specialty->name }}@endif</p>
+    @if($doctor->phone)<p style="margin:0;color:#64748b;font-size:14px;">📞 {{ $doctor->phone }}</p>@endif
+</div>
 
-        <h4>🔧 Manage Your Appointment:</h4>
-        <div style="text-align: center; margin: 20px 0;">
-            @if($appointment->isGuestAppointment())
-                <a href="{{ route('appointments.guest.show', ['appointment' => $appointment->appointment_number, 'email' => $appointment->guest_email]) }}" class="action-button">Manage Your Appointment</a>
-                <p class="small text-muted mt-2">Save this link - it is your access to reschedule or cancel. Linked to {{ $appointment->guest_email }}.</p>
-            @else
-                <a href="{{ route('appointments.show', $appointment) }}" class="action-button">View Appointment</a>
-            @endif
-        </div>
+<div class="info-card" style="background:#f8fafc">
+    <div class="info-card-header"><span class="info-card-icon" style="background:#1e293b">📋</span> What to Expect</div>
+    <ul style="margin:0;padding-left:18px;color:#334155;font-size:14px;line-height:1.7">
+        <li>Please arrive 15 minutes early for check-in</li>
+        <li>Bring medical records / test results</li>
+        <li>Have insurance info ready</li>
+        <li>Prepare questions for your doctor</li>
+    </ul>
+</div>
 
-        <p>If you need to cancel or reschedule this appointment, please do so at least {{ $doctor->cancellation_hours ?? 24 }} hours in advance.</p>
+<div style="text-align:center;margin:24px 0;">
+    @if($appointment->isGuestAppointment())
+        <a href="{{ route('appointments.guest.show', ['appointment' => $appointment->appointment_number, 'email' => $appointment->guest_email]) }}" class="btn btn-primary">Manage Your Appointment</a>
+        <p style="font-size:12px;color:#64748b;margin-top:8px">Save this link — linked to {{ $appointment->guest_email }}</p>
+    @else
+        <a href="{{ route('appointments.show', $appointment) }}" class="btn btn-primary">View Appointment</a>
+    @endif
+</div>
 
-        <p>We look forward to seeing you!</p>
-    </div>
-
-    <div class="footer">
-        <p>This is an automated confirmation from {{ config('app.name') }}.</p>
-        <p>Questions? Contact us at <a href="mailto:support@medcura.ai">support@medcura.ai</a></p>
-        <p><small>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</small></p>
-    </div>
-</body>
-</html>
+<p class="content-text" style="font-size:13px;color:#64748b">Need to cancel or reschedule? Please do so at least {{ $doctor->cancellation_hours ?? 24 }} hours in advance.</p>
+@endsection

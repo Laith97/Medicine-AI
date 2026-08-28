@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class HepProgressFactory extends Factory
 {
     protected $model = HepProgress::class;
-{
+
     /**
      * Define the model's default state.
      *
@@ -20,12 +20,15 @@ class HepProgressFactory extends Factory
     public function definition(): array
     {
         return [
-            'hep_assignment_id' => 1, // Will be overridden in tests
-            'completion_percentage' => $this->faker->numberBetween(0, 100),
-            'notes' => $this->faker->optional()->paragraph(),
-            'completed_at' => $this->faker->optional(0.3)->dateTime(),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'hep_assignment_id' => \App\Models\HepAssignment::factory(),
+            'hep_exercise_id' => \App\Models\HepExercise::factory(),
+            'date' => fake()->date(),
+            'completed_sets' => fake()->numberBetween(1, 4),
+            'completed_reps' => fake()->numberBetween(8, 15),
+            'duration_completed' => fake()->numberBetween(30, 120),
+            'pain_level' => fake()->numberBetween(0, 10),
+            'difficulty_rating' => fake()->numberBetween(1, 10),
+            'notes' => fake()->optional()->paragraph(),
         ];
     }
 }
