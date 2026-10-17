@@ -7,7 +7,7 @@
     <meta http-equiv="x-ua-compatible" content="IE=edge">
     <meta name="author" content="SemiColonWeb">
     <meta name="description"
-        content="Create Medical Clinic & Hospital Websites with Canvas Template. Get Canvas to build powerful websites easily with the Highly Customizable & Best Selling Bootstrap Template, today.">
+        content="MedCura AI - Modern, secure EMR for healthcare practices: patient management, smart scheduling, voice transcription, digital prescriptions, billing, and AI clinical support.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="pusher-key" content="{{ config('broadcasting.connections.pusher.key') }}">
     <meta name="pusher-cluster" content="{{ config('broadcasting.connections.pusher.options.cluster', 'ap2') }}">
@@ -1799,31 +1799,31 @@ body .dropdown .dropdown-menu.show,
                 <div class="footer-brand mb-4">
                     <h4 class="mb-3" style="color: #DE6262 !important;">
                         <i class="bi bi-heart-pulse me-2" style="color: #DE6262;"></i>
-                        Clinical Decision Support
+                        MedCura AI
                     </h4>
                     <p class="text-muted mb-4">
-                        Revolutionizing healthcare with cutting-edge clinical technology.
-                        Empowering medical professionals with advanced decision support tools for
-                        superior patient care and outcomes.
+                        Modern, secure EMR for healthcare practices.
+                        Patient management, scheduling, voice transcription, prescriptions,
+                        and billing in one platform.
                     </p>
 
                     <!-- Social Links -->
                     <div class="social-links">
-                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
-                            style="width: 36px; height: 36px; border-color: #e2e8f0; color: #475569; border-radius:8px">
-                            <i class="bi bi-facebook"></i>
+                        <a href="#" aria-label="MedCura AI on Facebook" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 44px; height: 44px; border-color: #e2e8f0; color: #475569; border-radius:8px">
+                            <i class="bi bi-facebook" aria-hidden="true"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
-                            style="width: 36px; height: 36px; border-color: #e2e8f0; color: #475569; border-radius:8px">
-                            <i class="bi bi-twitter"></i>
+                        <a href="#" aria-label="MedCura AI on X (Twitter)" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 44px; height: 44px; border-color: #e2e8f0; color: #475569; border-radius:8px">
+                            <i class="bi bi-twitter" aria-hidden="true"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
-                            style="width: 36px; height: 36px; border-color: #e2e8f0; color: #475569; border-radius:8px">
-                            <i class="bi bi-linkedin"></i>
+                        <a href="#" aria-label="MedCura AI on LinkedIn" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 44px; height: 44px; border-color: #e2e8f0; color: #475569; border-radius:8px">
+                            <i class="bi bi-linkedin" aria-hidden="true"></i>
                         </a>
-                        <a href="#" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
-                            style="width: 36px; height: 36px; border-color: #e2e8f0; color: #475569; border-radius:8px">
-                            <i class="bi bi-instagram"></i>
+                        <a href="#" aria-label="MedCura AI on Instagram" class="btn btn-outline-secondary btn-sm rounded-circle me-2 p-2"
+                            style="width: 44px; height: 44px; border-color: #e2e8f0; color: #475569; border-radius:8px">
+                            <i class="bi bi-instagram" aria-hidden="true"></i>
                         </a>
                     </div>
                 </div>
@@ -1908,15 +1908,15 @@ body .dropdown .dropdown-menu.show,
         <div class="row align-items-center">
             <div class="col-md-6">
                 <p class="text-muted mb-0">
-                    &copy; {{ date('Y') }} MedCura Clinical Platform. All rights reserved.
+                    &copy; {{ date('Y') }} MedCura AI. All rights reserved.
                 </p>
             </div>
             <div class="col-md-6 text-md-end">
                 <div class="footer-legal-links">
-                    <span class="text-muted me-3">Secure & HIPAA Compliant</span>
+                    <span class="text-muted me-3"><i class="bi bi-lock-fill me-1" aria-hidden="true"></i>Secure &amp; HIPAA-Conscious</span>
+                    <a href="{{ route('about') }}" class="text-muted text-decoration-none hover-link me-3">About</a>
                     <a href="{{ route('contact') }}" class="text-muted text-decoration-none hover-link me-3">Contact Us</a>
-                    <a href="{{ route('admin.login') }}" class="text-muted text-decoration-none hover-link"
-                        style="font-size: 0.8rem;">Admin</a>
+                    <a href="{{ route('doctors.index') }}" class="text-muted text-decoration-none hover-link">Find a Doctor</a>
                 </div>
             </div>
         </div>
