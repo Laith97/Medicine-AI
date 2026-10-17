@@ -2,6 +2,7 @@
 <html dir="ltr" lang="en-US">
 
 <head>
+    @include('partials.microsoft-clarity')
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta http-equiv="x-ua-compatible" content="IE=edge">
     <meta name="author" content="SemiColonWeb">
