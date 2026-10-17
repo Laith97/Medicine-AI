@@ -28,9 +28,10 @@
     <meta name="twitter:image" content="{{ Storage::disk('public')->url($landingPage->hero_image) }}">
     @endif
 
-    <!-- Favicon -->
+    <!-- Favicon - MedCura new logo -->
+    <link rel="icon" type="image/png" href="{{ asset('demos/medical/images/logo-medical.png') }}">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('demos/medical/images/logo-medical.png') }}">
 
     <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

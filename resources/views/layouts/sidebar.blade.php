@@ -1,8 +1,8 @@
 <aside id="appSidebar" class="sidebar">
-  <!-- Sidebar Brand - Logo 100x75 exact, moved from top-bar to keep slim bar -->
+  <!-- Sidebar Brand - MedCura new logo -->
   <div class="sidebar-brand" style="padding:0.5rem 1rem;border-bottom:1px solid #f1f5f9;text-align:center;background:#ffffff;justify-content:center;">
     <a href="{{ url('/') }}" class="d-flex align-items-center justify-content-center text-decoration-none">
-      <img style="width:100px;height:75px;" src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}" alt="Medcura Logo">
+      <img style="width:auto;height:48px;max-width:160px;object-fit:contain;background:#fff;border-radius:8px;padding:2px;" src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}" alt="MedCura AI">
     </a>
   </div>
   <nav class="sidebar-nav">

@@ -1449,18 +1449,18 @@ body .dropdown .dropdown-menu.show,
                         <!-- Logo - mobile only for logged-in (desktop logo is in sidebar) -->
                         <div class="top-bar-logo d-flex d-lg-none">
                             <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
-                                <img style="width:100px;height:75px;" class="logo-default"
+                                <img style="width:auto;height:48px;max-width:180px;object-fit:contain;" class="logo-default"
                                       src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}"
-                                      alt="Medcura Logo">
+                                      alt="MedCura AI">
                             </a>
                         </div>
                         @else
                         <!-- Logo - always visible for guest -->
                         <div class="top-bar-logo d-flex">
                             <a href="{{ url('/') }}" class="d-flex align-items-center text-decoration-none">
-                                <img style="width:100px;height:75px;" class="logo-default"
+                                <img style="width:auto;height:48px;max-width:180px;object-fit:contain;" class="logo-default"
                                       src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}"
-                                      alt="Medcura Logo">
+                                      alt="MedCura AI">
                             </a>
                         </div>
                         @endauth

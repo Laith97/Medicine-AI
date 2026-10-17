@@ -17,7 +17,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ url('/') }}">
-                        <img style="width: 140px" class="logo-default" src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}" alt="Canvas Logo">
+                        <img style="width:auto;height:40px;max-width:140px;object-fit:contain;" class="logo-default" src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}" alt="MedCura AI">
                     </a>
                 </div>
 

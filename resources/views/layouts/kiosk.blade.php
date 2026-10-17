@@ -406,7 +406,7 @@
                 <div class="d-flex align-items-center">
                     <img src="{{ asset('demos/medical/images/logo-medical.png') }}"
                          alt="MedCura AI"
-                         style="height: 50px; margin-right: 1rem;">
+                         style="height:56px;width:auto;max-width:200px;object-fit:contain;background:#fff;border-radius:8px;padding:4px;margin-right:1rem;">
                     <div>
                         <h1 class="h3 mb-0 fw-bold">MedCura AI Kiosk</h1>
                         <small class="text-muted">Touch to continue</small>

@@ -33,7 +33,8 @@
     <link rel="stylesheet" href="{{ asset('css/admin-enhancements.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-tables.css') }}">
     <link rel="stylesheet" href="{{ asset('css/ui-consistency.css') }}">
-    <!-- Favicon -->
+    <!-- Favicon - MedCura new logo -->
+    <link rel="icon" type="image/png" href="{{ asset('demos/medical/images/logo-medical.png') }}">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @stack('styles')
 
@@ -338,7 +339,7 @@
             <!-- Brand -->
             <div class="sidebar-brand">
                 <a href="{{ $showHospitalAdminNav ? route('hospital-admin.dashboard') : route('dashboard') }}">
-                    <img src="{{ asset('demos/medical/images/logo-medical.png') }}?v={{ time() }}&cache={{ rand(1000,9999) }}" alt="MedCura AI" class="img-fluid">
+                    <img src="{{ asset('demos/medical/images/logo-medical.png') }}" alt="MedCura AI" class="img-fluid" style="height:56px;width:auto;max-width:180px;object-fit:contain;background:#fff;border-radius:10px;padding:6px;">
                 </a>
                 <div class="mt-2">
                     <small class="text-white-50">{{ $showHospitalAdminNav ? 'Hospital Admin' : ($isDoctor ? 'Doctor' : 'User') }}</small>

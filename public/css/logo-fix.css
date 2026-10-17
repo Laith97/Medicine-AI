@@ -1,3 +1,12 @@
+/* MedCura new logo - preserve aspect ratio, avoid distortion */
+.sidebar-brand img,
+.top-bar-logo img,
+#logo img.logo-default,
+img.logo-default {
+    object-fit: contain !important;
+    height: auto !important;
+}
+
 /* Logo fixes for mobile devices */
 @media (max-width: 767.98px) {
     #logo {

@@ -29,7 +29,7 @@
     <link rel="stylesheet" href="{{ asset('demos/medical/medical.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/logo-fix.css') }}">
-    <link rel="stylesheet" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ asset('demos/medical/images/logo-medical.png') }}">
 
     <style>
         body, * {
@@ -61,7 +61,7 @@
             text-align: center;
             background: rgba(0,0,0,0.2);
         }
-        .sidebar-brand img { max-width: 90px; }
+        .sidebar-brand img { max-width: 150px; height: auto; object-fit: contain; }
         .sidebar-nav { padding: 0.75rem 0; }
         .nav-item { margin: 0.2rem 0.6rem; }
         .nav-link {
@@ -180,7 +180,7 @@
         <nav class="doctor-sidebar">
             <div class="sidebar-brand">
                 <a href="{{ route('dashboard') }}">
-                    <img src="{{ asset('demos/medical/images/logo-medical.png') }}" alt="MedCura AI">
+                    <img src="{{ asset('demos/medical/images/logo-medical.png') }}" alt="MedCura AI" style="height:56px;width:auto;max-width:150px;object-fit:contain;background:#fff;border-radius:10px;padding:6px;">
                 </a>
                 <small class="text-white-50 d-block mt-2" style="font-size: 0.75rem;">Doctor Panel</small>
             </div>
