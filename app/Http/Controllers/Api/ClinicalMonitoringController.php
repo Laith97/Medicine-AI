@@ -15,11 +15,51 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use App\Models\EarlyWarningScore;
+use App\Models\MonitoringDevice;
+use App\Models\AuditLog;
 use App\Services\ClinicalDecisionSupportService;
 use App\Services\PredictiveRiskEngine;
 
 class ClinicalMonitoringController extends Controller
 {
+    /**
+     * Register or assign a monitoring device to a patient
+     */
+    public function registerDevice(Request $request): JsonResponse
+    {
+        $request->validate([
+            'device_id' => 'required|string|max:255',
+            'device_type' => 'required|string|max:255',
+            'model' => 'nullable|string|max:255',
+            'manufacturer' => 'nullable|string|max:255',
+            'patient_id' => 'nullable|exists:users,id',
+        ]);
+
+        if (!Auth::user()->hasAnyRole(['admin', 'doctor', 'hospital_admin'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $device = MonitoringDevice::updateOrCreate(
+            ['device_id' => $request->device_id],
+            [
+                'device_type' => $request->device_type,
+                'model' => $request->model,
+                'manufacturer' => $request->manufacturer,
+                'status' => 'online',
+                'current_patient_id' => $request->patient_id,
+                'last_sync_at' => now(),
+                'configuration' => $request->input('configuration', []),
+            ]
+        );
+
+        AuditLog::log('device_registered', Auth::id(), $request->patient_id, Auth::id(), [
+            'device_id' => $device->device_id,
+            'device_type' => $device->device_type,
+        ]);
+
+        return response()->json(['message' => 'Device registered', 'device' => $device], 201);
+    }
+
     /**
      * Receive vital signs for a patient
      */
@@ -67,6 +107,11 @@ class ClinicalMonitoringController extends Controller
             // Also dispatch job as fallback or for intensive processing
             ProcessClinicalDataJob::dispatch($patient);
 
+            AuditLog::log('vitals_received', Auth::id(), (int) $patientId, Auth::id(), [
+                'count' => count($request->vitals),
+                'device_id' => $request->device_id,
+            ]);
+
             return response()->json(['message' => 'Vitals received and processing started']);
         } catch (\Exception $e) {
             Log::error("Error receiving vitals for patient {$patientId}: " . $e->getMessage());
@@ -104,6 +149,10 @@ class ClinicalMonitoringController extends Controller
 
             ProcessClinicalDataJob::dispatch(User::findOrFail($patientId));
 
+            AuditLog::log('labs_received', Auth::id(), (int) $patientId, Auth::id(), [
+                'count' => count($request->labs),
+            ]);
+
             return response()->json(['message' => 'Labs received and processing started']);
         } catch (\Exception $e) {
             Log::error("Error receiving labs for patient {$patientId}: " . $e->getMessage());
@@ -134,6 +183,8 @@ class ClinicalMonitoringController extends Controller
             ]);
 
             ProcessClinicalDataJob::dispatch(User::findOrFail($patientId));
+
+            AuditLog::log('clinical_note_received', Auth::id(), (int) $patientId, Auth::id(), []);
 
             return response()->json(['message' => 'Note received and processing started']);
         } catch (\Exception $e) {

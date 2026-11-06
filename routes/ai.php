@@ -23,6 +23,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->prefix('ai')->name('ai.')->
         Route::post('/handle-transcription', [VoiceAssistantController::class, 'handleTranscription'])->name('handle-transcription');
         Route::post('/process-with-ai', [VoiceAssistantController::class, 'processWithAI'])->name('process-with-ai');
         Route::post('/generate-ai-analysis', [VoiceAssistantController::class, 'generateAIAnalysis'])->name('generate-ai-analysis');
+        Route::post('/generate-clinical-doc', [VoiceAssistantController::class, 'generateClinicalDoc'])->name('generate-clinical-doc');
         Route::post('/create-ai-result', [VoiceAssistantController::class, 'createAiAssistantResult'])->name('create-ai-result');
         Route::post('/create-manual-diagnosis', [VoiceAssistantController::class, 'createManualDiagnosis'])->name('create-manual-diagnosis');
         Route::post('/complete-appointment-with-diagnosis', [VoiceAssistantController::class, 'completeAppointmentWithDiagnosis'])->name('complete-appointment-with-diagnosis');

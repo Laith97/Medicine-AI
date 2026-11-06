@@ -182,6 +182,8 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureJsonResponse::class])->gro
     Route::get('/api/auth/check-redirect', [\App\Http\Controllers\Auth\LoginRedirectController::class, 'checkRedirect'])->name('api.auth.check-redirect');
 });
 
+// Test / debug routes — local only, blocked in production (404)
+if (app()->environment('local')) {
 // Test all notification types page
 Route::get('/test-all-notifications', [App\Http\Controllers\TestAllNotificationsController::class, 'index'])
     ->name('test.all.notifications')
@@ -232,6 +234,7 @@ Route::get('/notifications/test', function () {
         'user_role' => Auth::user()?->role
     ]);
 })->middleware(['auth']);
+} // end local-only test routes
 
 // Temporary test endpoint without auth for debugging - COMMENTED OUT FOR PRODUCTION
 /*
@@ -1394,6 +1397,7 @@ Route::middleware('auth:admin')->prefix('security')->name('security.')->group(fu
     Route::get('/export', [App\Http\Controllers\Security\DashboardController::class, 'export'])->name('export');
 });
 
+if (app()->environment('local')) {
 // Dropdown test route
 Route::get('/test-dropdown', function () {
     return view('test-dropdown');
@@ -1515,6 +1519,7 @@ Route::get('/test-session-encryption', function () {
         'timestamp' => now()->toISOString()
     ]);
 })->name('test.session.encryption')->middleware(['auth']);
+} // end local-only test routes
 // Kiosk routes (public access for kiosk interface)
 Route::middleware(['kiosk.session-isolation', 'kiosk.rate-limit'])->prefix('kiosk')->name('kiosk.')->group(function () {
     // Kiosk home/welcome screen

@@ -732,6 +732,7 @@
                         <button id="stopRecordingBtn" class="btn btn-danger btn-sm d-none" disabled><i class="fas fa-stop me-1"></i>Stop</button>
                         <div class="ms-auto d-flex gap-1">
                             <button id="generateAnalysisBtn" class="btn btn-sm text-dark" disabled style="background:#facc15;border:none;border-radius:10px;font-weight:700"><i class="fas fa-brain me-1"></i>AI Analysis</button>
+                            <button id="generateClinicalDocBtn" class="btn btn-sm text-white" disabled style="background:#2c3e50;border:none;border-radius:10px;font-weight:700"><i class="fas fa-file-medical me-1"></i>Clinical Doc</button>
                             <button id="resetSessionBtn" class="btn btn-light border btn-sm" style="border-radius:10px;font-weight:600"><i class="fas fa-rotate me-1"></i>Reset</button>
                         </div>
                     </div>
@@ -1402,6 +1403,31 @@
                 this.disabled = false;
                 this.innerHTML = '<i class="fas fa-brain me-1"></i>AI Analysis';
             });
+        });
+
+        document.getElementById('generateClinicalDocBtn').addEventListener('click', function() {
+            const transcript = document.getElementById('react-transcript-container')?.innerText.trim() || '';
+            if (!transcript || transcript.length < 20) { alert('Please record more audio. Transcript too short for SOAP note.'); return; }
+            const patientSelect = document.getElementById('patientSelect');
+            if (!patientSelect || !patientSelect.value) { alert('Please select a patient first'); return; }
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating SOAP...';
+            fetch('{{ route("ai.ambient-listening.generate-clinical-doc") }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded','X-CSRF-TOKEN': '{{ csrf_token() }}'},
+                body: new URLSearchParams({transcription: transcript, sessionId: sessionId || '', selectedPatient: patientSelect.value, _token: '{{ csrf_token() }}'})
+            }).then(r => { if (!r.ok) throw new Error('Server error: ' + r.status); return r.json(); })
+            .then(data => {
+                if (data.success) {
+                    const formatted = window.formatAIAnalysis ? window.formatAIAnalysis(data.clinicalDoc) : data.clinicalDoc;
+                    const modalHtml = `<div class="modal fade" id="clinicalDocModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header text-white" style="background:#2c3e50"><h5 class="modal-title"><i class="fas fa-file-medical me-2"></i>SOAP Clinical Note</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body" style="max-height:70vh;overflow-y:auto;">${formatted}</div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div></div></div></div>`;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    new bootstrap.Modal(document.getElementById('clinicalDocModal')).show();
+                    document.getElementById('clinicalDocModal').addEventListener('hidden.bs.modal', function(){ this.remove(); });
+                } else { alert('Error: ' + (data.message || 'Failed')); }
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-file-medical me-1"></i>Clinical Doc';
+            }).catch(e => { alert('Error: ' + e.message); this.disabled = false; this.innerHTML = '<i class="fas fa-file-medical me-1"></i>Clinical Doc'; });
         });
 
         // Fallback: Enable buttons after recording stops (with delay to ensure status is set)

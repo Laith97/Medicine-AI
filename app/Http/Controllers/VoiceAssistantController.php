@@ -1134,6 +1134,61 @@ class VoiceAssistantController extends Controller
         }
     }
 
+    public function generateClinicalDoc(Request $request)
+    {
+        $sessionId = $request->input('sessionId');
+        $transcription = $request->input('transcription', '');
+        $selectedPatient = $request->input('selectedPatient');
+
+        if (empty($sessionId) || !is_string($sessionId) || strlen($sessionId) > 255) {
+            return response()->json(['success' => false, 'message' => 'Invalid session ID provided.'], 400);
+        }
+        $sessionId = preg_replace('/[^a-zA-Z0-9\-]/', '', $sessionId);
+        if (empty($sessionId)) {
+            return response()->json(['success' => false, 'message' => 'Invalid session ID format.'], 400);
+        }
+        if (empty($transcription) || strlen(trim($transcription)) < 20) {
+            return response()->json(['success' => false, 'message' => 'No transcription available. Please record more audio.']);
+        }
+        if (!$selectedPatient || !is_numeric($selectedPatient) || $selectedPatient <= 0) {
+            return response()->json(['success' => false, 'message' => 'Please select a valid patient first.']);
+        }
+
+        try {
+            $transcriptionRecord = VoiceTranscription::where('session_id', $sessionId)->where('doctor_id', Auth::id())->first();
+            if (!$transcriptionRecord) {
+                return response()->json(['success' => false, 'message' => 'Session not found or unauthorized access.'], 404);
+            }
+            $patient = User::find($selectedPatient);
+            if (!$patient) {
+                return response()->json(['success' => false, 'message' => 'Patient not found.'], 404);
+            }
+            $patientData = ['name' => $patient->name ?? 'Unknown', 'age' => $patient->age ?? 'N/A', 'gender' => $patient->gender ?? 'N/A'];
+
+            $cacheKey = 'voice_clinical_doc_' . md5($transcription);
+            $clinicalDoc = Cache::get($cacheKey);
+            if (!$clinicalDoc) {
+                $prompt = $this->prepareClinicalDocPrompt($transcription, $patientData);
+                $response = OpenAI::chat()->create([
+                    'model' => 'gpt-4o',
+                    'messages' => [['role' => 'user', 'content' => $prompt]],
+                    'temperature' => 0.2,
+                ]);
+                $clinicalDoc = $response['choices'][0]['message']['content'] ?? '';
+                if (!empty($clinicalDoc)) {
+                    Cache::put($cacheKey, $clinicalDoc, 7200);
+                }
+            }
+
+            $transcriptionRecord->update(['ai_analysis' => $clinicalDoc]);
+
+            return response()->json(['success' => true, 'clinicalDoc' => $clinicalDoc, 'message' => 'SOAP clinical note generated successfully.']);
+        } catch (\Exception $e) {
+            \Log::error('Clinical doc error: ' . $e->getMessage(), ['session_id' => $sessionId, 'user_id' => Auth::id()]);
+            return response()->json(['success' => false, 'message' => 'Failed to generate clinical doc: ' . $e->getMessage()]);
+        }
+    }
+
     public function createAiAssistantResult(Request $request)
     {
         $selectedPatient = $request->input('selectedPatient');

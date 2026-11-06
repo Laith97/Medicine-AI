@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Appointment;
 use App\Models\Diagnosis;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class PatientManagementController extends Controller
 {
@@ -103,6 +105,8 @@ class PatientManagementController extends Controller
         if (!$hasAccess) {
             abort(403, 'Unauthorized access to patient.');
         }
+
+        AuditLog::log('patient_chart_viewed', Auth::id(), $patient->id, Auth::id(), []);
         
         return view('doctor.patients.show', compact('patient', 'appointments', 'diagnoses'));
     }
@@ -111,10 +115,37 @@ class PatientManagementController extends Controller
     {
         return view('doctor.patients.create');
     }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:20',
+            'age' => 'required|integer|min:1|max:150',
+            'gender' => 'required|in:male,female,other',
+        ]);
+
+        $patient = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'password' => Hash::make('patient123'),
+            'role' => 'patient',
+            'gender' => $validated['gender'],
+            'date_of_birth' => now()->subYears((int) $validated['age'])->toDateString(),
+            'primary_doctor_id' => Auth::id(),
+            'email_verified_at' => now(),
+        ]);
+
+        return redirect()->route('doctor.patients.show', $patient->id)
+            ->with('success', 'Patient created successfully! Default password is "patient123".');
+    }
     
     public function edit($id)
     {
         $patient = User::where('role', 'patient')->findOrFail($id);
+        $this->authorizePatientAccess($patient);
         return view('doctor.patients.edit', compact('patient'));
     }
     
@@ -129,6 +160,7 @@ class PatientManagementController extends Controller
         ]);
         
         $patient = User::where('role', 'patient')->findOrFail($id);
+        $this->authorizePatientAccess($patient);
         
         // Convert age to date_of_birth
         $validated['date_of_birth'] = now()->subYears($validated['age'])->format('Y-m-d');
@@ -143,9 +175,20 @@ class PatientManagementController extends Controller
     public function destroy($id)
     {
         $patient = User::where('role', 'patient')->findOrFail($id);
+        $this->authorizePatientAccess($patient);
         $patient->delete();
         
         return redirect()->route('doctor.patients.index')
             ->with('success', 'Patient deleted successfully!');
+    }
+
+    private function authorizePatientAccess(User $patient): void
+    {
+        $doctorId = Auth::id();
+        $hasAccess = $patient->primary_doctor_id == $doctorId
+            || Appointment::where('patient_id', $patient->id)->where('doctor_id', Auth::user()->doctor->id ?? $doctorId)->exists();
+        if (!$hasAccess) {
+            abort(403, 'Unauthorized access to patient.');
+        }
     }
 }

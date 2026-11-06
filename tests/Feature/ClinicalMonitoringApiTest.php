@@ -43,7 +43,8 @@ class ClinicalMonitoringApiTest extends TestCase
 
     public function test_get_alerts_endpoint()
     {
-        $response = $this->actingAs($this->user)
+        $admin = User::factory()->create(['role' => 'admin']);
+        $response = $this->actingAs($admin)
             ->getJson('/api/monitoring/alerts');
 
         $response->assertStatus(200);

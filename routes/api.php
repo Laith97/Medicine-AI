@@ -299,6 +299,14 @@ Route::middleware(['auth:web'])->group(function () {
         Route::get('/compliance/webhooks', [App\Http\Controllers\Api\ComplianceIntegrationController::class, 'getWebhooks']);
         });
 
+    // FHIR R4 minimal facade (read-only interoperability)
+    Route::prefix('fhir')->group(function () {
+        Route::get('metadata', [App\Http\Controllers\Api\FhirController::class, 'metadata']);
+        Route::get('Patient/{id}', [App\Http\Controllers\Api\FhirController::class, 'readPatient']);
+        Route::get('Observation', [App\Http\Controllers\Api\FhirController::class, 'searchObservation']);
+        Route::get('Appointment', [App\Http\Controllers\Api\FhirController::class, 'searchAppointment']);
+    });
+
     // Video Call Routes
     Route::prefix('appointments')->group(function () {
         Route::get('{appointment}/patient-phone', [App\Http\Controllers\VideoCallController::class, 'getPatientPhone']);
@@ -308,6 +316,7 @@ Route::middleware(['auth:web'])->group(function () {
 
     // Clinical Monitoring Routes
     Route::prefix('monitoring')->group(function () {
+        Route::post('devices/register', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'registerDevice']);
         Route::post('{patient_id}/vitals', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'receiveVitals']);
         Route::post('{patient_id}/labs', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'receiveLabs']);
         Route::post('{patient_id}/notes', [App\Http\Controllers\Api\ClinicalMonitoringController::class, 'receiveNotes']);

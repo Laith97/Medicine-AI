@@ -25,7 +25,7 @@ class MonitoringController extends Controller
         $user = $request->user();
 
         // Check if user has monitoring access
-        if (!$user->hasRole(['admin', 'manager'])) {
+        if (!$user->hasAnyRole(['admin', 'manager'])) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Access denied to monitoring dashboard'
@@ -59,7 +59,7 @@ class MonitoringController extends Controller
         $user = $request->user();
 
         // Check if user has monitoring access
-        if (!$user || !$user->hasRole(['admin', 'manager'])) {
+        if (!$user || !$user->hasAnyRole(['admin', 'manager'])) {
             abort(403, 'Access denied to monitoring dashboard');
         }
 
@@ -83,7 +83,7 @@ class MonitoringController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->hasRole(['admin', 'manager'])) {
+        if (!$user->hasAnyRole(['admin', 'manager'])) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Access denied to metrics data'
@@ -111,7 +111,7 @@ class MonitoringController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->hasRole(['admin', 'manager'])) {
+        if (!$user->hasAnyRole(['admin', 'manager'])) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Access denied to alerts'
@@ -141,7 +141,7 @@ class MonitoringController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->hasRole(['admin', 'manager'])) {
+        if (!$user->hasAnyRole(['admin', 'manager'])) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Access denied to alert management'
