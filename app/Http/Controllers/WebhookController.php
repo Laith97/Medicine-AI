@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\StripeInvoice;
+use App\Models\StripeWebhookEvent;
 use App\Services\MonthlyInvoiceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -35,6 +36,19 @@ class WebhookController extends Controller
         }
 
         // Handle the event
+        try {
+            $webhookEvent = StripeWebhookEvent::firstOrCreate(
+                ['event_id' => $event->id],
+                ['type' => $event->type]
+            );
+            if (! $webhookEvent->wasRecentlyCreated && $webhookEvent->processed_at) {
+                return response('Already processed', 200);
+            }
+        } catch (\Exception $e) {
+            Log::error('Webhook dedup check failed: ' . $e->getMessage(), ['event_id' => $event->id ?? 'unknown']);
+        }
+
+        // Handle the event
         switch ($event->type) {
             case 'checkout.session.completed':
                 $this->handleCheckoutSessionCompleted($event->data->object);
@@ -47,6 +61,10 @@ class WebhookController extends Controller
                 break;
             default:
                 Log::info('Unhandled webhook event type: ' . $event->type);
+        }
+
+        if (isset($webhookEvent)) {
+            $webhookEvent->update(['processed_at' => now()]);
         }
 
         return response('Success', 200);
@@ -63,6 +81,10 @@ class WebhookController extends Controller
             
             if (!$invoice) {
                 Log::warning('No invoice found for session: ' . $session->id);
+                return;
+            }
+
+            if ($invoice->status === 'paid') {
                 return;
             }
 
@@ -105,6 +127,10 @@ class WebhookController extends Controller
             
             if (!$invoice) {
                 Log::warning('No local invoice found for Stripe invoice: ' . $stripeInvoice->id);
+                return;
+            }
+
+            if ($invoice->status === 'paid') {
                 return;
             }
 

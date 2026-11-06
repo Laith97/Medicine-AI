@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: function () {
+            require __DIR__.'/../routes/monitoring.php';
+        },
     )
     ->withProviders([
         SanctumServiceProvider::class,
@@ -52,24 +55,27 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\MetricsCollectionMiddleware::class);
         $middleware->appendToGroup('api', \App\Http\Middleware\MetricsCollectionMiddleware::class);
 
+        // Stripe webhooks verify via Stripe-Signature, not CSRF session tokens
+        $middleware->validateCsrfTokens(except: ['stripe/webhook', 'stripe/*']);
+
         // Handle doctor domains and subdomains
         $middleware->prependToGroup('web', \App\Http\Middleware\HandleDoctorDomains::class);
     })
     ->withSchedule(function (Schedule $schedule) {
         // Generate monthly invoices on the 1st of each month at 2 AM
-        $schedule->job(new CreateMonthlyInvoices())->monthlyOn(1, '02:00');
+        $schedule->job(new CreateMonthlyInvoices())->monthlyOn(1, '02:00')->withoutOverlapping();
 
         // Process overdue invoices and send reminders daily at 9 AM
-        $schedule->job(new ProcessOverdueInvoices())->dailyAt('09:00');
+        $schedule->job(new ProcessOverdueInvoices())->dailyAt('09:00')->withoutOverlapping();
 
         // Process invoice payments and remove restrictions every 2 hours
-        $schedule->job(new ProcessInvoicePayments())->everyTwoHours();
+        $schedule->job(new ProcessInvoicePayments())->everyTwoHours()->withoutOverlapping();
 
         // Send invoice notifications daily at 10 AM
-        $schedule->job(new SendInvoiceNotifications())->dailyAt('10:00');
+        $schedule->job(new SendInvoiceNotifications())->dailyAt('10:00')->withoutOverlapping();
 
         // Sync invoice statuses every 4 hours
-        $schedule->job(new SyncStripeInvoices())->everyFourHours();
+        $schedule->job(new SyncStripeInvoices())->everyFourHours()->withoutOverlapping();
 
         // Process expired trials daily at 1 AM
         $schedule->command('trials:process-expired')->dailyAt('01:00');

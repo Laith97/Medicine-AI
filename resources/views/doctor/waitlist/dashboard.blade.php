@@ -433,7 +433,7 @@
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="quick-action-card" onclick="bulkOperations()">
+                            <div class="quick-action-card opacity-50" aria-disabled="true" title="Bulk actions disabled" style="pointer-events:none">
                                 <div class="action-icon">
                                     <i class="fas fa-cogs"></i>
                                 </div>
@@ -713,8 +713,8 @@ function sendManualOffer() {
 }
 
 function bulkOperations() {
-    // Implementation for bulk operations
-    alert('Bulk operations feature coming soon!');
+    // Bulk operations are disabled in production until implemented
+    return;
 }
 
 function viewAnalytics() {

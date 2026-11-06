@@ -62,6 +62,18 @@ class SendAppointmentStatusChangeNotification
 
                 $user->notify($notificationInstance);
 
+                try {
+                    $databaseNotification = $user->notifications()->latest()->first();
+                    if ($databaseNotification) {
+                        $this->sendPushNotification($user, $databaseNotification);
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Push notification failed, database copy kept', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
                 Log::info('Appointment status change notification sent', [
                     'appointment_id' => $event->appointment->id,
                     'user_id' => $user->id,
@@ -186,16 +198,8 @@ class SendAppointmentStatusChangeNotification
     protected function sendPushNotification($user, $notificationInstance): void
     {
         try {
-            // Skip push notifications for now since we need the database notification model
-            // The push notification service expects App\Models\Notification, not the notification class
-            \Illuminate\Support\Facades\Log::info('Push notification skipped - requires database notification model', [
-                'user_id' => $user->id,
-                'notification_class' => get_class($notificationInstance),
-            ]);
-            
-            // TODO: Implement proper push notification after notification is saved to database
-            // $pushService = app(\App\Services\PushNotificationService::class);
-            // $pushService->sendCriticalPushNotification($user, $databaseNotification);
+            $pushService = app(\App\Services\PushNotificationService::class);
+            $pushService->sendAppointmentStatusPushNotification($user, $notificationInstance);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send critical push notification', [
                 'user_id' => $user->id,

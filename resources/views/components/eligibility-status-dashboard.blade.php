@@ -337,13 +337,12 @@ function loadEligibilityDetails() {
         </div>
     `;
 
-    // This would load detailed eligibility information
-    // For now, just show a placeholder
+    // Eligibility details are disabled in production until implemented
     setTimeout(() => {
         container.innerHTML = `
-            <div class="alert alert-info">
+            <div class="alert alert-warning">
                 <i class="fas fa-info-circle me-2"></i>
-                Detailed eligibility information would be displayed here.
+                Eligibility details are unavailable. Contact support if needed.
             </div>
         `;
     }, 1000);
@@ -354,13 +353,13 @@ function refreshEligibilityStatus() {
 }
 
 function showInsuranceModal() {
-    // This would open the insurance management modal
-    alert('Insurance modal would open here');
+    // Insurance management is disabled in production until implemented
+    return;
 }
 
 function showEligibilityHistory() {
-    // This would show eligibility history
-    showErrorMessage('Eligibility history feature coming soon');
+    // Eligibility history is disabled in production until implemented
+    showErrorMessage('Eligibility history is disabled');
 }
 
 function showErrorMessage(message) {

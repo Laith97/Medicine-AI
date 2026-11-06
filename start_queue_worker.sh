@@ -25,13 +25,14 @@ echo "   Jobs in queue: $JOBS_COUNT"
 echo "   Failed jobs: $FAILED_COUNT"
 echo ""
 
-# Clear any failed jobs older than 24 hours
+# Clear any failed jobs older than 7 days (keeps forensic data for a week)
 echo "🧹 Cleaning up old failed jobs..."
-php artisan queue:prune-failed --hours=24 2>/dev/null || true
+php artisan queue:prune-failed --hours=168 2>/dev/null || true
 
 echo ""
 echo "🔄 Queue worker is managed by systemd user service."
 echo "   Service name: medcura-queue.service"
+echo "   Install template: deploy/medcura-queue.service -> ~/.config/systemd/user/medcura-queue.service"
 echo ""
 
 # Check if service is running

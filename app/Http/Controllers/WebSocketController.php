@@ -9,11 +9,13 @@ class WebSocketController extends Controller
 {
     public function sendNotification(Request $request)
     {
-        $message = $request->input('message', 'Default notification message');
-        
-        // Broadcast the event
-        event(new NewNotification($message));
-        
+        $validated = $request->validate([
+            'message' => 'required|string|max:500',
+        ]);
+
+        // Broadcast only to the authenticated user - no cross-user targeting
+        event(new NewNotification(['message' => $validated['message']], (int) $request->user()->id));
+
         return response()->json(['status' => 'Notification sent']);
     }
     

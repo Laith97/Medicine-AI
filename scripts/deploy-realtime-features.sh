@@ -125,7 +125,7 @@ deploy_code() {
 
     # Build assets
     log "Building frontend assets..."
-    npm run production
+    npm run build
 
     # Clear and optimize Laravel caches
     log "Optimizing Laravel..."

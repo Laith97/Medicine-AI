@@ -1,0 +1,13 @@
+[Unit]
+Description=MedCura AI Queue Worker
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Medicine-AI
+ExecStart=/usr/bin/php %h/Medicine-AI/artisan queue:work --tries=3 --timeout=60 --sleep=3 --max-jobs=1000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

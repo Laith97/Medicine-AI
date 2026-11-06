@@ -600,7 +600,7 @@ sudo -u www-data npm audit
 sudo -u www-data npm update
 
 # Rebuild assets
-sudo -u www-data npm run production
+sudo -u www-data npm run build
 ```
 
 ### Database Schema Updates

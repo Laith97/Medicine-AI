@@ -87,7 +87,7 @@ sudo -u www-data composer install --no-dev --optimize-autoloader
 sudo -u www-data npm install
 
 # Build assets for production
-sudo -u www-data npm run production
+sudo -u www-data npm run build
 ```
 
 ### 4. Environment Configuration

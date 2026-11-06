@@ -42,8 +42,8 @@ use Illuminate\Support\Str;
 // DO NOT duplicate Broadcast::routes() here as it causes duplicate route registration
 
 // Debug authentication routes (temporary)
-if (config('app.debug')) {
-    Route::middleware(['web'])->group(function () {
+if (app()->environment('local') && config('app.debug')) {
+    Route::middleware(['web', 'auth'])->group(function () {
         Route::get('/debug-broadcasting-auth', function (\Illuminate\Http\Request $request) {
             $user = Auth::user();
 
@@ -209,20 +209,11 @@ Route::get('/test-offline-notifications', function () {
 
 // Quick diagnostic route for API checks
 Route::get('/api/notification-diagnostics', function () {
+    abort_unless(app()->environment('local'), 404);
     return response()->json([
         'echo_available' => false,
-        'echo_connector' => false,
-        'pusher_available' => false,
-        'pusher_state' => 'unknown',
         'notification_system' => false,
-        'notification_initialized' => false,
         'user_id' => Auth::id(),
-        'user_role' => Auth::user()?->role,
-        'sound_enabled' => true,
-        'toast_enabled' => true,
-        'broadcast_driver' => config('broadcasting.default'),
-        'queue_driver' => config('queue.default'),
-        'pusher_app_key' => config('broadcasting.connections.pusher.key'),
     ]);
 })->middleware(['auth']);
 
@@ -465,13 +456,14 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     // Debug route for testing payment redirects
     Route::get('/debug/payment/{invoice}', function($invoiceId) {
+        abort_unless(app()->environment('local'), 404);
         $invoice = \App\Models\StripeInvoice::findOrFail($invoiceId);
+        abort_unless((int) $invoice->user_id === (int) \Illuminate\Support\Facades\Auth::id(), 403);
         $service = new \App\Services\StripeInvoiceService();
         $paymentUrl = $service->getPaymentUrl($invoice);
 
         return response()->json([
             'invoice_id' => $invoice->id,
-            'payment_url' => $paymentUrl,
             'is_stripe' => strpos($paymentUrl, 'stripe.com') !== false,
             'url_length' => strlen($paymentUrl)
         ]);
@@ -479,7 +471,9 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
 
     // Test payment page
     Route::get('/test-payment', function() {
-        $invoices = \App\Models\StripeInvoice::where('status', '!=', 'paid')
+        abort_unless(app()->environment('local'), 404);
+        $invoices = \App\Models\StripeInvoice::where('user_id', \Illuminate\Support\Facades\Auth::id())
+            ->where('status', '!=', 'paid')
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
@@ -1454,32 +1448,27 @@ Route::get('/test-broadcasting-auth', function () {
 
 // Broadcasting test route
 Route::get('/test-broadcasting', function () {
+    abort_unless(app()->environment('local'), 404);
     return view('test-broadcasting');
-})->name('test.broadcasting');
+})->name('test.broadcasting')->middleware(['auth']);
 
 // Authenticated broadcasting test page
 Route::get('/test-authenticated-broadcasting-page', function () {
+    abort_unless(app()->environment('local'), 404);
     return view('test-authenticated-broadcasting');
-})->name('test.authenticated.broadcasting.page');
+})->name('test.authenticated.broadcasting.page')->middleware(['auth']);
 
 // Comprehensive authenticated broadcasting test
 Route::get('/test-authenticated-broadcasting', function (\Illuminate\Http\Request $request) {
+    abort_unless(app()->environment('local'), 404);
     try {
-        // Get the first user from database for testing
-        $testUser = User::first();
-
+        /** @var \App\Models\User $testUser */
+        $testUser = $request->user();
         if (!$testUser) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No users found in database for testing',
-                'timestamp' => now()->toISOString()
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
         }
 
-        // Authenticate the user for this request
-        Auth::login($testUser);
-
-        // Send authenticated test notification
+        // Send authenticated test notification to self only - no impersonation
         $testUser->notify(new \App\Notifications\TestNotification([
             'type' => 'authenticated-broadcast-test',
             'title' => 'Authenticated Broadcasting Test',
@@ -1495,65 +1484,37 @@ Route::get('/test-authenticated-broadcasting', function (\Illuminate\Http\Reques
             'timestamp' => now()->toISOString(),
             'user' => [
                 'id' => $testUser->id,
-                'name' => $testUser->name,
-                'email' => $testUser->email,
-                'role' => $testUser->role,
-                'authenticated' => Auth::check(),
-                'current_user_id' => Auth::id()
+                'authenticated' => true,
             ],
             'notification' => [
                 'type' => 'authenticated-broadcast-test',
-                'title' => 'Authenticated Broadcasting Test',
-                'message' => 'This notification was sent through an authenticated user session to test private channel broadcasting',
                 'channel' => 'App.User.' . $testUser->id,
                 'broadcast_driver' => config('broadcasting.default'),
-                'pusher_config' => [
-                    'key' => config('broadcasting.connections.pusher.key'),
-                    'cluster' => config('broadcasting.connections.pusher.options.cluster'),
-                    'app_id' => config('broadcasting.connections.pusher.app_id')
-                ]
             ],
-            'instructions' => [
-                'frontend_test' => 'Open browser console to see if notification is received',
-                'channel_verification' => 'Check if notification appears in private channel App.User.' . $testUser->id,
-                'authentication_check' => 'Verify user authentication is maintained throughout the process'
-            ]
         ]);
 
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
             'message' => 'Authenticated broadcasting test failed',
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
             'timestamp' => now()->toISOString()
         ], 500);
     }
-})->name('test.authenticated.broadcasting');
+})->name('test.authenticated.broadcasting')->middleware(['auth']);
 
 // Session encryption test route
 Route::get('/test-session-encryption', function () {
+    abort_unless(app()->environment('local'), 404);
     // Set some test data in session
     session(['test_key' => 'test_value_' . now()->timestamp]);
-    session(['encrypted_data' => 'This data should be encrypted: ' . Str::random(32)]);
-
-    // Retrieve and verify session data
-    $testValue = session('test_key');
-    $encryptedData = session('encrypted_data');
 
     return response()->json([
         'success' => true,
         'message' => 'Session encryption test completed',
-        'session_data' => [
-            'test_key' => $testValue,
-            'encrypted_data' => $encryptedData,
-            'session_id' => session()->getId(),
-            'session_encrypt_enabled' => config('session.encrypt'),
-        ],
         'encryption_status' => config('session.encrypt') ? 'ENABLED' : 'DISABLED',
         'timestamp' => now()->toISOString()
     ]);
-})->name('test.session.encryption');
+})->name('test.session.encryption')->middleware(['auth']);
 // Kiosk routes (public access for kiosk interface)
 Route::middleware(['kiosk.session-isolation', 'kiosk.rate-limit'])->prefix('kiosk')->name('kiosk.')->group(function () {
     // Kiosk home/welcome screen
@@ -1649,5 +1610,7 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
 });
 
 // WebSocket test routes
-Route::get('/websocket-test', [App\Http\Controllers\WebSocketController::class, 'testPage'])->name('websocket.test');
-Route::post('/send-notification', [App\Http\Controllers\WebSocketController::class, 'sendNotification'])->name('send.notification');
+Route::middleware(['auth', 'throttle:30,1'])->group(function () {
+    Route::get('/websocket-test', [App\Http\Controllers\WebSocketController::class, 'testPage'])->name('websocket.test');
+    Route::post('/send-notification', [App\Http\Controllers\WebSocketController::class, 'sendNotification'])->name('send.notification');
+});

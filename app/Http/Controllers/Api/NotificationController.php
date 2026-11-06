@@ -300,9 +300,9 @@ class NotificationController extends Controller
         // Implementation depends on your guest notification system
 
         return response()->json([
-            'success' => true,
+            'success' => false,
             'notifications' => [],
-            'message' => 'Guest notifications feature not implemented yet',
-        ]);
+            'message' => 'Guest notifications are disabled',
+        ], 501);
     }
 }

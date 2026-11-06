@@ -13,6 +13,10 @@ class SendInvoiceNotifications implements ShouldQueue
 {
     use Queueable;
 
+    public int $tries = 3;
+    public int $timeout = 120;
+    public int $backoff = 60;
+
     /**
      * Execute the job.
      */
