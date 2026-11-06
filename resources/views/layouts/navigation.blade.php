@@ -60,6 +60,12 @@
                             <x-nav-link :href="route('diagnosis.patient.index')" :active="request()->routeIs('diagnosis.patient.*')">
                                 <i class="fas fa-file-medical mr-2"></i>{{ __('My Diagnoses') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('patient.hep.dashboard')" :active="request()->routeIs('patient.hep.*')">
+                                <i class="fas fa-dumbbell mr-2"></i>{{ __('Exercises') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('patient.waitlist.dashboard')" :active="request()->routeIs('patient.waitlist.*')">
+                                <i class="fas fa-list-ol mr-2"></i>{{ __('Waitlist') }}
+                            </x-nav-link>
                         @endif
                     @else
                         <x-nav-link :href="url('/')">
@@ -188,6 +194,12 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('diagnosis.patient.index')" :active="request()->routeIs('diagnosis.patient.*')">
                         <i class="fas fa-file-medical mr-2"></i>{{ __('My Diagnoses') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('patient.hep.dashboard')" :active="request()->routeIs('patient.hep.*')">
+                        <i class="fas fa-dumbbell mr-2"></i>{{ __('Exercises') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('patient.waitlist.dashboard')" :active="request()->routeIs('patient.waitlist.*')">
+                        <i class="fas fa-list-ol mr-2"></i>{{ __('Waitlist') }}
                     </x-responsive-nav-link>
                 @endif
             @else

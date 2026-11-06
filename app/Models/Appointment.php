@@ -354,6 +354,11 @@ class Appointment extends Model
             return false;
         }
 
+        // Can't reschedule past appointments
+        if ($this->appointment_date && $this->appointment_date->isPast()) {
+            return false;
+        }
+
         return true;
     }
 

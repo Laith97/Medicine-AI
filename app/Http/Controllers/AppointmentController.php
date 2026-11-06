@@ -382,7 +382,7 @@ class AppointmentController extends Controller
             }
 
             $cancelledBy = $user->isPatient() ? 'patient' : 'doctor';
-            $lockedAppointment->cancel($cancelledBy, $request->cancellation_reason);
+            $lockedAppointment->cancel($request->cancellation_reason, $cancelledBy);
 
             // NOTE: Database notifications are sent via AppointmentObserver -> broadcastService
             // -> AppointmentStatusChangedEvent -> SendAppointmentStatusChangeNotification listener
@@ -500,6 +500,56 @@ class AppointmentController extends Controller
     }
 
     /**
+     * Download appointment as ICS file for Add to Calendar (Google/Outlook/Apple)
+     */
+    public function downloadIcs(Appointment $appointment)
+    {
+        $authService = app(AuthorizationService::class);
+        $user = $authService->getAuthenticatedUser();
+
+        if (!$user || !$authService->canViewAppointment($user, $appointment)) {
+            abort(403, 'Unauthorized access to appointment');
+        }
+
+        $appointment->load(['doctor.user', 'doctor.specialty']);
+
+        $start = $appointment->appointment_date->copy()->setTimezone('UTC')->format('Ymd\THis\Z');
+        $end = ($appointment->appointment_end ?? $appointment->appointment_date->copy()->addMinutes(30))->copy()->setTimezone('UTC')->format('Ymd\THis\Z');
+        $stamp = now('UTC')->format('Ymd\THis\Z');
+        $uid = "appointment-{$appointment->id}-{$appointment->appointment_number}@medcura";
+        $doctorName = $appointment->doctor->user->name ?? 'Doctor';
+        $specialty = $appointment->doctor->specialty->name ?? '';
+        $summary = "Appointment with Dr. {$doctorName}" . ($specialty ? " ({$specialty})" : '');
+        $description = trim(($appointment->reason ?? '') . "\\nType: " . str_replace('_', ' ', $appointment->appointment_type) . "\\nStatus: {$appointment->status}\\nRef: {$appointment->appointment_number}");
+        $location = $appointment->appointment_type === 'video_call' ? route('appointments.show', $appointment) : ($appointment->doctor->address ?? 'Clinic');
+
+        // Escape ICS text per RFC 5545
+        $escape = fn ($text) => addcslashes(preg_replace("/\r\n|\r|\n/", "\\n", (string) $text), ",;");
+
+        $ics = implode("\r\n", [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//MedCura//Appointments//EN',
+            'BEGIN:VEVENT',
+            "UID:{$uid}",
+            "DTSTAMP:{$stamp}",
+            "DTSTART:{$start}",
+            "DTEND:{$end}",
+            'SUMMARY:' . $escape($summary),
+            'DESCRIPTION:' . $escape($description),
+            'LOCATION:' . $escape($location),
+            'STATUS:' . ($appointment->status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'),
+            'END:VEVENT',
+            'END:VCALENDAR',
+        ]);
+
+        return response($ics, 200, [
+            'Content-Type' => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => "attachment; filename=\"appointment-{$appointment->appointment_number}.ics\"",
+        ]);
+    }
+
+    /**
      * Show guest appointment lookup form
      */
     public function guestLookup()
@@ -586,7 +636,7 @@ class AppointmentController extends Controller
             return back()->withErrors(['error' => 'This appointment cannot be cancelled.']);
         }
 
-        $appointment->cancel('patient', $request->cancellation_reason);
+        $appointment->cancel($request->cancellation_reason, 'patient');
 
         return redirect()->route('appointments.guest.show', [
             'appointment' => $appointmentNumber,

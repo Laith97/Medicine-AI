@@ -550,6 +550,21 @@ class MenuHelper
                         'route' => 'diagnosis.patient.index',
                         'icon' => 'fas fa-file-medical',
                     ],
+                    [
+                        'name' => 'My Reviews',
+                        'route' => 'reviews.index',
+                        'icon' => 'fas fa-star',
+                    ],
+                    [
+                        'name' => 'Exercise Programs',
+                        'route' => 'patient.hep.dashboard',
+                        'icon' => 'fas fa-dumbbell',
+                    ],
+                    [
+                        'name' => 'Waitlist',
+                        'route' => 'patient.waitlist.dashboard',
+                        'icon' => 'fas fa-list-ol',
+                    ],
                 ]
             ],
         ];

@@ -210,7 +210,7 @@ class WaitlistController extends Controller
         try {
             $this->waitlistService->acceptSlotOffer($entryId);
 
-            return redirect()->route('patient.appointments')
+            return redirect()->route('appointments.index')
                 ->with('success', 'Slot accepted successfully! Your appointment has been confirmed.');
         } catch (\Exception $e) {
             return back()
@@ -330,5 +330,46 @@ class WaitlistController extends Controller
             'message' => 'Auto-accept configuration updated successfully.',
             'preference' => $preference,
         ]);
+    }
+
+    /**
+     * Update waitlist preferences (form submit)
+     */
+    public function updatePreferences(Request $request)
+    {
+        $request->validate([
+            'doctor_id' => 'required|exists:doctors,id',
+            'preferred_times' => 'nullable',
+            'preferred_days' => 'nullable',
+            'auto_accept_threshold' => 'nullable|integer|min:1|max:30',
+        ]);
+
+        $user = Auth::user();
+
+        $decode = function ($value) {
+            if (is_array($value)) {
+                return $value;
+            }
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                return is_array($decoded) ? $decoded : [$value];
+            }
+            return [];
+        };
+
+        WaitlistPatientPreference::updateOrCreate(
+            [
+                'patient_id' => $user->id,
+                'doctor_id' => $request->doctor_id,
+            ],
+            [
+                'preferred_times' => $decode($request->input('preferred_times', [])),
+                'preferred_days' => $decode($request->input('preferred_days', [])),
+                'auto_accept_threshold' => $request->input('auto_accept_threshold'),
+            ]
+        );
+
+        return redirect()->route('patient.waitlist.preferences')
+            ->with('success', 'Preferences updated successfully.');
     }
 }

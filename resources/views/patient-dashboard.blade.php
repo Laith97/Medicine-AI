@@ -15,6 +15,14 @@
             </div>
         </div>
         <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <h3>{{ $stats['pending_appointments'] ?? $appointments->where('status', 'pending')->count() }}</h3>
+                    <p class="text-muted">Pending Confirmation</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
             <div class="card text-center">
                 <div class="card-body">
                     <h3>{{ $stats['upcoming_appointments'] }}</h3>
@@ -30,6 +38,9 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="row mb-4">
         <div class="col-md-3">
             <div class="card text-center">
                 <div class="card-body">
@@ -38,14 +49,58 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3>{{ $stats['total_prescriptions'] ?? 0 }}</h3>
+                    <p class="text-muted">Prescriptions</p>
+                    <a href="{{ route('appointments.index') }}" class="btn btn-sm btn-link">View in appointments</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3>{{ $stats['active_hep'] ?? 0 }}</h3>
+                    <p class="text-muted">Active Exercise Programs</p>
+                    <a href="{{ route('patient.hep.dashboard') }}" class="btn btn-sm btn-link">Open Exercises</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3>{{ $stats['active_waitlist'] ?? 0 }}</h3>
+                    <p class="text-muted">Active Waitlists</p>
+                    <a href="{{ route('patient.waitlist.dashboard') }}" class="btn btn-sm btn-link">View Waitlist</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card mb-4">
+        <div class="card-header"><h5>Quick Actions</h5></div>
+        <div class="card-body d-flex flex-wrap gap-2">
+            <a href="{{ route('doctors.index') }}" class="btn btn-primary">Book Appointment</a>
+            <a href="{{ route('appointments.index') }}" class="btn btn-outline-primary">My Appointments</a>
+            <a href="{{ route('diagnosis.patient.index') }}" class="btn btn-outline-primary">My Diagnoses</a>
+            <a href="{{ route('patient.hep.dashboard') }}" class="btn btn-outline-success">Exercises</a>
+            <a href="{{ route('patient.waitlist.dashboard') }}" class="btn btn-outline-info">Waitlist</a>
+            <a href="{{ route('notifications.index') }}" class="btn btn-outline-secondary">Notifications</a>
+        </div>
     </div>
     
     <!-- Upcoming Appointments -->
     <div class="card mb-4">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5>Upcoming Appointments</h5>
+            <a href="{{ route('appointments.index') }}" class="btn btn-sm btn-link">View all</a>
         </div>
         <div class="card-body">
+            @if(($pendingAppointments ?? $appointments->where('status', 'pending'))->count() > 0)
+                <div class="alert alert-warning py-2">You have {{ ($pendingAppointments ?? $appointments->where('status', 'pending'))->count() }} appointment(s) awaiting doctor confirmation.</div>
+            @endif
             @if($appointments->where('status', 'confirmed')->where('appointment_date', '>', now())->count() > 0)
                 <div class="table-responsive">
                     <table class="table">
@@ -65,8 +120,11 @@
                                 <td>{{ $appointment->doctor->user->name ?? 'N/A' }}</td>
                                 <td>{{ ucfirst($appointment->appointment_type) }}</td>
                                 <td><span class="badge bg-success">{{ ucfirst($appointment->status) }}</span></td>
-                                <td>
+                                <td class="text-nowrap">
                                     <a href="{{ route('appointments.show', $appointment) }}" class="btn btn-sm btn-primary">View</a>
+                                    @if($appointment->appointment_type === 'video_call')
+                                        <a href="{{ route('video.room', $appointment) }}" class="btn btn-sm btn-success" target="_blank">Join</a>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach

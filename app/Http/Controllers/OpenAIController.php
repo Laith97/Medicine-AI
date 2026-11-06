@@ -1491,7 +1491,7 @@ class OpenAIController extends Controller
     private function patientDashboard($user)
     {
         // Get patient's appointments
-        $appointments = Appointment::with(['doctor.user'])
+        $appointments = Appointment::with(['doctor.user', 'doctor.specialty'])
             ->where('patient_id', $user->id)
             ->orderBy('appointment_date', 'desc')
             ->get();
@@ -1507,21 +1507,35 @@ class OpenAIController extends Controller
             ->where('patient_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Upcoming = confirmed future (joinable), Pending = awaiting confirmation
+        $pendingAppointments = $appointments->where('status', 'pending');
+        $upcomingAppointments = $appointments->where('status', 'confirmed')
+            ->where('appointment_date', '>', now());
+        $videoAppointments = $upcomingAppointments->where('appointment_type', 'video_call')->take(3);
+        $completedNeedingReview = $appointments->where('status', 'completed')->filter(fn ($a) => !$a->relationLoaded('review') || !$a->review)->take(3);
             
         // Patient statistics
         $stats = [
             'total_appointments' => $appointments->count(),
-            'upcoming_appointments' => $appointments->where('status', 'confirmed')
-                ->where('appointment_date', '>', now())->count(),
+            'pending_appointments' => $pendingAppointments->count(),
+            'upcoming_appointments' => $upcomingAppointments->count(),
             'completed_appointments' => $appointments->where('status', 'completed')->count(),
             'total_diagnoses' => $diagnoses->count(),
+            'total_prescriptions' => \App\Models\Prescription::where('patient_id', $user->id)->count(),
+            'active_hep' => class_exists(\App\Models\HepAssignment::class) ? \App\Models\HepAssignment::where('patient_id', $user->id)->where('completion_status', '!=', 'completed')->count() : 0,
+            'active_waitlist' => class_exists(\App\Models\Waitlist::class) ? \App\Models\Waitlist::where('patient_id', $user->id)->where('status', 'active')->count() : 0,
         ];
         
         return view('patient-dashboard', compact(
             'appointments',
             'diagnoses',
             'reviews',
-            'stats'
+            'stats',
+            'pendingAppointments',
+            'upcomingAppointments',
+            'videoAppointments',
+            'completedNeedingReview'
         ));
     }
 }

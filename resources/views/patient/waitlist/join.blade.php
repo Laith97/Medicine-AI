@@ -178,7 +178,7 @@
         </div>
     </div>
 
-    <form id="waitlistForm" method="POST" action="{{ route('patient.waitlist.join') }}">
+    <form id="waitlistForm" method="POST" action="{{ route('patient.waitlist.store') }}">
         @csrf
 
         <!-- Step 1: Select Doctor -->

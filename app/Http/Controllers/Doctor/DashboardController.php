@@ -234,7 +234,7 @@ class DashboardController extends Controller
         ]);
 
         // Cancel appointment - NO EMAIL DURING REQUEST
-        $appointment->cancel('doctor', $request->cancellation_reason);
+        $appointment->cancel($request->cancellation_reason, 'doctor');
 
         // Return success immediately
         if (request()->wantsJson() || request()->ajax()) {

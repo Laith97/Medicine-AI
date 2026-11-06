@@ -162,6 +162,28 @@ class PrescriptionController extends Controller
 
         $appointment->update(['prescription_given' => true]);
 
+        // Notify patient of new prescription (in-app + broadcast)
+        try {
+            if ($patient) {
+                $patient->notify(new \App\Notifications\SystemAlertNotification(
+                    'New Prescription: ' . $prescription->medication_name,
+                    "Dr. {$appointment->doctor->user->name} prescribed {$prescription->medication_name} ({$prescription->dosage}, {$prescription->frequency}) on {$appointment->appointment_date->format('M j, Y')}.",
+                    'info',
+                    [
+                        'link' => route('prescriptions.show', $prescription),
+                        'link_text' => 'View Prescription',
+                        'related_type' => 'prescription',
+                        'related_id' => $prescription->id,
+                    ]
+                ));
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to send prescription notification', [
+                'prescription_id' => $prescription->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Prescription created successfully.');
         // Or return response()->json(['success' => true]);
     }

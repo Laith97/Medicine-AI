@@ -29,10 +29,12 @@ class DoctorController extends Controller
         // Search by name or specialty
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-            })->orWhereHas('specialty', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })->orWhereHas('specialty', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
             });
         }
 
@@ -198,10 +200,12 @@ Log::info('Available slots for next 7 days:', $availableSlots);
 
         if ($request->filled('q')) {
             $search = $request->q;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-            })->orWhereHas('specialty', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })->orWhereHas('specialty', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
             });
         }
 

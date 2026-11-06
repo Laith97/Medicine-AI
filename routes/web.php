@@ -334,6 +334,7 @@ Route::middleware(['auth', 'sub.user.permissions'])->group(function () {
     Route::resource('appointments', AppointmentController::class)->except(['edit', 'update', 'create', 'store']);
     Route::post('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
     Route::post('/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
+    Route::get('/appointments/{appointment}/ics', [AppointmentController::class, 'downloadIcs'])->name('appointments.ics');
     Route::get('/appointments/calendar/events', [AppointmentController::class, 'getCalendarEvents'])->name('appointments.calendar.events');
 
     // Diagnosis creation from appointment page (for doctors) - DUPLICATE REMOVED - kept in doctor group only
@@ -1066,7 +1067,21 @@ Route::middleware(['auth'])->get('/video/room/{appointment}', function($appointm
     if (Auth::id() !== $appointment->doctor->user_id && Auth::id() !== $appointment->patient_id) {
         abort(403);
     }
-    
+
+    // Patient experience guard: block video for terminal states and non-video types
+    if (in_array($appointment->status, ['cancelled', 'completed', 'no_show'])) {
+        return view('video.room-error', [
+            'appointment' => $appointment,
+            'error' => 'This video call is no longer available because the appointment is ' . str_replace('_', ' ', $appointment->status) . '.'
+        ]);
+    }
+
+    if ($appointment->appointment_type !== 'video_call') {
+        return view('video.room-error', [
+            'appointment' => $appointment,
+            'error' => 'This appointment is a ' . str_replace('_', ' ', $appointment->appointment_type) . ' appointment and does not have a video room.'
+        ]);
+    }
     // Create room if not exists
     $roomName = 'appointment-' . $appointmentId;
     if (!$appointment->meeting_id) {
@@ -1573,14 +1588,14 @@ require __DIR__.'/ai.php';
 // Waitlist Routes
 Route::middleware(['auth', 'role:patient'])->prefix('patient/waitlist')->name('patient.waitlist.')->group(function () {
     Route::get('/', [App\Http\Controllers\Patient\WaitlistController::class, 'dashboard'])->name('dashboard');
-    Route::get('/join', [App\Http\Controllers\Patient\WaitlistController::class, 'join'])->name('join');
-    Route::post('/join', [App\Http\Controllers\Patient\WaitlistController::class, 'store'])->name('store');
-    Route::get('/status/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'show'])->name('status');
+    Route::get('/join', [App\Http\Controllers\Patient\WaitlistController::class, 'joinForm'])->name('join');
+    Route::post('/join', [App\Http\Controllers\Patient\WaitlistController::class, 'join'])->name('store');
+    Route::get('/status/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'status'])->name('status');
     Route::get('/position/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'getPosition'])->name('position');
     Route::post('/accept-offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'acceptOffer'])->name('accept-offer');
     Route::post('/decline-offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'declineOffer'])->name('decline-offer');
-    Route::delete('/leave/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'leaveWaitlist'])->name('leave');
-    Route::get('/offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'viewOffer'])->name('offer');
+    Route::delete('/leave/{waitlist}', [App\Http\Controllers\Patient\WaitlistController::class, 'leave'])->name('leave');
+    Route::get('/offer/{entry}', [App\Http\Controllers\Patient\WaitlistController::class, 'showOffer'])->name('offer');
     Route::get('/preferences', [App\Http\Controllers\Patient\WaitlistController::class, 'preferences'])->name('preferences');
     Route::put('/preferences', [App\Http\Controllers\Patient\WaitlistController::class, 'updatePreferences'])->name('preferences.update');
 });
